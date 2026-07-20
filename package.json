@@ -1,0 +1,19 @@
+{
+  "name": "colimo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "admin:dev": "pnpm --filter @colimo/admin dev",
+    "mobile:web": "pnpm --filter @colimo/mobile web",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "react-native-reanimated": "~3.10.1"
+    }
+  }
+}
