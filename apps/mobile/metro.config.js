@@ -7,10 +7,9 @@ const workspaceRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
 
-// Requis pour un monorepo pnpm : les paquets vivent dans <racine>/node_modules/.pnpm
-// et sont exposés via symlinks. Sans unstable_enableSymlinks, Metro les ignore ;
-// sans watchFolders incluant la racine, Metro ne voit pas le vrai chemin (hors de
-// apps/mobile) vers lequel les symlinks pointent une fois résolus.
+// Monorepo pnpm : les paquets sont exposés via symlinks (store .pnpm central).
+// unstable_enableSymlinks permet à Metro de les suivre ; watchFolders inclut la
+// racine du workspace pour que packages/shared soit vu par le watcher.
 config.resolver.unstable_enableSymlinks = true;
 config.watchFolders = [workspaceRoot];
 
