@@ -1,21 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
-import { courses, utilisateurs, zones } from "@/lib/mockData";
-import { COURSE_STATUS_LABELS, formatFCFA, ZONE_LABELS } from "@colimo/shared";
+import { getCourses, getUtilisateurs } from "@/lib/api";
+import { COURSE_STATUS_LABELS, formatFCFA, ZONE_LABELS, type Course, type Utilisateur, type Zone } from "@colimo/shared";
 
-function nomUtilisateur(id: string): string {
-  return utilisateurs.find((u) => u.id === id)?.nom ?? "—";
-}
+const ZONES: Zone[] = ["libreville", "akanda", "owendo", "bikele_essassa", "ntoum"];
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [filtreZone, setFiltreZone] = useState<string>("toutes");
+  const [chargement, setChargement] = useState(true);
 
-  const coursesFiltrees = useMemo(() => {
-    if (filtreZone === "toutes") return courses;
-    return courses.filter((c) => c.zoneDepart === filtreZone);
+  useEffect(() => {
+    getUtilisateurs().then(setUtilisateurs);
+  }, []);
+
+  useEffect(() => {
+    setChargement(true);
+    getCourses(filtreZone === "toutes" ? undefined : { zone: filtreZone as Zone })
+      .then(setCourses)
+      .finally(() => setChargement(false));
   }, [filtreZone]);
+
+  const nomUtilisateur = useMemo(
+    () => (id: string) => utilisateurs.find((u) => u.id === id)?.nom ?? "—",
+    [utilisateurs]
+  );
 
   return (
     <div>
@@ -31,7 +43,7 @@ export default function CoursesPage() {
           className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
         >
           <option value="toutes">Toutes les zones</option>
-          {zones.map((zone) => (
+          {ZONES.map((zone) => (
             <option key={zone} value={zone}>
               {ZONE_LABELS[zone]}
             </option>
@@ -51,7 +63,7 @@ export default function CoursesPage() {
             </tr>
           </thead>
           <tbody>
-            {coursesFiltrees.map((course) => (
+            {courses.map((course) => (
               <tr key={course.id} className="border-b border-colimo-neutre-clair last:border-0">
                 <td className="px-4 py-3">{nomUtilisateur(course.clientId)}</td>
                 <td className="px-4 py-3">{course.coursierId ? nomUtilisateur(course.coursierId) : "—"}</td>
@@ -64,7 +76,7 @@ export default function CoursesPage() {
                 </td>
               </tr>
             ))}
-            {coursesFiltrees.length === 0 && (
+            {!chargement && courses.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
                   Aucune course pour cette zone

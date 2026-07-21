@@ -1,14 +1,25 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import StatCard from "@/components/StatCard";
-import { courses, zones } from "@/lib/mockData";
-import { formatFCFA, ZONE_LABELS } from "@colimo/shared";
+import { getCourses } from "@/lib/api";
+import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
+
+const ZONES: Zone[] = ["libreville", "akanda", "owendo", "bikele_essassa", "ntoum"];
 
 export default function StatistiquesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    getCourses().then(setCourses);
+  }, []);
+
   const totalCourses = courses.length;
   const prixMoyen = totalCourses ? Math.round(courses.reduce((s, c) => s + c.prix, 0) / totalCourses) : 0;
 
-  const parZone = zones
-    .map((zone) => ({ zone, count: courses.filter((c) => c.zoneDepart === zone).length }))
-    .filter((z) => z.count > 0);
+  const parZone = ZONES.map((zone) => ({ zone, count: courses.filter((c) => c.zoneDepart === zone).length })).filter(
+    (z) => z.count > 0
+  );
 
   return (
     <div>

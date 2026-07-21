@@ -8,7 +8,7 @@ export default function RoleScreen() {
 
   function choisir(role: "client" | "coursier") {
     setRole(role);
-    router.replace(role === "client" ? "/(client)" : "/(coursier)/dashboard");
+    router.replace(role === "client" ? "/(client)" : "/(auth)/coursier-entry");
   }
 
   return (

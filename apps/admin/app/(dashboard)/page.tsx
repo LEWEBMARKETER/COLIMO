@@ -1,8 +1,19 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import StatCard from "@/components/StatCard";
-import { coursiers, courses } from "@/lib/mockData";
-import { formatFCFA } from "@colimo/shared";
+import { getCoursiers, getCourses, type CoursierAvecUtilisateur } from "@/lib/api";
+import { formatFCFA, type Course } from "@colimo/shared";
 
 export default function DashboardPage() {
+  const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    getCoursiers().then(setCoursiers);
+    getCourses().then(setCourses);
+  }, []);
+
   const coursesAujourdHui = courses.length;
   const coursiersActifs = coursiers.filter((c) => c.disponibilite).length;
   const litigesOuverts = courses.filter((c) => c.statut === "litige").length;

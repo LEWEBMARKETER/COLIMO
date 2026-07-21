@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
-import { coursiers as coursiersInitial } from "@/lib/mockData";
+import { getCoursiers, patchCoursier, type CoursierAvecUtilisateur } from "@/lib/api";
 import type { VerificationStatus } from "@colimo/shared";
 
 const LABELS_VERIFICATION: Record<VerificationStatus, string> = {
@@ -12,11 +12,18 @@ const LABELS_VERIFICATION: Record<VerificationStatus, string> = {
 };
 
 export default function CoursiersPage() {
-  const [coursiers, setCoursiers] = useState(coursiersInitial);
+  const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
+  const [chargement, setChargement] = useState(true);
 
-  // TODO: persister la décision via Supabase (update coursiers.statut_verification).
-  function changerStatut(id: string, statut: VerificationStatus) {
+  useEffect(() => {
+    getCoursiers()
+      .then(setCoursiers)
+      .finally(() => setChargement(false));
+  }, []);
+
+  async function changerStatut(id: string, statut: VerificationStatus) {
     setCoursiers((prev) => prev.map((c) => (c.id === id ? { ...c, statutVerification: statut } : c)));
+    await patchCoursier(id, { statutVerification: statut });
   }
 
   return (
@@ -75,6 +82,13 @@ export default function CoursiersPage() {
                 </td>
               </tr>
             ))}
+            {!chargement && coursiers.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                  Aucun coursier inscrit
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
