@@ -48,8 +48,9 @@ une fois un fournisseur SMS choisi — voir la discussion précédente.)*
 
 1. Dans le dashboard, va dans **Settings** (icône engrenage) → **API**
 2. Note deux valeurs :
-   - **Project URL** (ressemble à `https://cynivhfxbvbugxeirfba.supabase.co`)
-   - **anon public** key (une longue chaîne commençant par `eyJ...`)
+
+    - **Project URL** (ressemble à `https://cynivhfxbvbugxeirfba.supabase.co`)
+    - **anon public** key (une longue chaîne commençant par `eyJ...`)
 
 **Ne me donne pas** la clé `service_role` (celle-ci a tous les droits et ne doit
 jamais être utilisée côté client) ni le mot de passe de la base — je n'en ai pas
@@ -58,10 +59,12 @@ besoin pour cette étape.
 ## Étape 4 — Me transmettre ces deux valeurs
 
 Une fois que tu as :
+
 - l'URL du projet
 - la clé `anon public`
 
 donne-les-moi ici. Je m'en sers pour :
+
 1. Ajouter `@supabase/supabase-js` au projet
 2. Remplacer les appels au serveur simulé (`apps/api`) par de vrais appels Supabase
    dans `apps/admin` et `apps/mobile`
