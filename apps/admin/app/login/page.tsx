@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 export default function LoginPage() {
@@ -14,8 +15,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-colimo-fond px-4">
       <div className="w-full max-w-sm rounded-2xl border border-colimo-neutre-clair bg-white p-8 shadow-sm">
-        <h1 className="font-titre text-2xl font-semibold text-colimo-rouge">COLIMO</h1>
-        <p className="mt-1 text-sm text-colimo-neutre-fonce/70">Back-office administrateur</p>
+        <Image src="/logo-colimo.png" alt="COLIMO" width={200} height={57} priority />
+        <p className="mt-3 text-sm text-colimo-neutre-fonce/70">Back-office administrateur</p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>

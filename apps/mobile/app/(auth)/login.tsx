@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Image, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
@@ -14,8 +14,11 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond">
       <View className="flex-1 justify-center px-6">
-        <Text className="font-titre text-3xl font-bold text-colimo-rouge">COLIMO</Text>
-        <Text className="mt-1 text-colimo-neutre-fonce/70">Directement chez vous</Text>
+        <Image
+          source={require("../../assets/logo-colimo.png")}
+          style={{ width: 220, height: 63 }}
+          resizeMode="contain"
+        />
 
         <Text className="mt-10 text-sm font-medium text-colimo-neutre-fonce">Numéro de téléphone</Text>
         <TextInput

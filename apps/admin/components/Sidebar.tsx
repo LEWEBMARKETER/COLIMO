@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,7 +17,8 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-colimo-neutre-clair bg-white">
-      <div className="px-5 py-6">
+      <div className="flex items-center gap-2 px-5 py-6">
+        <Image src="/icons/icon-192.png" alt="" width={32} height={32} className="rounded-md" />
         <span className="font-titre text-xl font-bold text-colimo-rouge">COLIMO</span>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3">
