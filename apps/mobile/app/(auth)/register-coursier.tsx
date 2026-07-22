@@ -5,7 +5,6 @@ import { router } from "expo-router";
 import { ZONE_LABELS, type VehiculeType, type Zone } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
 import { inscrireCoursier } from "@/lib/api";
-import { useRole } from "@/lib/RoleContext";
 
 const VEHICULES: { valeur: VehiculeType; label: string }[] = [
   { valeur: "moto", label: "Moto" },
@@ -15,17 +14,19 @@ const VEHICULES: { valeur: VehiculeType; label: string }[] = [
 ];
 
 export default function RegisterCoursierScreen() {
-  const { setRole, setCourierUserId } = useRole();
-
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [zone, setZone] = useState<Zone | null>(null);
   const [typeVehicule, setTypeVehicule] = useState<VehiculeType | null>(null);
   const [documents, setDocuments] = useState<string[]>([]);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  const peutEnvoyer = Boolean(nom.trim() && telephone.trim() && zone && typeVehicule && documents.length > 0);
+  const peutEnvoyer = Boolean(
+    nom.trim() && telephone.trim() && email.trim() && password.length >= 6 && zone && typeVehicule && documents.length > 0
+  );
 
   // Pas d'intégration Supabase Storage pour l'instant : on simule l'ajout de
   // pièces justificatives (CNI, permis...) sans upload réel.
@@ -42,9 +43,7 @@ export default function RegisterCoursierScreen() {
     setEnvoiEnCours(true);
     setErreur(null);
     try {
-      const { utilisateur } = await inscrireCoursier({ nom, telephone, zone, typeVehicule, documents });
-      setCourierUserId(utilisateur.id);
-      setRole("coursier");
+      await inscrireCoursier({ email, password, nom, telephone, zone, typeVehicule, documents });
       router.replace("/(coursier)/dashboard");
     } catch {
       setErreur("Impossible d'envoyer l'inscription. Réessayez.");
@@ -77,6 +76,25 @@ export default function RegisterCoursierScreen() {
           onChangeText={setTelephone}
           keyboardType="phone-pad"
           placeholder="+241 XX XXX XXX"
+          className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
+        />
+
+        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Email</Text>
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          placeholder="vous@exemple.com"
+          className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
+        />
+
+        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Mot de passe</Text>
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          placeholder="6 caractères minimum"
           className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
         />
 

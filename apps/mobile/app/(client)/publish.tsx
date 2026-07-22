@@ -6,9 +6,10 @@ import { calculatePrice, isRouteDesservie, type Zone } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
 import PriceSummary from "@/components/PriceSummary";
 import { creerCourse } from "@/lib/api";
-import { DEMO_CLIENT_ID } from "@/lib/session";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function PublishScreen() {
+  const { session } = useAuth();
   const [depart, setDepart] = useState<Zone | null>(null);
   const [arrivee, setArrivee] = useState<Zone | null>(null);
   const [adresseDepart, setAdresseDepart] = useState("");
@@ -32,12 +33,12 @@ export default function PublishScreen() {
   );
 
   async function handlePublier() {
-    if (!depart || !arrivee || !pricing) return;
+    if (!depart || !arrivee || !pricing || !session) return;
     setEnvoiEnCours(true);
     setErreur(null);
     try {
       const course = await creerCourse({
-        clientId: DEMO_CLIENT_ID,
+        clientId: session.user.id,
         adresseDepart,
         adresseArrivee,
         zoneDepart: depart,

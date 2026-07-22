@@ -3,49 +3,48 @@ import { ActivityIndicator, FlatList, Pressable, Switch, Text, View } from "reac
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course } from "@colimo/shared";
-import { getCoursiers, getCourses, patchCoursier, patchCourse, type CoursierAvecUtilisateur } from "@/lib/api";
-import { useRole } from "@/lib/RoleContext";
+import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function CoursierDashboard() {
-  const { courierUserId } = useRole();
-  const [moi, setMoi] = useState<CoursierAvecUtilisateur | null>(null);
+  const { session, utilisateur, coursier, refreshProfile, signOut } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [chargement, setChargement] = useState(true);
 
-  const charger = useCallback(async () => {
-    const coursiers = await getCoursiers();
-    const trouve = coursiers.find((c) => c.utilisateurId === courierUserId) ?? null;
-    setMoi(trouve);
-
-    if (trouve?.disponibilite && trouve.utilisateur.zone) {
-      const disponibles = await getCourses({ zone: trouve.utilisateur.zone, statut: "en_attente" });
-      setCourses(disponibles);
+  const chargerCourses = useCallback(async () => {
+    if (coursier?.disponibilite && utilisateur?.zone) {
+      setCourses(await getCourses({ zone: utilisateur.zone, statut: "en_attente" }));
     } else {
       setCourses([]);
     }
-  }, [courierUserId]);
+  }, [coursier?.disponibilite, utilisateur?.zone]);
 
   useEffect(() => {
     setChargement(true);
-    charger().finally(() => setChargement(false));
-  }, [charger]);
+    chargerCourses().finally(() => setChargement(false));
+  }, [chargerCourses]);
 
   useFocusEffect(
     useCallback(() => {
-      charger();
-    }, [charger])
+      chargerCourses();
+    }, [chargerCourses])
   );
 
   async function toggleDisponibilite(valeur: boolean) {
-    if (!moi) return;
-    setMoi({ ...moi, disponibilite: valeur });
-    await patchCoursier(moi.id, { disponibilite: valeur });
-    charger();
+    if (!coursier) return;
+    await patchCoursier(coursier.id, { disponibilite: valeur });
+    await refreshProfile();
   }
 
   async function accepter(course: Course) {
-    await patchCourse(course.id, { statut: "acceptee", coursierId: courierUserId });
+    if (!session) return;
+    await patchCourse(course.id, { statut: "acceptee", coursierId: session.user.id });
     router.push(`/(coursier)/course/${course.id}`);
+  }
+
+  async function handleDeconnexion() {
+    await signOut();
+    router.replace("/(auth)/login");
   }
 
   if (chargement) {
@@ -63,18 +62,22 @@ export default function CoursierDashboard() {
           <View>
             <Text className="font-medium text-colimo-neutre-fonce">Disponible</Text>
             <Text className="text-xs text-colimo-neutre-fonce/60">
-              Zone : {moi?.utilisateur.zone ? ZONE_LABELS[moi.utilisateur.zone] : "—"}
+              Zone : {utilisateur?.zone ? ZONE_LABELS[utilisateur.zone] : "—"}
             </Text>
           </View>
-          <Switch value={moi?.disponibilite ?? false} onValueChange={toggleDisponibilite} />
+          <Switch
+            value={coursier?.disponibilite ?? false}
+            onValueChange={toggleDisponibilite}
+            disabled={coursier?.statutVerification !== "valide"}
+          />
         </View>
 
-        {moi?.statutVerification !== "valide" ? (
+        {coursier?.statutVerification !== "valide" ? (
           <Text className="mt-6 text-center text-colimo-neutre-fonce/60">
             Votre inscription est en cours de validation par COLIMO. Vous pourrez accepter des
             courses une fois validé·e.
           </Text>
-        ) : !moi?.disponibilite ? (
+        ) : !coursier?.disponibilite ? (
           <Text className="mt-6 text-center text-colimo-neutre-fonce/60">
             Passez disponible pour voir les courses de votre zone
           </Text>
@@ -106,6 +109,10 @@ export default function CoursierDashboard() {
             )}
           />
         )}
+
+        <Pressable onPress={handleDeconnexion} className="mt-4 py-2">
+          <Text className="text-center text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );

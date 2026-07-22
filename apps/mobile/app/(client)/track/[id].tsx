@@ -6,9 +6,10 @@ import { ZONE_LABELS, type Course } from "@colimo/shared";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import { getCourse } from "@/lib/api";
-import { DEMO_CLIENT_ID } from "@/lib/session";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function TrackScreen() {
+  const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [course, setCourse] = useState<Course | null>(null);
 
@@ -53,10 +54,10 @@ export default function TrackScreen() {
           <StatusTimeline statutActuel={course.statut} />
         </View>
 
-        {(course.statut === "livree" || course.statut === "confirmee") && course.coursierId && (
+        {(course.statut === "livree" || course.statut === "confirmee") && course.coursierId && session && (
           <NotationForm
             courseId={course.id}
-            auteurId={DEMO_CLIENT_ID}
+            auteurId={session.user.id}
             destinataireId={course.coursierId}
             titre="Comment s'est passée la livraison ?"
           />

@@ -1,40 +1,34 @@
-import type { Coursier, Course, CourseStatus, Utilisateur, VerificationStatus, Zone } from "@colimo/shared";
+import {
+  getUtilisateurs as getUtilisateursQuery,
+  getCoursiers as getCoursiersQuery,
+  patchCoursier as patchCoursierQuery,
+  getCourses as getCoursesQuery,
+  type Coursier,
+  type Course,
+  type CourseStatus,
+  type VerificationStatus,
+  type Utilisateur,
+  type Zone,
+} from "@colimo/shared";
+import { createClient } from "./supabaseClient";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
-
-export interface CoursierAvecUtilisateur extends Coursier {
-  utilisateur: Utilisateur;
-}
-
-async function requete<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`Erreur API ${path} : ${res.status}`);
-  return res.json();
-}
+export type { CoursierAvecUtilisateur } from "@colimo/shared";
 
 export function getUtilisateurs(): Promise<Utilisateur[]> {
-  return requete("/utilisateurs");
+  return getUtilisateursQuery(createClient());
 }
 
-export function getCoursiers(): Promise<CoursierAvecUtilisateur[]> {
-  return requete("/coursiers");
+export function getCoursiers() {
+  return getCoursiersQuery(createClient());
 }
 
 export function patchCoursier(
   id: string,
   body: { statutVerification?: VerificationStatus; disponibilite?: boolean }
 ): Promise<Coursier> {
-  return requete(`/coursiers/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+  return patchCoursierQuery(createClient(), id, body);
 }
 
 export function getCourses(params?: { zone?: Zone; statut?: CourseStatus }): Promise<Course[]> {
-  const search = new URLSearchParams();
-  if (params?.zone) search.set("zone", params.zone);
-  if (params?.statut) search.set("statut", params.statut);
-  const query = search.toString();
-  return requete(`/courses${query ? `?${query}` : ""}`);
+  return getCoursesQuery(createClient(), params);
 }

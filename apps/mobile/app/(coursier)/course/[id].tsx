@@ -6,7 +6,7 @@ import { COURSE_STATUS_LABELS, formatFCFA, ZONE_LABELS, type Course, type Course
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import { getCourse, patchCourse } from "@/lib/api";
-import { useRole } from "@/lib/RoleContext";
+import { useAuth } from "@/lib/AuthContext";
 
 const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
   acceptee: "en_cours",
@@ -15,7 +15,7 @@ const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { courierUserId } = useRole();
+  const { session } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [maj, setMaj] = useState(false);
 
@@ -72,10 +72,10 @@ export default function CourseDetailScreen() {
           </Pressable>
         )}
 
-        {(course.statut === "livree" || course.statut === "confirmee") && (
+        {(course.statut === "livree" || course.statut === "confirmee") && session && (
           <NotationForm
             courseId={course.id}
-            auteurId={courierUserId}
+            auteurId={session.user.id}
             destinataireId={course.clientId}
             titre="Comment s'est passée la course avec ce client ?"
           />

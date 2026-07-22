@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabaseClient";
 
 const LIENS = [
   { href: "/", label: "Dashboard" },
@@ -14,6 +15,14 @@ const LIENS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function seDeconnecter() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-colimo-neutre-clair bg-white">
@@ -39,6 +48,12 @@ export default function Sidebar() {
           );
         })}
       </nav>
+      <button
+        onClick={seDeconnecter}
+        className="mx-3 mb-5 rounded-lg px-3 py-2 text-left text-sm font-medium text-colimo-neutre-fonce/60 hover:bg-colimo-neutre-clair"
+      >
+        Se déconnecter
+      </button>
     </aside>
   );
 }

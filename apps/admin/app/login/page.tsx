@@ -1,15 +1,30 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { createClient } from "@/lib/supabaseClient";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [envoiEnCours, setEnvoiEnCours] = useState(false);
 
-  // TODO: brancher Supabase Auth (email/mot de passe admin) — écran UI seule pour l'instant.
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setErreur(null);
+    setEnvoiEnCours(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setEnvoiEnCours(false);
+    if (error) {
+      setErreur("Email ou mot de passe incorrect.");
+      return;
+    }
+    router.push("/");
+    router.refresh();
   }
 
   return (
@@ -47,11 +62,14 @@ export default function LoginPage() {
             />
           </div>
 
+          {erreur && <p className="text-sm text-colimo-rouge">{erreur}</p>}
+
           <button
             type="submit"
-            className="w-full rounded-lg bg-colimo-rouge px-4 py-2 text-sm font-semibold text-white transition hover:bg-colimo-rouge-fonce"
+            disabled={envoiEnCours}
+            className="w-full rounded-lg bg-colimo-rouge px-4 py-2 text-sm font-semibold text-white transition hover:bg-colimo-rouge-fonce disabled:opacity-60"
           >
-            Se connecter
+            {envoiEnCours ? "Connexion..." : "Se connecter"}
           </button>
         </form>
       </div>
