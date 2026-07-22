@@ -12,9 +12,20 @@
 
 ## App mobile / PWA (Vercel)
 
-À faire : nouveau projet Vercel, Root Directory `apps/mobile`, variables :
-  - `EXPO_PUBLIC_SUPABASE_URL`
-  - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+Nouveau projet Vercel (équipe `lewebmarketer-1318`), configuré ainsi :
+  - Root Directory : `apps/mobile`
+  - Framework Preset : `Other` (ce n'est pas du Next.js, c'est un export web Expo)
+  - Build Command : `pnpm build:web`
+  - Output Directory : `dist`
+  - Install Command : par défaut (Vercel détecte pnpm via `pnpm-lock.yaml` à la racine du monorepo)
+  - Variables d'environnement :
+    - `EXPO_PUBLIC_SUPABASE_URL` = `https://cynivhfxbvbugxeirfba.supabase.co`
+    - `EXPO_PUBLIC_SUPABASE_ANON_KEY` = clé publique du projet Supabase
+  - Production Branch : `claude/colimo-project-analysis-tg9vqv` (à changer vers `main` une fois la branche fusionnée)
+
+Une fois déployée, l'app mobile web sert à la fois les comptes **client** et
+**coursier** (inscription + connexion par email/mot de passe, navigation
+selon le type de compte).
 
 ## Compte administrateur
 

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start",
     "web": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --web",
+    "build:web": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo export -p web",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
