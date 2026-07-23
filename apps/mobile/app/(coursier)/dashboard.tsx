@@ -10,6 +10,7 @@ export default function CoursierDashboard() {
   const { session, utilisateur, coursier, refreshProfile, signOut } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState<string | null>(null);
 
   const chargerCourses = useCallback(async () => {
     if (coursier?.disponibilite && utilisateur?.zone) {
@@ -38,8 +39,14 @@ export default function CoursierDashboard() {
 
   async function accepter(course: Course) {
     if (!session) return;
-    await patchCourse(course.id, { statut: "acceptee", coursierId: session.user.id });
-    router.push(`/(coursier)/course/${course.id}`);
+    setErreur(null);
+    try {
+      await patchCourse(course.id, { statut: "acceptee", coursierId: session.user.id });
+      router.push(`/(coursier)/course/${course.id}`);
+    } catch {
+      setErreur("Impossible d'accepter cette course. Elle a peut-être déjà été prise.");
+      chargerCourses();
+    }
   }
 
   async function handleDeconnexion() {
@@ -71,6 +78,8 @@ export default function CoursierDashboard() {
             disabled={coursier?.statutVerification !== "valide"}
           />
         </View>
+
+        {erreur && <Text className="mb-4 text-sm text-colimo-rouge">{erreur}</Text>}
 
         {coursier?.statutVerification !== "valide" ? (
           <Text className="mt-6 text-center text-colimo-neutre-fonce/60">
