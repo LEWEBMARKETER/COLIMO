@@ -15,7 +15,10 @@
 Nouveau projet Vercel (équipe `lewebmarketer-1318`), configuré ainsi :
   - Root Directory : `apps/mobile`
   - Framework Preset : `Other` (ce n'est pas du Next.js, c'est un export web Expo)
-  - Build Command : `pnpm build:web`
+  - Build Command : `pnpm --filter @colimo/mobile build:web`
+    (Vercel exécute la commande depuis la racine du monorepo, pas depuis
+    Root Directory : il faut donc filtrer explicitement le package, sinon
+    pnpm bascule en mode récursif et échoue avec `ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL`)
   - Output Directory : `dist`
   - Install Command : par défaut (Vercel détecte pnpm via `pnpm-lock.yaml` à la racine du monorepo)
   - Variables d'environnement :
