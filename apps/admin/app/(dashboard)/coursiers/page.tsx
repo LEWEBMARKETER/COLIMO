@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
 import { getCoursiers, patchCoursier, type CoursierAvecUtilisateur } from "@/lib/api";
-import type { VerificationStatus } from "@colimo/shared";
+import { PIECE_IDENTITE_LABELS, type VerificationStatus } from "@colimo/shared";
 
 const LABELS_VERIFICATION: Record<VerificationStatus, string> = {
   en_attente: "En attente",
@@ -41,6 +41,7 @@ export default function CoursiersPage() {
               <th className="px-4 py-3 font-medium">Téléphone</th>
               <th className="px-4 py-3 font-medium">Zone</th>
               <th className="px-4 py-3 font-medium">Véhicule</th>
+              <th className="px-4 py-3 font-medium">Pièce d&apos;identité</th>
               <th className="px-4 py-3 font-medium">Note</th>
               <th className="px-4 py-3 font-medium">Statut</th>
               <th className="px-4 py-3 font-medium">Actions</th>
@@ -49,10 +50,39 @@ export default function CoursiersPage() {
           <tbody>
             {coursiers.map((coursier) => (
               <tr key={coursier.id} className="border-b border-colimo-neutre-clair last:border-0">
-                <td className="px-4 py-3">{coursier.utilisateur.nom}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    {coursier.utilisateur.photoUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={coursier.utilisateur.photoUrl}
+                        alt=""
+                        className="h-8 w-8 rounded-full object-cover"
+                      />
+                    )}
+                    <span>
+                      {coursier.utilisateur.prenom ? `${coursier.utilisateur.prenom} ` : ""}
+                      {coursier.utilisateur.nom}
+                    </span>
+                  </div>
+                </td>
                 <td className="px-4 py-3">{coursier.utilisateur.telephone}</td>
                 <td className="px-4 py-3 capitalize">{coursier.utilisateur.zone}</td>
                 <td className="px-4 py-3 capitalize">{coursier.typeVehicule}</td>
+                <td className="px-4 py-3">
+                  {coursier.pieceIdentiteUrl ? (
+                    <a
+                      href={coursier.pieceIdentiteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-colimo-rouge hover:underline"
+                    >
+                      {coursier.typePieceIdentite ? PIECE_IDENTITE_LABELS[coursier.typePieceIdentite] : "Voir"}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="px-4 py-3">{coursier.noteMoyenne || "—"}</td>
                 <td className="px-4 py-3">
                   <StatutBadge
@@ -84,7 +114,7 @@ export default function CoursiersPage() {
             ))}
             {!chargement && coursiers.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <td colSpan={8} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
                   Aucun coursier inscrit
                 </td>
               </tr>

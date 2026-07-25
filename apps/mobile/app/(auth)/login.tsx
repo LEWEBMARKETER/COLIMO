@@ -73,6 +73,9 @@ export default function LoginScreen() {
               Vous êtes coursier ? <Text className="font-semibold text-colimo-rouge">Créer un compte coursier</Text>
             </Text>
           </Pressable>
+          <Pressable onPress={() => router.push("/faq")}>
+            <Text className="text-center text-sm text-colimo-neutre-fonce/50">FAQ</Text>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>

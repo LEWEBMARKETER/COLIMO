@@ -13,15 +13,18 @@ _Dernière mise à jour : [à compléter à la publication]_
 
 | Donnée | Utilisateurs concernés | Finalité |
 |---|---|---|
-| Nom, numéro de téléphone | Client, Coursier | Création de compte, communication liée aux courses |
-| Zone (Libreville / Akanda / Owendo...) | Client, Coursier | Mise en relation géographique, affichage des courses disponibles |
-| Pièce d'identité, permis de conduire ou équivalent | Coursier | Vérification de l'identité et validation de l'inscription |
+| Nom (ou nom du commerce), prénom, numéro de téléphone, email | Client, Coursier | Création de compte, authentification, communication liée aux courses |
+| Photo de profil ou logo du commerce | Client, Coursier | Personnalisation du profil affiché à l'autre partie |
+| Zone (Libreville, Akanda, Owendo, PK12, Bikélé, Ntoum) | Client, Coursier | Mise en relation géographique, affichage des courses disponibles |
+| Pièce d'identité (CNI, passeport, carte de séjour ou permis de conduire) | Coursier | Vérification de l'identité et validation de l'inscription |
 | Type de véhicule | Coursier | Information affichée au Client |
-| Adresses de départ/arrivée, type de colis, valeur déclarée | Client | Exécution de la course, calcul du tarif |
+| Adresses de départ/arrivée, catégorie et description du colis, valeur déclarée | Client | Exécution de la course, calcul du tarif |
+| Mode de paiement choisi (Mobile Money ou espèces) et, pour les paiements en espèces, l'historique des sommes dues et reversées par chaque Coursier | Client, Coursier | Traitement des paiements et suivi des reversements de commission |
+| Messages échangés entre Client et Coursier pour une course | Client, Coursier | Coordination de la livraison |
 | Notes et commentaires laissés après une course | Client, Coursier | Fiabilité et qualité du service |
 | Historique des courses et statuts | Client, Coursier, Administrateur | Suivi du service, support, statistiques internes |
 
-Les pièces d'identité constituent une donnée sensible : leur collecte est strictement limitée à la vérification de l'inscription des Coursiers et n'est jamais partagée avec les Clients.
+Les pièces d'identité constituent une donnée sensible : leur collecte est strictement limitée à la vérification de l'inscription des Coursiers, n'est accessible qu'à l'équipe d'administration COLIMO, et n'est jamais partagée avec les Clients.
 
 ## 3. Base légale et finalités
 
@@ -33,9 +36,9 @@ Les données sont traitées sur la base de :
 ## 4. Destinataires des données
 
 - Les équipes internes de COLIMO habilitées (validation des coursiers, support, gestion des litiges)
-- Le Coursier assigné à une course a accès aux informations strictement nécessaires à la livraison (adresses, contact du Client pour cette course)
-- Notre hébergeur technique (base de données et infrastructure), lié par un contrat de sous-traitance
-- *À venir : l'opérateur ou l'agrégateur Mobile Money, lors de l'activation du paiement en ligne*
+- Le Coursier assigné à une course a accès aux informations strictement nécessaires à la livraison (adresses, contact du Client, échanges de messagerie pour cette course) ; ces coordonnées ne sont partagées qu'une fois la course acceptée et uniquement pour la durée de celle-ci
+- Notre hébergeur technique (base de données, stockage des documents et infrastructure), lié par un contrat de sous-traitance
+- *À venir : l'opérateur ou l'agrégateur Mobile Money, lors de l'activation du paiement en ligne — les données de paiement transiteront alors par ce partenaire selon ses propres engagements de sécurité*
 
 Aucune donnée n'est vendue à des tiers.
 

@@ -1,16 +1,27 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CourseStatus, VehiculeType, VerificationStatus, Zone } from "../types";
+import type {
+  CategorieColis,
+  CourseStatus,
+  ModePaiement,
+  PieceIdentiteType,
+  TypeClient,
+  VehiculeType,
+  VerificationStatus,
+  Zone,
+} from "../types";
 import {
   coursierFromRow,
   courseFromRow,
+  messageFromRow,
   notationFromRow,
   utilisateurFromRow,
   type CoursierRow,
   type CourseRow,
+  type MessageRow,
   type NotationRow,
   type UtilisateurRow,
 } from "./mappers";
-import type { Coursier, Course, Notation, Utilisateur } from "../types";
+import type { Coursier, Course, Message, Notation, Utilisateur } from "../types";
 
 export interface CoursierAvecUtilisateur extends Coursier {
   utilisateur: Utilisateur;
@@ -53,11 +64,18 @@ export async function getCoursiers(client: SupabaseClient): Promise<CoursierAvec
 export async function patchCoursier(
   client: SupabaseClient,
   id: string,
-  body: { statutVerification?: VerificationStatus; disponibilite?: boolean }
+  body: {
+    statutVerification?: VerificationStatus;
+    disponibilite?: boolean;
+    typePieceIdentite?: PieceIdentiteType;
+    pieceIdentiteUrl?: string;
+  }
 ): Promise<Coursier> {
   const update: Record<string, unknown> = {};
   if (body.statutVerification) update.statut_verification = body.statutVerification;
   if (typeof body.disponibilite === "boolean") update.disponibilite = body.disponibilite;
+  if (body.typePieceIdentite) update.type_piece_identite = body.typePieceIdentite;
+  if (body.pieceIdentiteUrl) update.piece_identite_url = body.pieceIdentiteUrl;
 
   const { data, error } = await client.from("coursiers").update(update).eq("id", id).select().single();
   if (error) throw error;
@@ -66,16 +84,28 @@ export async function patchCoursier(
 
 export async function insertUtilisateur(
   client: SupabaseClient,
-  input: { id: string; nom: string; telephone: string; type: "client" | "coursier"; zone?: Zone | null }
+  input: {
+    id: string;
+    nom: string;
+    prenom?: string;
+    telephone: string;
+    type: "client" | "coursier";
+    typeClient?: TypeClient;
+    zone?: Zone | null;
+    photoUrl?: string;
+  }
 ): Promise<Utilisateur> {
   const { data, error } = await client
     .from("utilisateurs")
     .insert({
       id: input.id,
       nom: input.nom,
+      prenom: input.prenom ?? null,
       telephone: input.telephone,
       type: input.type,
+      type_client: input.typeClient ?? null,
       zone: input.zone ?? null,
+      photo_url: input.photoUrl ?? null,
     })
     .select()
     .single();
@@ -83,9 +113,28 @@ export async function insertUtilisateur(
   return utilisateurFromRow(data as UtilisateurRow);
 }
 
+export async function updateUtilisateur(
+  client: SupabaseClient,
+  id: string,
+  body: { photoUrl?: string }
+): Promise<Utilisateur> {
+  const update: Record<string, unknown> = {};
+  if (body.photoUrl) update.photo_url = body.photoUrl;
+
+  const { data, error } = await client.from("utilisateurs").update(update).eq("id", id).select().single();
+  if (error) throw error;
+  return utilisateurFromRow(data as UtilisateurRow);
+}
+
 export async function insertCoursier(
   client: SupabaseClient,
-  input: { utilisateurId: string; documents: string[]; typeVehicule: VehiculeType }
+  input: {
+    utilisateurId: string;
+    documents: string[];
+    typeVehicule: VehiculeType;
+    typePieceIdentite?: PieceIdentiteType;
+    pieceIdentiteUrl?: string;
+  }
 ): Promise<Coursier> {
   const { data, error } = await client
     .from("coursiers")
@@ -93,6 +142,8 @@ export async function insertCoursier(
       utilisateur_id: input.utilisateurId,
       documents: input.documents,
       type_vehicule: input.typeVehicule,
+      type_piece_identite: input.typePieceIdentite ?? null,
+      piece_identite_url: input.pieceIdentiteUrl ?? null,
     })
     .select()
     .single();
@@ -130,7 +181,9 @@ export async function creerCourse(
     zoneDepart: Zone;
     zoneArrivee: Zone;
     typeColis: string;
+    categorieColis: CategorieColis;
     livraisonPrioritaire?: boolean;
+    modePaiement: ModePaiement;
     valeurDeclaree?: number;
     prix: number;
   }
@@ -144,7 +197,9 @@ export async function creerCourse(
       zone_depart: input.zoneDepart,
       zone_arrivee: input.zoneArrivee,
       type_colis: input.typeColis,
+      categorie_colis: input.categorieColis,
       livraison_prioritaire: input.livraisonPrioritaire ?? false,
+      mode_paiement: input.modePaiement,
       valeur_declaree: input.valeurDeclaree ?? null,
       prix: input.prix,
     })
@@ -191,4 +246,46 @@ export async function creerNotation(
     .single();
   if (error) throw error;
   return notationFromRow(data as NotationRow);
+}
+
+export async function getMessages(client: SupabaseClient, courseId: string): Promise<Message[]> {
+  const { data, error } = await client
+    .from("messages")
+    .select("*")
+    .eq("course_id", courseId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data as MessageRow[]).map(messageFromRow);
+}
+
+export async function envoyerMessage(
+  client: SupabaseClient,
+  input: { courseId: string; auteurId: string; contenu: string }
+): Promise<Message> {
+  const { data, error } = await client
+    .from("messages")
+    .insert({ course_id: input.courseId, auteur_id: input.auteurId, contenu: input.contenu })
+    .select()
+    .single();
+  if (error) throw error;
+  return messageFromRow(data as MessageRow);
+}
+
+export async function uploadFichier(
+  client: SupabaseClient,
+  bucket: "avatars" | "documents",
+  chemin: string,
+  fichier: ArrayBuffer,
+  contentType: string
+): Promise<string> {
+  const { error } = await client.storage.from(bucket).upload(chemin, fichier, { upsert: true, contentType });
+  if (error) throw error;
+
+  if (bucket === "avatars") {
+    return client.storage.from(bucket).getPublicUrl(chemin).data.publicUrl;
+  }
+
+  const { data, error: signedError } = await client.storage.from(bucket).createSignedUrl(chemin, 60 * 60 * 24 * 365);
+  if (signedError) throw signedError;
+  return data.signedUrl;
 }

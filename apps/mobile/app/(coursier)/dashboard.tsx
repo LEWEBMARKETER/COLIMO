@@ -119,7 +119,18 @@ export default function CoursierDashboard() {
           />
         )}
 
-        <Pressable onPress={handleDeconnexion} className="mt-4 py-2">
+        <Pressable
+          onPress={() => router.push("/(coursier)/historique")}
+          className="mt-4 rounded-xl border border-colimo-neutre-clair bg-white py-3"
+        >
+          <Text className="text-center text-sm font-semibold text-colimo-neutre-fonce">Mes gains et notes</Text>
+        </Pressable>
+
+        <Pressable onPress={() => router.push("/faq")} className="mt-3 py-2">
+          <Text className="text-center text-sm text-colimo-neutre-fonce/60">FAQ</Text>
+        </Pressable>
+
+        <Pressable onPress={handleDeconnexion} className="mt-1 py-2">
           <Text className="text-center text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
         </Pressable>
       </View>

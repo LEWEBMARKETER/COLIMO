@@ -2,11 +2,22 @@ import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { calculatePrice, isRouteDesservie, type Zone } from "@colimo/shared";
+import {
+  CATEGORIE_COLIS_LABELS,
+  MODE_PAIEMENT_LABELS,
+  calculatePrice,
+  isRouteDesservie,
+  type CategorieColis,
+  type ModePaiement,
+  type Zone,
+} from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
 import PriceSummary from "@/components/PriceSummary";
 import { creerCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+
+const CATEGORIES = Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[];
+const MODES_PAIEMENT = Object.keys(MODE_PAIEMENT_LABELS) as ModePaiement[];
 
 export default function PublishScreen() {
   const { session } = useAuth();
@@ -14,7 +25,9 @@ export default function PublishScreen() {
   const [arrivee, setArrivee] = useState<Zone | null>(null);
   const [adresseDepart, setAdresseDepart] = useState("");
   const [adresseArrivee, setAdresseArrivee] = useState("");
-  const [typeColis, setTypeColis] = useState("");
+  const [categorieColis, setCategorieColis] = useState<CategorieColis | null>(null);
+  const [description, setDescription] = useState("");
+  const [modePaiement, setModePaiement] = useState<ModePaiement>("especes");
   const [prioritaire, setPrioritaire] = useState(false);
   const [valeurDeclaree, setValeurDeclaree] = useState("");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
@@ -29,11 +42,11 @@ export default function PublishScreen() {
   }, [depart, arrivee, prioritaire, valeurDeclaree]);
 
   const peutPublier = Boolean(
-    pricing && typeColis.trim() && adresseDepart.trim() && adresseArrivee.trim() && !envoiEnCours
+    pricing && categorieColis && adresseDepart.trim() && adresseArrivee.trim() && !envoiEnCours
   );
 
   async function handlePublier() {
-    if (!depart || !arrivee || !pricing || !session) return;
+    if (!depart || !arrivee || !pricing || !session || !categorieColis) return;
     setEnvoiEnCours(true);
     setErreur(null);
     try {
@@ -43,8 +56,10 @@ export default function PublishScreen() {
         adresseArrivee,
         zoneDepart: depart,
         zoneArrivee: arrivee,
-        typeColis,
+        typeColis: description,
+        categorieColis,
         livraisonPrioritaire: prioritaire,
+        modePaiement,
         valeurDeclaree: Number(valeurDeclaree) || undefined,
         prix: pricing.total,
       });
@@ -76,10 +91,30 @@ export default function PublishScreen() {
         />
 
         <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Type de colis</Text>
+        <View className="mb-4 flex-row flex-wrap gap-2">
+          {CATEGORIES.map((categorie) => {
+            const selectionne = categorieColis === categorie;
+            return (
+              <Pressable
+                key={categorie}
+                onPress={() => setCategorieColis(categorie)}
+                className={`rounded-full border px-4 py-2 ${
+                  selectionne ? "border-colimo-rouge bg-colimo-rouge" : "border-colimo-neutre-clair bg-white"
+                }`}
+              >
+                <Text className={selectionne ? "text-white" : "text-colimo-neutre-fonce"}>
+                  {CATEGORIE_COLIS_LABELS[categorie]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Description du colis</Text>
         <TextInput
-          value={typeColis}
-          onChangeText={setTypeColis}
-          placeholder="Documents, colis moyen, colis fragile..."
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Ex : 2 plats + 1 boisson, colis fragile..."
           className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
         />
 
@@ -97,6 +132,26 @@ export default function PublishScreen() {
         <View className="mb-4 flex-row items-center justify-between rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3">
           <Text className="text-colimo-neutre-fonce">Livraison prioritaire (+1 000 FCFA)</Text>
           <Switch value={prioritaire} onValueChange={setPrioritaire} />
+        </View>
+
+        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Mode de paiement</Text>
+        <View className="mb-4 flex-row gap-2">
+          {MODES_PAIEMENT.map((mode) => {
+            const selectionne = modePaiement === mode;
+            return (
+              <Pressable
+                key={mode}
+                onPress={() => setModePaiement(mode)}
+                className={`flex-1 rounded-xl border py-3 ${
+                  selectionne ? "border-colimo-rouge bg-colimo-rouge" : "border-colimo-neutre-clair bg-white"
+                }`}
+              >
+                <Text className={`text-center ${selectionne ? "text-white" : "text-colimo-neutre-fonce"}`}>
+                  {MODE_PAIEMENT_LABELS[mode]}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {depart && arrivee && !pricing && (

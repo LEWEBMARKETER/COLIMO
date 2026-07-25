@@ -3,9 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
 import { getCourses, getUtilisateurs } from "@/lib/api";
-import { COURSE_STATUS_LABELS, formatFCFA, ZONE_LABELS, type Course, type Utilisateur, type Zone } from "@colimo/shared";
+import {
+  CATEGORIE_COLIS_LABELS,
+  COURSE_STATUS_LABELS,
+  MODE_PAIEMENT_LABELS,
+  ZONE_LABELS,
+  formatFCFA,
+  type Course,
+  type Utilisateur,
+  type Zone,
+} from "@colimo/shared";
 
-const ZONES: Zone[] = ["libreville", "akanda", "owendo", "bikele_essassa", "ntoum"];
+const ZONES = Object.keys(ZONE_LABELS) as Zone[];
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -55,22 +64,28 @@ export default function CoursesPage() {
         <table className="w-full text-left text-sm">
           <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
             <tr>
+              <th className="px-4 py-3 font-medium">N° commande</th>
               <th className="px-4 py-3 font-medium">Client</th>
               <th className="px-4 py-3 font-medium">Coursier</th>
               <th className="px-4 py-3 font-medium">Trajet</th>
+              <th className="px-4 py-3 font-medium">Colis</th>
               <th className="px-4 py-3 font-medium">Prix</th>
+              <th className="px-4 py-3 font-medium">Paiement</th>
               <th className="px-4 py-3 font-medium">Statut</th>
             </tr>
           </thead>
           <tbody>
             {courses.map((course) => (
               <tr key={course.id} className="border-b border-colimo-neutre-clair last:border-0">
+                <td className="px-4 py-3 font-mono text-xs text-colimo-neutre-fonce/70">{course.numeroCommande}</td>
                 <td className="px-4 py-3">{nomUtilisateur(course.clientId)}</td>
                 <td className="px-4 py-3">{course.coursierId ? nomUtilisateur(course.coursierId) : "—"}</td>
                 <td className="px-4 py-3">
                   {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
                 </td>
+                <td className="px-4 py-3">{CATEGORIE_COLIS_LABELS[course.categorieColis]}</td>
                 <td className="px-4 py-3">{formatFCFA(course.prix)}</td>
+                <td className="px-4 py-3">{MODE_PAIEMENT_LABELS[course.modePaiement]}</td>
                 <td className="px-4 py-3">
                   <StatutBadge statut={course.statut} label={COURSE_STATUS_LABELS[course.statut]} />
                 </td>
@@ -78,7 +93,7 @@ export default function CoursesPage() {
             ))}
             {!chargement && courses.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <td colSpan={8} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
                   Aucune course pour cette zone
                 </td>
               </tr>

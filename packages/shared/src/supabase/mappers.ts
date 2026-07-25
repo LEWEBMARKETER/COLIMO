@@ -1,8 +1,13 @@
 import type {
+  CategorieColis,
   Coursier,
   Course,
   CourseStatus,
+  Message,
+  ModePaiement,
   Notation,
+  PieceIdentiteType,
+  TypeClient,
   Utilisateur,
   UserType,
   VehiculeType,
@@ -13,8 +18,11 @@ import type {
 export interface UtilisateurRow {
   id: string;
   nom: string;
+  prenom: string | null;
   telephone: string;
   type: UserType;
+  type_client: TypeClient | null;
+  photo_url: string | null;
   zone: Zone | null;
   statut: string;
   created_at: string;
@@ -24,6 +32,8 @@ export interface CoursierRow {
   id: string;
   utilisateur_id: string;
   documents: string[];
+  type_piece_identite: PieceIdentiteType | null;
+  piece_identite_url: string | null;
   type_vehicule: VehiculeType;
   statut_verification: VerificationStatus;
   disponibilite: boolean;
@@ -32,6 +42,7 @@ export interface CoursierRow {
 
 export interface CourseRow {
   id: string;
+  numero_commande: string;
   client_id: string;
   coursier_id: string | null;
   adresse_depart: string;
@@ -39,7 +50,9 @@ export interface CourseRow {
   zone_depart: Zone;
   zone_arrivee: Zone;
   type_colis: string;
+  categorie_colis: CategorieColis;
   livraison_prioritaire: boolean;
+  mode_paiement: ModePaiement;
   valeur_declaree: number | null;
   prix: number;
   statut: CourseStatus;
@@ -55,12 +68,23 @@ export interface NotationRow {
   commentaire: string | null;
 }
 
+export interface MessageRow {
+  id: string;
+  course_id: string;
+  auteur_id: string;
+  contenu: string;
+  created_at: string;
+}
+
 export function utilisateurFromRow(row: UtilisateurRow): Utilisateur {
   return {
     id: row.id,
     nom: row.nom,
+    prenom: row.prenom,
     telephone: row.telephone,
     type: row.type,
+    typeClient: row.type_client,
+    photoUrl: row.photo_url,
     zone: row.zone,
     statut: row.statut,
     createdAt: row.created_at,
@@ -72,6 +96,8 @@ export function coursierFromRow(row: CoursierRow): Coursier {
     id: row.id,
     utilisateurId: row.utilisateur_id,
     documents: row.documents ?? [],
+    typePieceIdentite: row.type_piece_identite,
+    pieceIdentiteUrl: row.piece_identite_url,
     typeVehicule: row.type_vehicule,
     statutVerification: row.statut_verification,
     disponibilite: row.disponibilite,
@@ -82,6 +108,7 @@ export function coursierFromRow(row: CoursierRow): Coursier {
 export function courseFromRow(row: CourseRow): Course {
   return {
     id: row.id,
+    numeroCommande: row.numero_commande,
     clientId: row.client_id,
     coursierId: row.coursier_id,
     adresseDepart: row.adresse_depart,
@@ -89,7 +116,9 @@ export function courseFromRow(row: CourseRow): Course {
     zoneDepart: row.zone_depart,
     zoneArrivee: row.zone_arrivee,
     typeColis: row.type_colis,
+    categorieColis: row.categorie_colis,
     livraisonPrioritaire: row.livraison_prioritaire,
+    modePaiement: row.mode_paiement,
     valeurDeclaree: row.valeur_declaree ?? undefined,
     prix: row.prix,
     statut: row.statut,
@@ -105,5 +134,15 @@ export function notationFromRow(row: NotationRow): Notation {
     destinataireId: row.destinataire_id,
     note: row.note,
     commentaire: row.commentaire ?? undefined,
+  };
+}
+
+export function messageFromRow(row: MessageRow): Message {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    auteurId: row.auteur_id,
+    contenu: row.contenu,
+    createdAt: row.created_at,
   };
 }

@@ -31,7 +31,18 @@ export default function ClientHome() {
             <Text className="text-center text-base font-semibold text-white">Nouvelle course</Text>
           </Pressable>
 
-          <Pressable onPress={handleDeconnexion} className="mt-4 py-2">
+          <Pressable
+            onPress={() => router.push("/(client)/historique")}
+            className="mt-3 rounded-xl border border-colimo-neutre-clair bg-white py-4"
+          >
+            <Text className="text-center text-base font-semibold text-colimo-neutre-fonce">Mes courses</Text>
+          </Pressable>
+
+          <Pressable onPress={() => router.push("/faq")} className="mt-4 py-2">
+            <Text className="text-center text-sm text-colimo-neutre-fonce/60">FAQ</Text>
+          </Pressable>
+
+          <Pressable onPress={handleDeconnexion} className="mt-1 py-2">
             <Text className="text-center text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
           </Pressable>
         </View>
