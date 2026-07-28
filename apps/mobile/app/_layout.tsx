@@ -29,7 +29,11 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <View className="flex-1 bg-colimo-neutre-clair md:items-center md:py-8">
+        <View className="w-full flex-1 bg-colimo-fond md:max-w-[480px] md:rounded-[28px] md:shadow-2xl md:overflow-hidden">
+          <Stack screenOptions={{ headerShown: false }} />
+        </View>
+      </View>
     </AuthProvider>
   );
 }
