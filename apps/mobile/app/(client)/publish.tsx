@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
@@ -13,10 +13,16 @@ import {
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
 import PriceSummary from "@/components/PriceSummary";
+import Bouton from "@/components/ui/Bouton";
+import ChampTexte from "@/components/ui/ChampTexte";
+import GroupePastilles from "@/components/ui/GroupePastilles";
 import { creerCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
-const CATEGORIES = Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[];
+const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
+  valeur,
+  label: CATEGORIE_COLIS_LABELS[valeur],
+}));
 const MODES_PAIEMENT = Object.keys(MODE_PAIEMENT_LABELS) as ModePaiement[];
 
 export default function PublishScreen() {
@@ -75,87 +81,58 @@ export default function PublishScreen() {
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <ScrollView className="flex-1 px-6 py-6">
         <ZoneSelector label="Départ" value={depart} onChange={setDepart} />
-        <TextInput
+        <ChampTexte
+          label="Adresse de départ"
           value={adresseDepart}
           onChangeText={setAdresseDepart}
           placeholder="Adresse précise de départ"
-          className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
         />
 
         <ZoneSelector label="Arrivée" value={arrivee} onChange={setArrivee} />
-        <TextInput
+        <ChampTexte
+          label="Adresse d'arrivée"
           value={adresseArrivee}
           onChangeText={setAdresseArrivee}
           placeholder="Adresse précise d'arrivée"
-          className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
         />
 
-        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Type de colis</Text>
-        <View className="mb-4 flex-row flex-wrap gap-2">
-          {CATEGORIES.map((categorie) => {
-            const selectionne = categorieColis === categorie;
-            return (
-              <Pressable
-                key={categorie}
-                onPress={() => setCategorieColis(categorie)}
-                className={`rounded-full border px-4 py-2 ${
-                  selectionne ? "border-colimo-rouge bg-colimo-rouge" : "border-colimo-neutre-clair bg-white"
-                }`}
-              >
-                <Text className={selectionne ? "text-white" : "text-colimo-neutre-fonce"}>
-                  {CATEGORIE_COLIS_LABELS[categorie]}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <GroupePastilles label="Type de colis" options={CATEGORIES} value={categorieColis} onChange={setCategorieColis} />
 
-        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Description du colis</Text>
-        <TextInput
+        <ChampTexte
+          label="Description du colis"
           value={description}
           onChangeText={setDescription}
           placeholder="Ex : 2 plats + 1 boisson, colis fragile..."
-          className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
         />
 
-        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">
-          Valeur déclarée (FCFA, optionnel)
-        </Text>
-        <TextInput
+        <ChampTexte
+          label="Valeur déclarée (FCFA, optionnel)"
           value={valeurDeclaree}
           onChangeText={setValeurDeclaree}
           keyboardType="numeric"
           placeholder="0"
-          className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
         />
 
         <View className="mb-4 flex-row items-center justify-between rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3">
-          <Text className="text-colimo-neutre-fonce">Livraison prioritaire (+1 000 FCFA)</Text>
+          <Text className="font-texte text-colimo-neutre-fonce">Livraison prioritaire (+1 000 FCFA)</Text>
           <Switch value={prioritaire} onValueChange={setPrioritaire} />
         </View>
 
-        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Mode de paiement</Text>
+        <Text className="mb-2 font-texte-medium text-sm text-colimo-neutre-fonce">Mode de paiement</Text>
         <View className="mb-4 flex-row gap-2">
-          {MODES_PAIEMENT.map((mode) => {
-            const selectionne = modePaiement === mode;
-            return (
-              <Pressable
-                key={mode}
-                onPress={() => setModePaiement(mode)}
-                className={`flex-1 rounded-xl border py-3 ${
-                  selectionne ? "border-colimo-rouge bg-colimo-rouge" : "border-colimo-neutre-clair bg-white"
-                }`}
-              >
-                <Text className={`text-center ${selectionne ? "text-white" : "text-colimo-neutre-fonce"}`}>
-                  {MODE_PAIEMENT_LABELS[mode]}
-                </Text>
-              </Pressable>
-            );
-          })}
+          {MODES_PAIEMENT.map((mode) => (
+            <Bouton
+              key={mode}
+              label={MODE_PAIEMENT_LABELS[mode]}
+              variante={modePaiement === mode ? "primaire" : "contour"}
+              onPress={() => setModePaiement(mode)}
+              className="flex-1 py-3"
+            />
+          ))}
         </View>
 
         {depart && arrivee && !pricing && (
-          <Text className="mb-4 text-sm text-colimo-rouge">
+          <Text className="mb-4 font-texte text-sm text-colimo-rouge">
             Cette route n&apos;est pas encore desservie.
           </Text>
         )}
@@ -166,22 +143,15 @@ export default function PublishScreen() {
           </View>
         )}
 
-        {erreur && <Text className="mb-4 text-sm text-colimo-rouge">{erreur}</Text>}
+        {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 
-        <Pressable
-          disabled={!peutPublier}
+        <Bouton
+          label="Publier la course"
           onPress={handlePublier}
-          className={`mb-8 flex-row items-center justify-center rounded-xl py-4 ${
-            peutPublier ? "bg-colimo-rouge" : "bg-colimo-neutre-clair"
-          }`}
-        >
-          {envoiEnCours && <ActivityIndicator color="white" className="mr-2" />}
-          <Text
-            className={`text-center font-semibold ${peutPublier ? "text-white" : "text-colimo-neutre-fonce/50"}`}
-          >
-            Publier la course
-          </Text>
-        </Pressable>
+          disabled={!peutPublier}
+          chargement={envoiEnCours}
+          className="mb-8"
+        />
       </ScrollView>
     </SafeAreaView>
   );

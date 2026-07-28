@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import Bouton from "@/components/ui/Bouton";
+import ChampTexte from "@/components/ui/ChampTexte";
 import { connecter } from "@/lib/api";
 
 export default function LoginScreen() {
@@ -32,49 +34,42 @@ export default function LoginScreen() {
           resizeMode="contain"
         />
 
-        <Text className="mt-10 text-sm font-medium text-colimo-neutre-fonce">Email</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder="vous@exemple.com"
-          className="mt-2 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
-        />
+        <View className="mt-10">
+          <ChampTexte
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholder="vous@exemple.com"
+          />
+          <ChampTexte
+            label="Mot de passe"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholder="••••••••"
+          />
+        </View>
 
-        <Text className="mt-4 text-sm font-medium text-colimo-neutre-fonce">Mot de passe</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholder="••••••••"
-          className="mt-2 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
-        />
+        {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 
-        {erreur && <Text className="mt-3 text-sm text-colimo-rouge">{erreur}</Text>}
-
-        <Pressable
-          onPress={handleConnexion}
-          disabled={envoiEnCours}
-          className="mt-6 flex-row items-center justify-center rounded-xl bg-colimo-rouge py-3"
-        >
-          {envoiEnCours && <ActivityIndicator color="white" className="mr-2" />}
-          <Text className="text-center font-semibold text-white">Se connecter</Text>
-        </Pressable>
+        <Bouton label="Se connecter" onPress={handleConnexion} chargement={envoiEnCours} />
 
         <View className="mt-8 gap-2">
           <Pressable onPress={() => router.push("/(auth)/register-client")}>
-            <Text className="text-center text-sm text-colimo-neutre-fonce/70">
-              Pas de compte ? <Text className="font-semibold text-colimo-rouge">Créer un compte client</Text>
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/70">
+              Pas de compte ? <Text className="font-texte-medium text-colimo-rouge">Créer un compte client</Text>
             </Text>
           </Pressable>
           <Pressable onPress={() => router.push("/(auth)/register-coursier")}>
-            <Text className="text-center text-sm text-colimo-neutre-fonce/70">
-              Vous êtes coursier ? <Text className="font-semibold text-colimo-rouge">Créer un compte coursier</Text>
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/70">
+              Vous êtes coursier ?{" "}
+              <Text className="font-texte-medium text-colimo-rouge">Créer un compte coursier</Text>
             </Text>
           </Pressable>
           <Pressable onPress={() => router.push("/faq")}>
-            <Text className="text-center text-sm text-colimo-neutre-fonce/50">FAQ</Text>
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/50">FAQ</Text>
           </Pressable>
         </View>
       </View>

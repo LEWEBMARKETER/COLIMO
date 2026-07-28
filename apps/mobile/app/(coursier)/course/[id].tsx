@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@colimo/shared";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
+import Bouton from "@/components/ui/Bouton";
 import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -57,37 +58,36 @@ export default function CourseDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <View className="flex-1 px-6 py-6">
-        <Text className="text-xs font-semibold text-colimo-neutre-fonce/50">{course.numeroCommande}</Text>
-        <Text className="mt-1 font-titre text-lg font-semibold text-colimo-neutre-fonce">
+        <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">{course.numeroCommande}</Text>
+        <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">
           {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
         </Text>
-        <Text className="mt-1 text-colimo-neutre-fonce/70">{course.typeColis}</Text>
+        <Text className="mt-1 font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
         <View className="mt-1 flex-row items-center justify-between">
-          <Text className="font-titre font-semibold text-colimo-rouge">{formatFCFA(course.prix)}</Text>
-          <Text className="text-xs text-colimo-neutre-fonce/60">{MODE_PAIEMENT_LABELS[course.modePaiement]}</Text>
+          <Text className="font-titre text-colimo-rouge">{formatFCFA(course.prix)}</Text>
+          <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
+            {MODE_PAIEMENT_LABELS[course.modePaiement]}
+          </Text>
         </View>
 
         <View className="mt-8">
           <StatusTimeline statutActuel={course.statut} />
         </View>
 
-        <Pressable
+        <Bouton
+          label="Discuter avec le client"
+          variante="contour"
           onPress={() => router.push(`/(coursier)/chat/${course.id}`)}
-          className="mt-4 rounded-xl border border-colimo-neutre-clair bg-white py-3"
-        >
-          <Text className="text-center font-semibold text-colimo-neutre-fonce">Discuter avec le client</Text>
-        </Pressable>
+          className="mt-4 py-3"
+        />
 
         {prochain && (
-          <Pressable
-            disabled={maj}
+          <Bouton
+            label={`Marquer « ${COURSE_STATUS_LABELS[prochain]} »`}
             onPress={marquerProchainStatut}
-            className="mt-4 rounded-xl bg-colimo-rouge py-4"
-          >
-            <Text className="text-center font-semibold text-white">
-              Marquer « {COURSE_STATUS_LABELS[prochain]} »
-            </Text>
-          </Pressable>
+            chargement={maj}
+            className="mt-4"
+          />
         )}
 
         {(course.statut === "livree" || course.statut === "confirmee") && session && (

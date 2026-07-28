@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import { messageFromRow, type Message, type MessageRow } from "@colimo/shared";
 import { getMessages, envoyerMessage } from "@/lib/api";
 import { supabase } from "@/lib/supabaseClient";
+import Bouton from "./ui/Bouton";
 
 interface ChatThreadProps {
   courseId: string;
@@ -68,7 +69,7 @@ export default function ChatThread({ courseId, moiId }: ChatThreadProps) {
   if (erreurChargement) {
     return (
       <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-center text-sm text-colimo-rouge">{erreurChargement}</Text>
+        <Text className="text-center font-texte text-sm text-colimo-rouge">{erreurChargement}</Text>
       </View>
     );
   }
@@ -82,7 +83,9 @@ export default function ChatThread({ courseId, moiId }: ChatThreadProps) {
         contentContainerStyle={{ padding: 16, gap: 8 }}
         onContentSizeChange={() => listeRef.current?.scrollToEnd({ animated: true })}
         ListEmptyComponent={
-          <Text className="mt-6 text-center text-colimo-neutre-fonce/60">Aucun message pour l&apos;instant</Text>
+          <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
+            Aucun message pour l&apos;instant
+          </Text>
         }
         renderItem={({ item }) => {
           const estMoi = item.auteurId === moiId;
@@ -92,24 +95,22 @@ export default function ChatThread({ courseId, moiId }: ChatThreadProps) {
                 estMoi ? "self-end bg-colimo-rouge" : "self-start border border-colimo-neutre-clair bg-white"
               }`}
             >
-              <Text className={estMoi ? "text-white" : "text-colimo-neutre-fonce"}>{item.contenu}</Text>
+              <Text className={`font-texte ${estMoi ? "text-white" : "text-colimo-neutre-fonce"}`}>
+                {item.contenu}
+              </Text>
             </View>
           );
         }}
       />
-      {erreurEnvoi && (
-        <Text className="px-4 pb-1 text-xs text-colimo-rouge">{erreurEnvoi}</Text>
-      )}
+      {erreurEnvoi && <Text className="px-4 pb-1 font-texte text-xs text-colimo-rouge">{erreurEnvoi}</Text>}
       <View className="flex-row items-center gap-2 border-t border-colimo-neutre-clair bg-colimo-fond px-4 py-3">
         <TextInput
           value={texte}
           onChangeText={setTexte}
           placeholder="Votre message..."
-          className="flex-1 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
+          className="flex-1 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 font-texte text-colimo-neutre-fonce"
         />
-        <Pressable onPress={envoyer} className="rounded-xl bg-colimo-rouge px-4 py-3">
-          <Text className="font-semibold text-white">Envoyer</Text>
-        </Pressable>
+        <Bouton label="Envoyer" onPress={envoyer} className="w-auto px-5 py-3" />
       </View>
     </KeyboardAvoidingView>
   );

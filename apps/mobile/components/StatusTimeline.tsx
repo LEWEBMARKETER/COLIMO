@@ -22,7 +22,7 @@ export default function StatusTimeline({ statutActuel }: { statutActuel: CourseS
             </View>
             <Text
               className={`ml-3 pb-8 text-sm ${
-                atteinte ? "font-medium text-colimo-neutre-fonce" : "text-colimo-neutre-fonce/50"
+                atteinte ? "font-texte-medium text-colimo-neutre-fonce" : "font-texte text-colimo-neutre-fonce/50"
               }`}
             >
               {COURSE_STATUS_LABELS[etape]}

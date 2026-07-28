@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import Bouton from "@/components/ui/Bouton";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function ClientHome() {
@@ -15,35 +16,30 @@ export default function ClientHome() {
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <View className="flex-1 justify-between px-6 py-8">
         <View>
-          <Text className="font-titre text-xl font-semibold text-colimo-neutre-fonce">
+          <Text className="font-titre text-xl text-colimo-neutre-fonce">
             Bonjour {utilisateur?.nom ?? ""} 👋
           </Text>
-          <Text className="mt-1 text-colimo-neutre-fonce/70">
+          <Text className="mt-1 font-texte text-colimo-neutre-fonce/70">
             Où souhaitez-vous envoyer un colis aujourd&apos;hui ?
           </Text>
         </View>
 
         <View>
-          <Pressable
-            onPress={() => router.push("/(client)/publish")}
-            className="rounded-xl bg-colimo-rouge py-4"
-          >
-            <Text className="text-center text-base font-semibold text-white">Nouvelle course</Text>
-          </Pressable>
+          <Bouton label="Nouvelle course" onPress={() => router.push("/(client)/publish")} />
 
-          <Pressable
+          <Bouton
+            label="Mes courses"
+            variante="contour"
             onPress={() => router.push("/(client)/historique")}
-            className="mt-3 rounded-xl border border-colimo-neutre-clair bg-white py-4"
-          >
-            <Text className="text-center text-base font-semibold text-colimo-neutre-fonce">Mes courses</Text>
-          </Pressable>
+            className="mt-3"
+          />
 
           <Pressable onPress={() => router.push("/faq")} className="mt-4 py-2">
-            <Text className="text-center text-sm text-colimo-neutre-fonce/60">FAQ</Text>
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">FAQ</Text>
           </Pressable>
 
           <Pressable onPress={handleDeconnexion} className="mt-1 py-2">
-            <Text className="text-center text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
           </Pressable>
         </View>
       </View>

@@ -30,7 +30,7 @@ export default function PhotoPicker({ label, uri, onChange, rond = true }: Photo
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">{label}</Text>
+      <Text className="mb-2 font-texte-medium text-sm text-colimo-neutre-fonce">{label}</Text>
       <Pressable
         onPress={choisir}
         className={`items-center justify-center overflow-hidden border border-dashed border-colimo-neutre-clair bg-white ${
@@ -40,10 +40,10 @@ export default function PhotoPicker({ label, uri, onChange, rond = true }: Photo
         {uri ? (
           <Image source={{ uri }} className={rond ? "h-24 w-24" : "h-32 w-full"} resizeMode="cover" />
         ) : (
-          <Text className="px-3 text-center text-xs text-colimo-neutre-fonce/60">+ Choisir une photo</Text>
+          <Text className="px-3 text-center font-texte text-xs text-colimo-neutre-fonce/60">+ Choisir une photo</Text>
         )}
       </Pressable>
-      {erreur && <Text className="mt-1 text-xs text-colimo-rouge">{erreur}</Text>}
+      {erreur && <Text className="mt-1 font-texte text-xs text-colimo-rouge">{erreur}</Text>}
     </View>
   );
 }

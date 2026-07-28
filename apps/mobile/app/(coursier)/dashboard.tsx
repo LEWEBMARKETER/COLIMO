@@ -3,6 +3,8 @@ import { ActivityIndicator, FlatList, Pressable, Switch, Text, View } from "reac
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course } from "@colimo/shared";
+import Bouton from "@/components/ui/Bouton";
+import Carte from "@/components/ui/Carte";
 import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -65,10 +67,10 @@ export default function CoursierDashboard() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <View className="flex-1 px-6 py-6">
-        <View className="mb-4 flex-row items-center justify-between rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3">
+        <Carte className="mb-4 flex-row items-center justify-between">
           <View>
-            <Text className="font-medium text-colimo-neutre-fonce">Disponible</Text>
-            <Text className="text-xs text-colimo-neutre-fonce/60">
+            <Text className="font-texte-medium text-colimo-neutre-fonce">Disponible</Text>
+            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
               Zone : {utilisateur?.zone ? ZONE_LABELS[utilisateur.zone] : "—"}
             </Text>
           </View>
@@ -77,17 +79,17 @@ export default function CoursierDashboard() {
             onValueChange={toggleDisponibilite}
             disabled={coursier?.statutVerification !== "valide"}
           />
-        </View>
+        </Carte>
 
-        {erreur && <Text className="mb-4 text-sm text-colimo-rouge">{erreur}</Text>}
+        {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 
         {coursier?.statutVerification !== "valide" ? (
-          <Text className="mt-6 text-center text-colimo-neutre-fonce/60">
+          <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
             Votre inscription est en cours de validation par COLIMO. Vous pourrez accepter des
             courses une fois validé·e.
           </Text>
         ) : !coursier?.disponibilite ? (
-          <Text className="mt-6 text-center text-colimo-neutre-fonce/60">
+          <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
             Passez disponible pour voir les courses de votre zone
           </Text>
         ) : (
@@ -96,42 +98,38 @@ export default function CoursierDashboard() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ gap: 12 }}
             ListEmptyComponent={
-              <Text className="mt-6 text-center text-colimo-neutre-fonce/60">
+              <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
                 Aucune course disponible pour l&apos;instant
               </Text>
             }
             renderItem={({ item }) => (
-              <View className="rounded-2xl border border-colimo-neutre-clair bg-white p-4">
-                <Text className="font-medium text-colimo-neutre-fonce">
+              <Carte>
+                <Text className="font-texte-medium text-colimo-neutre-fonce">
                   {item.adresseDepart} → {item.adresseArrivee}
                 </Text>
-                <Text className="mt-1 text-sm text-colimo-neutre-fonce/70">{item.typeColis}</Text>
+                <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/70">{item.typeColis}</Text>
                 <View className="mt-3 flex-row items-center justify-between">
-                  <Text className="font-titre font-semibold text-colimo-rouge">
-                    {formatFCFA(item.prix)}
-                  </Text>
-                  <Pressable onPress={() => accepter(item)} className="rounded-lg bg-colimo-rouge px-4 py-2">
-                    <Text className="text-sm font-semibold text-white">Accepter</Text>
-                  </Pressable>
+                  <Text className="font-titre text-colimo-rouge">{formatFCFA(item.prix)}</Text>
+                  <Bouton label="Accepter" onPress={() => accepter(item)} className="px-6 py-2.5" />
                 </View>
-              </View>
+              </Carte>
             )}
           />
         )}
 
-        <Pressable
+        <Bouton
+          label="Mes gains et notes"
+          variante="contour"
           onPress={() => router.push("/(coursier)/historique")}
-          className="mt-4 rounded-xl border border-colimo-neutre-clair bg-white py-3"
-        >
-          <Text className="text-center text-sm font-semibold text-colimo-neutre-fonce">Mes gains et notes</Text>
-        </Pressable>
+          className="mt-4 py-3"
+        />
 
         <Pressable onPress={() => router.push("/faq")} className="mt-3 py-2">
-          <Text className="text-center text-sm text-colimo-neutre-fonce/60">FAQ</Text>
+          <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">FAQ</Text>
         </Pressable>
 
         <Pressable onPress={handleDeconnexion} className="mt-1 py-2">
-          <Text className="text-center text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
+          <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
         </Pressable>
       </View>
     </SafeAreaView>

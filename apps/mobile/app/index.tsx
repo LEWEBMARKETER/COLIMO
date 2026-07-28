@@ -13,7 +13,7 @@ export default function Index() {
     );
   }
 
-  if (!session) return <Redirect href="/(auth)/login" />;
+  if (!session) return <Redirect href="/accueil" />;
   if (utilisateur?.type === "coursier") return <Redirect href="/(coursier)/dashboard" />;
   return <Redirect href="/(client)" />;
 }

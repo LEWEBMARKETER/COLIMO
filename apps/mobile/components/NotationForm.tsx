@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Text, TextInput, View } from "react-native";
 import StarRating from "./StarRating";
+import Bouton from "./ui/Bouton";
+import Carte from "./ui/Carte";
 import { creerNotation, getNotations } from "@/lib/api";
 
 interface NotationFormProps {
@@ -36,23 +38,23 @@ export default function NotationForm({ courseId, auteurId, destinataireId, titre
 
   if (chargement) {
     return (
-      <View className="mt-6 items-center rounded-2xl border border-colimo-neutre-clair bg-white p-5">
+      <Carte className="mt-6 items-center p-5">
         <ActivityIndicator color="#C41E24" />
-      </View>
+      </Carte>
     );
   }
 
   if (dejaNote) {
     return (
-      <View className="mt-6 rounded-2xl border border-colimo-neutre-clair bg-white p-5">
-        <Text className="text-colimo-neutre-fonce">Merci, votre avis a bien été envoyé.</Text>
-      </View>
+      <Carte className="mt-6 p-5">
+        <Text className="font-texte text-colimo-neutre-fonce">Merci, votre avis a bien été envoyé.</Text>
+      </Carte>
     );
   }
 
   return (
-    <View className="mt-6 rounded-2xl border border-colimo-neutre-clair bg-white p-5">
-      <Text className="font-titre font-semibold text-colimo-neutre-fonce">{titre}</Text>
+    <Carte className="mt-6 p-5">
+      <Text className="font-titre text-colimo-neutre-fonce">{titre}</Text>
       <View className="mt-3">
         <StarRating value={note} onChange={setNote} />
       </View>
@@ -61,17 +63,15 @@ export default function NotationForm({ courseId, auteurId, destinataireId, titre
         onChangeText={setCommentaire}
         placeholder="Un commentaire (optionnel)"
         multiline
-        className="mt-3 min-h-[60px] rounded-xl border border-colimo-neutre-clair px-4 py-3 text-colimo-neutre-fonce"
+        className="mt-3 min-h-[60px] rounded-xl border border-colimo-neutre-clair px-4 py-3 font-texte text-colimo-neutre-fonce"
       />
-      <Pressable
-        disabled={note === 0 || envoiEnCours}
+      <Bouton
+        label="Envoyer la note"
         onPress={envoyer}
-        className={`mt-3 rounded-xl py-3 ${note === 0 ? "bg-colimo-neutre-clair" : "bg-colimo-rouge"}`}
-      >
-        <Text className={`text-center font-semibold ${note === 0 ? "text-colimo-neutre-fonce/50" : "text-white"}`}>
-          Envoyer la note
-        </Text>
-      </Pressable>
-    </View>
+        disabled={note === 0}
+        chargement={envoiEnCours}
+        className="mt-3 py-3"
+      />
+    </Carte>
   );
 }
