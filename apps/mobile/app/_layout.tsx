@@ -1,8 +1,13 @@
 import "../global.css";
 import { ActivityIndicator, View } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
 import { AuthProvider } from "@/lib/AuthContext";
+
+// Pages vitrine : elles gèrent elles-mêmes leur mise en page desktop (nav large,
+// sections en colonnes) et ne doivent donc pas être bridées dans le cadre étroit
+// façon "app mobile" utilisé pour le reste de l'application connectée.
+const PAGES_VITRINE = ["/accueil", "/faq", "/cgu", "/confidentialite"];
 
 // Import direct des fichiers de police (et non du package barrel), pour éviter
 // que Metro n'embarque les 18 graisses de chaque famille dans le bundle web.
@@ -12,6 +17,7 @@ const Inter_400Regular = require("@expo-google-fonts/inter/Inter_400Regular.ttf"
 const Inter_500Medium = require("@expo-google-fonts/inter/Inter_500Medium.ttf");
 
 export default function RootLayout() {
+  const pathname = usePathname();
   const [policesChargees] = useFonts({
     Poppins_600SemiBold,
     Poppins_700Bold,
@@ -24,6 +30,16 @@ export default function RootLayout() {
       <View className="flex-1 items-center justify-center bg-colimo-fond">
         <ActivityIndicator color="#C41E24" />
       </View>
+    );
+  }
+
+  const vitrine = PAGES_VITRINE.includes(pathname);
+
+  if (vitrine) {
+    return (
+      <AuthProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </AuthProvider>
     );
   }
 
