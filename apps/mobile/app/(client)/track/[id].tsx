@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { MODE_PAIEMENT_LABELS, ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
+import { MODE_PAIEMENT_LABELS, ZONE_LABELS, formatFCFA, lienGoogleMaps, type Course } from "@colimo/shared";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import Bouton from "@/components/ui/Bouton";
@@ -58,7 +59,48 @@ export default function TrackScreen() {
           </Text>
         </View>
 
-        <View className="mt-8">
+        <View className="mt-6 gap-3">
+          <View className="flex-row items-center justify-between rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3">
+            <Text className="flex-1 font-texte text-sm text-colimo-neutre-fonce/80" numberOfLines={1}>
+              {course.adresseDepart}
+            </Text>
+            <Ionicons
+              name="navigate-outline"
+              size={18}
+              color="#C41E24"
+              onPress={() =>
+                Linking.openURL(
+                  lienGoogleMaps({
+                    latitude: course.latitudeDepart,
+                    longitude: course.longitudeDepart,
+                    adresse: course.adresseDepart,
+                  })
+                )
+              }
+            />
+          </View>
+          <View className="flex-row items-center justify-between rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3">
+            <Text className="flex-1 font-texte text-sm text-colimo-neutre-fonce/80" numberOfLines={1}>
+              {course.adresseArrivee}
+            </Text>
+            <Ionicons
+              name="navigate-outline"
+              size={18}
+              color="#C41E24"
+              onPress={() =>
+                Linking.openURL(
+                  lienGoogleMaps({
+                    latitude: course.latitudeArrivee,
+                    longitude: course.longitudeArrivee,
+                    adresse: course.adresseArrivee,
+                  })
+                )
+              }
+            />
+          </View>
+        </View>
+
+        <View className="mt-6">
           <StatusTimeline statutActuel={course.statut} />
         </View>
 

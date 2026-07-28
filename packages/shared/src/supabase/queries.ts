@@ -178,6 +178,10 @@ export async function creerCourse(
     clientId: string;
     adresseDepart: string;
     adresseArrivee: string;
+    latitudeDepart?: number;
+    longitudeDepart?: number;
+    latitudeArrivee?: number;
+    longitudeArrivee?: number;
     zoneDepart: Zone;
     zoneArrivee: Zone;
     typeColis: string;
@@ -194,6 +198,10 @@ export async function creerCourse(
       client_id: input.clientId,
       adresse_depart: input.adresseDepart,
       adresse_arrivee: input.adresseArrivee,
+      latitude_depart: input.latitudeDepart ?? null,
+      longitude_depart: input.longitudeDepart ?? null,
+      latitude_arrivee: input.latitudeArrivee ?? null,
+      longitude_arrivee: input.longitudeArrivee ?? null,
       zone_depart: input.zoneDepart,
       zone_arrivee: input.zoneArrivee,
       type_colis: input.typeColis,

@@ -47,6 +47,10 @@ export interface CourseRow {
   coursier_id: string | null;
   adresse_depart: string;
   adresse_arrivee: string;
+  latitude_depart: number | null;
+  longitude_depart: number | null;
+  latitude_arrivee: number | null;
+  longitude_arrivee: number | null;
   zone_depart: Zone;
   zone_arrivee: Zone;
   type_colis: string;
@@ -113,6 +117,10 @@ export function courseFromRow(row: CourseRow): Course {
     coursierId: row.coursier_id,
     adresseDepart: row.adresse_depart,
     adresseArrivee: row.adresse_arrivee,
+    latitudeDepart: row.latitude_depart ?? undefined,
+    longitudeDepart: row.longitude_depart ?? undefined,
+    latitudeArrivee: row.latitude_arrivee ?? undefined,
+    longitudeArrivee: row.longitude_arrivee ?? undefined,
     zoneDepart: row.zone_depart,
     zoneArrivee: row.zone_arrivee,
     typeColis: row.type_colis,

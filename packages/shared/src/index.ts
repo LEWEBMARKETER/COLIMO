@@ -4,6 +4,7 @@ export * from "./theme";
 export * from "./format";
 export * from "./faq";
 export * from "./legal";
+export * from "./maps";
 export * from "./supabase/client";
 export * from "./supabase/mappers";
 export * from "./supabase/queries";

@@ -58,6 +58,10 @@ export function creerCourse(body: {
   clientId: string;
   adresseDepart: string;
   adresseArrivee: string;
+  latitudeDepart?: number;
+  longitudeDepart?: number;
+  latitudeArrivee?: number;
+  longitudeArrivee?: number;
   zoneDepart: Zone;
   zoneArrivee: Zone;
   typeColis: string;

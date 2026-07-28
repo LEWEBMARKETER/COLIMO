@@ -12,6 +12,7 @@ import {
   type Zone,
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
+import BoutonPosition from "@/components/BoutonPosition";
 import PriceSummary from "@/components/PriceSummary";
 import Bouton from "@/components/ui/Bouton";
 import ChampTexte from "@/components/ui/ChampTexte";
@@ -31,6 +32,8 @@ export default function PublishScreen() {
   const [arrivee, setArrivee] = useState<Zone | null>(null);
   const [adresseDepart, setAdresseDepart] = useState("");
   const [adresseArrivee, setAdresseArrivee] = useState("");
+  const [coordDepart, setCoordDepart] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [coordArrivee, setCoordArrivee] = useState<{ latitude: number; longitude: number } | null>(null);
   const [categorieColis, setCategorieColis] = useState<CategorieColis | null>(null);
   const [description, setDescription] = useState("");
   const [modePaiement, setModePaiement] = useState<ModePaiement>("especes");
@@ -60,6 +63,10 @@ export default function PublishScreen() {
         clientId: session.user.id,
         adresseDepart,
         adresseArrivee,
+        latitudeDepart: coordDepart?.latitude,
+        longitudeDepart: coordDepart?.longitude,
+        latitudeArrivee: coordArrivee?.latitude,
+        longitudeArrivee: coordArrivee?.longitude,
         zoneDepart: depart,
         zoneArrivee: arrivee,
         typeColis: description,
@@ -88,6 +95,10 @@ export default function PublishScreen() {
           onChangeText={setAdresseDepart}
           placeholder="Adresse précise de départ"
         />
+        <BoutonPosition
+          label={coordDepart ? "Position de départ enregistrée ✓" : "Utiliser ma position actuelle"}
+          onLocalisation={(latitude, longitude) => setCoordDepart({ latitude, longitude })}
+        />
 
         <ZoneSelector label="Arrivée" value={arrivee} onChange={setArrivee} />
         <ChampTexte
@@ -96,6 +107,10 @@ export default function PublishScreen() {
           value={adresseArrivee}
           onChangeText={setAdresseArrivee}
           placeholder="Adresse précise d'arrivée"
+        />
+        <BoutonPosition
+          label={coordArrivee ? "Position d'arrivée enregistrée ✓" : "Utiliser ma position actuelle"}
+          onLocalisation={(latitude, longitude) => setCoordArrivee({ latitude, longitude })}
         />
 
         <GroupePastilles label="Type de colis" options={CATEGORIES} value={categorieColis} onChange={setCategorieColis} />

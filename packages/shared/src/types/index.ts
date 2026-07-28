@@ -105,6 +105,10 @@ export interface Course {
   coursierId: string | null;
   adresseDepart: string;
   adresseArrivee: string;
+  latitudeDepart?: number;
+  longitudeDepart?: number;
+  latitudeArrivee?: number;
+  longitudeArrivee?: number;
   zoneDepart: Zone;
   zoneArrivee: Zone;
   typeColis: string;
