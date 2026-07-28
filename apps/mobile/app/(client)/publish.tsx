@@ -83,6 +83,7 @@ export default function PublishScreen() {
         <ZoneSelector label="Départ" value={depart} onChange={setDepart} />
         <ChampTexte
           label="Adresse de départ"
+          icone="radio-button-on-outline"
           value={adresseDepart}
           onChangeText={setAdresseDepart}
           placeholder="Adresse précise de départ"
@@ -91,6 +92,7 @@ export default function PublishScreen() {
         <ZoneSelector label="Arrivée" value={arrivee} onChange={setArrivee} />
         <ChampTexte
           label="Adresse d'arrivée"
+          icone="location-outline"
           value={adresseArrivee}
           onChangeText={setAdresseArrivee}
           placeholder="Adresse précise d'arrivée"
