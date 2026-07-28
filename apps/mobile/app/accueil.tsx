@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Animated, Easing, Image, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -56,9 +56,85 @@ function GlowDecor() {
   );
 }
 
+// Pas d'accès à de vraies photos/vidéos ici (pas de récupération d'images externes) :
+// on simule la vivacité façon Gozem/Yango avec un petit graphique animé sur le thème
+// livraison plutôt qu'un visuel statique.
+function CercleFlottant({ children }: { children: ReactNode }) {
+  const bob = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bob, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(bob, { toValue: 0, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [bob]);
+  const translateY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
+  return <Animated.View style={{ transform: [{ translateY }] }}>{children}</Animated.View>;
+}
+
+function AnneauPing() {
+  const ping = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.timing(ping, { toValue: 1, duration: 2000, easing: Easing.out(Easing.ease), useNativeDriver: true })
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [ping]);
+  const scale = ping.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] });
+  const opacity = ping.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] });
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{ transform: [{ scale }], opacity }}
+      className="absolute inset-0 rounded-full bg-colimo-rouge"
+    />
+  );
+}
+
+function LigneLivraisonAnimee() {
+  const [largeur, setLargeur] = useState(0);
+  const trajet = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(trajet, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.delay(500),
+        Animated.timing(trajet, { toValue: 0, duration: 0, useNativeDriver: true }),
+        Animated.delay(200),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [trajet]);
+  const translateX = trajet.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(largeur - 16, 0)] });
+  return (
+    <View className="mt-8 w-full">
+      <View className="flex-row items-center justify-between">
+        <Ionicons name="storefront-outline" size={18} color="white" />
+        <Ionicons name="home-outline" size={18} color="white" />
+      </View>
+      <View
+        onLayout={(e) => setLargeur(e.nativeEvent.layout.width)}
+        className="relative mt-2 h-1 w-full rounded-full bg-white/15"
+      >
+        <Animated.View
+          style={{ transform: [{ translateX }] }}
+          className="absolute -top-1.5 h-4 w-4 rounded-full bg-colimo-rouge"
+        />
+      </View>
+    </View>
+  );
+}
+
 export default function AccueilScreen() {
   const [zone, setZone] = useState<Zone | null>(null);
   const [motIndex, setMotIndex] = useState(0);
+  const [yEtapes, setYEtapes] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
   const { width } = useWindowDimensions();
   const desktop = width >= SEUIL_DESKTOP;
 
@@ -93,11 +169,14 @@ export default function AccueilScreen() {
   if (desktop) {
     return (
       <SafeAreaView className="flex-1 bg-colimo-fond" edges={["top"]}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
           <View className="flex-row items-center justify-between border-b border-colimo-neutre-clair px-12 py-5">
             <Image source={require("../assets/logo-colimo.png")} style={{ width: 150, height: 43 }} resizeMode="contain" />
             <View className="flex-row items-center gap-8">
-              <Text onPress={() => router.push("/faq")} className="font-texte-medium text-sm text-colimo-neutre-fonce/70">
+              <Text
+                onPress={() => scrollRef.current?.scrollTo({ y: yEtapes, animated: true })}
+                className="font-texte-medium text-sm text-colimo-neutre-fonce/70"
+              >
                 Comment ça marche
               </Text>
               <Text onPress={() => router.push("/faq")} className="font-texte-medium text-sm text-colimo-neutre-fonce/70">
@@ -136,8 +215,13 @@ export default function AccueilScreen() {
 
               <View className="flex-1 items-center justify-center">
                 <View className="aspect-square w-full items-center justify-center rounded-[32px] bg-colimo-noir-clair p-10">
-                  <View className="h-36 w-36 items-center justify-center rounded-full bg-colimo-rouge">
-                    <Ionicons name="cube-outline" size={64} color="white" />
+                  <View className="relative h-36 w-36 items-center justify-center">
+                    <AnneauPing />
+                    <CercleFlottant>
+                      <View className="h-36 w-36 items-center justify-center rounded-full bg-colimo-rouge">
+                        <Ionicons name="cube-outline" size={64} color="white" />
+                      </View>
+                    </CercleFlottant>
                   </View>
                   <View className="mt-10 w-full gap-3">
                     {CHIFFRES_CLES.map((chiffre) => (
@@ -147,6 +231,7 @@ export default function AccueilScreen() {
                       </View>
                     ))}
                   </View>
+                  <LigneLivraisonAnimee />
                 </View>
               </View>
             </View>
@@ -180,7 +265,10 @@ export default function AccueilScreen() {
             </View>
           </View>
 
-          <View className="mt-20 bg-colimo-noir px-12 py-16">
+          <View
+            onLayout={(e) => setYEtapes(e.nativeEvent.layout.y)}
+            className="mt-20 bg-colimo-noir px-12 py-16"
+          >
             <View className="mx-auto w-full max-w-6xl">
               <Text className="font-titre text-2xl text-white">Comment fonctionne une course COLIMO</Text>
               <View className="mt-10 flex-row gap-12">
@@ -211,6 +299,9 @@ export default function AccueilScreen() {
             </View>
             <Text className="mt-2 text-center font-texte text-xs text-colimo-neutre-fonce/50">
               Zones desservies : Libreville, Akanda, Owendo, PK12, Bikélé, Ntoum
+            </Text>
+            <Text className="mt-3 text-center font-texte text-xs text-colimo-neutre-fonce/40">
+              © COLIMO {new Date().getFullYear()}. Tous droits réservés.
             </Text>
           </View>
         </ScrollView>
@@ -251,6 +342,26 @@ export default function AccueilScreen() {
         <Carte className="-mt-12 mx-6" style={STYLE_OMBRE}>
           {formulaire}
         </Carte>
+
+        <View className="mx-6 mt-6 overflow-hidden rounded-3xl bg-colimo-noir p-6">
+          <View className="flex-row items-center gap-4">
+            <View className="relative h-14 w-14 items-center justify-center">
+              <AnneauPing />
+              <CercleFlottant>
+                <View className="h-14 w-14 items-center justify-center rounded-full bg-colimo-rouge">
+                  <Ionicons name="cube-outline" size={26} color="white" />
+                </View>
+              </CercleFlottant>
+            </View>
+            <View className="flex-1">
+              <Text className="font-texte-medium text-white">Suivi en temps réel</Text>
+              <Text className="mt-1 font-texte text-xs text-white/60">
+                Votre coursier, du départ jusqu'à la livraison
+              </Text>
+            </View>
+          </View>
+          <LigneLivraisonAnimee />
+        </View>
 
         <View className="mt-10 px-6">
           <Text className="font-titre text-xl text-colimo-neutre-fonce">Ce qui est inclus</Text>
@@ -316,6 +427,9 @@ export default function AccueilScreen() {
           </View>
           <Text className="mt-2 text-center font-texte text-xs text-colimo-neutre-fonce/50">
             Zones desservies : Libreville, Akanda, Owendo, PK12, Bikélé, Ntoum
+          </Text>
+          <Text className="mt-3 text-center font-texte text-xs text-colimo-neutre-fonce/40">
+            © COLIMO {new Date().getFullYear()}. Tous droits réservés.
           </Text>
         </View>
       </ScrollView>
