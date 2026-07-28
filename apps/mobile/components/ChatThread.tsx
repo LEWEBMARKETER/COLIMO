@@ -13,13 +13,21 @@ export default function ChatThread({ courseId, moiId }: ChatThreadProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [texte, setTexte] = useState("");
   const [chargement, setChargement] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState<string | null>(null);
+  const [erreurEnvoi, setErreurEnvoi] = useState<string | null>(null);
   const listeRef = useRef<FlatList<Message>>(null);
 
   useEffect(() => {
-    getMessages(courseId).then((donnees) => {
-      setMessages(donnees);
-      setChargement(false);
-    });
+    getMessages(courseId)
+      .then((donnees) => {
+        setMessages(donnees);
+      })
+      .catch((e) => {
+        setErreurChargement(e instanceof Error ? e.message : "Impossible de charger la discussion.");
+      })
+      .finally(() => {
+        setChargement(false);
+      });
 
     const channel = supabase
       .channel(`messages-course-${courseId}`)
@@ -41,13 +49,26 @@ export default function ChatThread({ courseId, moiId }: ChatThreadProps) {
     const contenu = texte.trim();
     if (!contenu) return;
     setTexte("");
-    await envoyerMessage({ courseId, auteurId: moiId, contenu });
+    setErreurEnvoi(null);
+    try {
+      await envoyerMessage({ courseId, auteurId: moiId, contenu });
+    } catch (e) {
+      setErreurEnvoi(e instanceof Error ? e.message : "Impossible d'envoyer le message.");
+    }
   }
 
   if (chargement) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator color="#C41E24" />
+      </View>
+    );
+  }
+
+  if (erreurChargement) {
+    return (
+      <View className="flex-1 items-center justify-center px-6">
+        <Text className="text-center text-sm text-colimo-rouge">{erreurChargement}</Text>
       </View>
     );
   }
@@ -76,6 +97,9 @@ export default function ChatThread({ courseId, moiId }: ChatThreadProps) {
           );
         }}
       />
+      {erreurEnvoi && (
+        <Text className="px-4 pb-1 text-xs text-colimo-rouge">{erreurEnvoi}</Text>
+      )}
       <View className="flex-row items-center gap-2 border-t border-colimo-neutre-clair bg-colimo-fond px-4 py-3">
         <TextInput
           value={texte}
