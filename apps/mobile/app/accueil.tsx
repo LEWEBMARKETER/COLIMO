@@ -92,6 +92,17 @@ export default function AccueilScreen() {
           >
             Questions fréquentes
           </Text>
+          <View className="mt-3 flex-row gap-4">
+            <Text onPress={() => router.push("/cgu")} className="font-texte text-xs text-colimo-neutre-fonce/50">
+              CGU
+            </Text>
+            <Text
+              onPress={() => router.push("/confidentialite")}
+              className="font-texte text-xs text-colimo-neutre-fonce/50"
+            >
+              Confidentialité
+            </Text>
+          </View>
           <Text className="mt-2 text-center font-texte text-xs text-colimo-neutre-fonce/50">
             Zones desservies : Libreville, Akanda, Owendo, PK12, Bikélé, Ntoum
           </Text>

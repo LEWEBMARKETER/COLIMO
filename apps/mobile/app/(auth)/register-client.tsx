@@ -109,8 +109,19 @@ export default function RegisterClientScreen() {
           onPress={envoyer}
           disabled={!peutEnvoyer}
           chargement={envoiEnCours}
-          className="mb-8"
         />
+
+        <Text className="mb-8 mt-3 text-center font-texte text-xs text-colimo-neutre-fonce/50">
+          En créant votre compte, vous acceptez nos{" "}
+          <Text onPress={() => router.push("/cgu")} className="text-colimo-rouge">
+            CGU
+          </Text>{" "}
+          et notre{" "}
+          <Text onPress={() => router.push("/confidentialite")} className="text-colimo-rouge">
+            politique de confidentialité
+          </Text>
+          .
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
