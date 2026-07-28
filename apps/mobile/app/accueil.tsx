@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Image, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -37,12 +37,45 @@ const CHIFFRES_CLES: { icone: keyof typeof Ionicons.glyphMap; texte: string }[] 
   { icone: "shield-checkmark-outline", texte: "Coursiers vérifiés" },
 ];
 
+const MOTS_ROTATIFS = ["colis", "repas", "documents", "courses du quotidien"];
+
 const SEUIL_DESKTOP = 860;
+
+function GlowDecor() {
+  return (
+    <>
+      <View
+        pointerEvents="none"
+        className="absolute -right-24 top-0 h-96 w-96 rounded-full bg-colimo-rouge/10"
+      />
+      <View
+        pointerEvents="none"
+        className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-colimo-rouge/5"
+      />
+    </>
+  );
+}
 
 export default function AccueilScreen() {
   const [zone, setZone] = useState<Zone | null>(null);
+  const [motIndex, setMotIndex] = useState(0);
   const { width } = useWindowDimensions();
   const desktop = width >= SEUIL_DESKTOP;
+
+  useEffect(() => {
+    const id = setInterval(() => setMotIndex((i) => (i + 1) % MOTS_ROTATIFS.length), 2600);
+    return () => clearInterval(id);
+  }, []);
+
+  const dots = (
+    <View className="mt-5 flex-row gap-2">
+      {MOTS_ROTATIFS.map((mot, i) => (
+        <Pressable key={mot} onPress={() => setMotIndex(i)} hitSlop={8}>
+          <View className={`h-1.5 rounded-full ${i === motIndex ? "w-6 bg-colimo-rouge" : "w-1.5 bg-white/30"}`} />
+        </Pressable>
+      ))}
+    </View>
+  );
 
   const formulaire = (
     <>
@@ -81,23 +114,24 @@ export default function AccueilScreen() {
             </View>
           </View>
 
-          <View className="mx-auto w-full max-w-6xl px-12 pt-12">
-            <View className="flex-row items-center gap-16 rounded-[40px] bg-colimo-noir p-16">
+          <View className="relative overflow-hidden bg-colimo-noir">
+            <GlowDecor />
+            <View className="mx-auto w-full max-w-6xl flex-row items-center gap-16 px-12 py-24">
               <View className="flex-1">
                 <Text className="font-texte-medium text-xs uppercase tracking-widest text-colimo-rouge">
                   Livraison à Libreville et environs
                 </Text>
                 <Text className="mt-3 font-titre-bold text-6xl leading-[1.05] text-white">
-                  Vos colis, livrés en toute confiance
+                  COLIMO, livrez vos{" "}
+                  <Text className="text-colimo-rouge">{MOTS_ROTATIFS[motIndex]}</Text> en toute confiance
                 </Text>
+                {dots}
                 <Text className="mt-5 max-w-md font-texte text-lg text-white/60">
                   COLIMO connecte particuliers, commerces et coursiers vérifiés à Libreville et ses
                   environs.
                 </Text>
 
-                <Carte className="mt-8 w-full max-w-md" style={STYLE_OMBRE}>
-                  {formulaire}
-                </Carte>
+                <Carte className="mt-8 w-full max-w-md">{formulaire}</Carte>
               </View>
 
               <View className="flex-1 items-center justify-center">
@@ -116,8 +150,10 @@ export default function AccueilScreen() {
                 </View>
               </View>
             </View>
+          </View>
 
-            <View className="mt-20 flex-row gap-16">
+          <View className="mx-auto w-full max-w-6xl px-12 pt-20">
+            <View className="flex-row gap-16">
               <View className="flex-1">
                 <Text className="font-titre text-2xl text-colimo-neutre-fonce">Ce qui est inclus</Text>
                 <View className="mt-6 flex-row flex-wrap gap-x-8 gap-y-4">
@@ -199,10 +235,13 @@ export default function AccueilScreen() {
           </Text>
         </View>
 
-        <View className="mt-4 rounded-b-[32px] bg-colimo-noir px-6 pb-20 pt-8">
-          <Text className="font-titre-bold text-4xl leading-[44px] text-white">
-            Vos colis, livrés{"\n"}en toute confiance
+        <View className="relative mt-4 overflow-hidden rounded-b-[32px] bg-colimo-noir px-6 pb-20 pt-8">
+          <GlowDecor />
+          <Text className="font-titre-bold text-4xl leading-tight text-white">
+            COLIMO, livrez vos <Text className="text-colimo-rouge">{MOTS_ROTATIFS[motIndex]}</Text> en toute
+            confiance
           </Text>
+          {dots}
           <Text className="mt-3 font-texte text-base text-white/60">
             COLIMO connecte particuliers, commerces et coursiers vérifiés à
             Libreville et ses environs.
