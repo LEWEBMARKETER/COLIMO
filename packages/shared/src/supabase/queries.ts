@@ -118,7 +118,7 @@ export async function insertUtilisateur(
 export async function updateUtilisateur(
   client: SupabaseClient,
   id: string,
-  body: { nom?: string; prenom?: string; telephone?: string; zone?: Zone; photoUrl?: string }
+  body: { nom?: string; prenom?: string; telephone?: string; zone?: Zone; photoUrl?: string; statut?: string }
 ): Promise<Utilisateur> {
   const update: Record<string, unknown> = {};
   if (body.nom) update.nom = body.nom;
@@ -126,6 +126,7 @@ export async function updateUtilisateur(
   if (body.telephone) update.telephone = body.telephone;
   if (body.zone) update.zone = body.zone;
   if (body.photoUrl) update.photo_url = body.photoUrl;
+  if (body.statut) update.statut = body.statut;
 
   const { data, error } = await client.from("utilisateurs").update(update).eq("id", id).select().single();
   if (error) throw error;

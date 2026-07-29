@@ -5,7 +5,7 @@ import StatCard from "@/components/StatCard";
 import { getCourses } from "@/lib/api";
 import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
 
-const ZONES: Zone[] = ["libreville", "akanda", "owendo", "bikele_essassa", "ntoum"];
+const ZONES = Object.keys(ZONE_LABELS) as Zone[];
 
 export default function StatistiquesPage() {
   const [courses, setCourses] = useState<Course[]>([]);

@@ -8,6 +8,8 @@ const COULEURS: Record<string, string> = {
   confirmee: "bg-emerald-100 text-emerald-800",
   annulee: "bg-gray-200 text-gray-700",
   litige: "bg-red-100 text-red-800",
+  actif: "bg-emerald-100 text-emerald-800",
+  suspendu: "bg-red-100 text-red-800",
 };
 
 export default function StatutBadge({ statut, label }: { statut: string; label: string }) {

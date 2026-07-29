@@ -2,6 +2,8 @@ import {
   getUtilisateurs as getUtilisateursQuery,
   getCoursiers as getCoursiersQuery,
   patchCoursier as patchCoursierQuery,
+  patchCourse as patchCourseQuery,
+  updateUtilisateur as updateUtilisateurQuery,
   getCourses as getCoursesQuery,
   type Coursier,
   type Course,
@@ -27,6 +29,17 @@ export function patchCoursier(
   body: { statutVerification?: VerificationStatus; disponibilite?: boolean }
 ): Promise<Coursier> {
   return patchCoursierQuery(createClient(), id, body);
+}
+
+export function updateUtilisateur(
+  id: string,
+  body: { nom?: string; telephone?: string; zone?: Zone; statut?: string }
+): Promise<Utilisateur> {
+  return updateUtilisateurQuery(createClient(), id, body);
+}
+
+export function patchCourse(id: string, body: { statut?: CourseStatus; coursierId?: string | null }): Promise<Course> {
+  return patchCourseQuery(createClient(), id, body);
 }
 
 export function getCourses(params?: { zone?: Zone; statut?: CourseStatus }): Promise<Course[]> {
