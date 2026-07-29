@@ -11,6 +11,7 @@ import {
   insertUtilisateur,
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
+  updateUtilisateur as updateUtilisateurQuery,
   uploadFichier,
   type CategorieColis,
   type Coursier,
@@ -41,9 +42,17 @@ export function patchCoursier(
     disponibilite?: boolean;
     typePieceIdentite?: PieceIdentiteType;
     pieceIdentiteUrl?: string;
+    typeVehicule?: VehiculeType;
   }
 ): Promise<Coursier> {
   return patchCoursierQuery(supabase, id, body);
+}
+
+export function updateUtilisateur(
+  id: string,
+  body: { nom?: string; prenom?: string; telephone?: string; zone?: Zone; photoUrl?: string }
+): Promise<Utilisateur> {
+  return updateUtilisateurQuery(supabase, id, body);
 }
 
 export function getCourses(params?: { zone?: Zone; statut?: CourseStatus; clientId?: string; coursierId?: string }): Promise<Course[]> {

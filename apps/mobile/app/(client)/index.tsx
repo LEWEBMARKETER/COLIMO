@@ -1,11 +1,26 @@
-import { Pressable, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { COURSE_STATUS_LABELS, ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
+import Carte from "@/components/ui/Carte";
+import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
+const STATUTS_TERMINES = new Set(["confirmee", "annulee"]);
+
 export default function ClientHome() {
-  const { utilisateur, signOut } = useAuth();
+  const { session, utilisateur, signOut } = useAuth();
+  const [courseActive, setCourseActive] = useState<Course | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+    getCourses({ clientId: session.user.id }).then((courses) => {
+      const active = courses.find((c) => !STATUTS_TERMINES.has(c.statut));
+      setCourseActive(active ?? null);
+    });
+  }, [session]);
 
   async function handleDeconnexion() {
     await signOut();
@@ -14,17 +29,43 @@ export default function ClientHome() {
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-      <View className="flex-1 justify-between px-6 py-8">
-        <View>
-          <Text className="font-titre text-xl text-colimo-neutre-fonce">
-            Bonjour {utilisateur?.nom ?? ""} 👋
-          </Text>
-          <Text className="mt-1 font-texte text-colimo-neutre-fonce/70">
-            Où souhaitez-vous envoyer un colis aujourd&apos;hui ?
-          </Text>
+      <ScrollView className="flex-1 px-6 py-8" contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="flex-row items-center gap-3">
+          {utilisateur?.photoUrl ? (
+            <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
+          ) : (
+            <View className="h-12 w-12 items-center justify-center rounded-full bg-colimo-rouge-clair">
+              <Text className="font-titre text-colimo-rouge">{(utilisateur?.nom ?? "?").charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+          <View>
+            <Text className="font-titre text-xl text-colimo-neutre-fonce">
+              Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""} 👋
+            </Text>
+            <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/70">
+              Où souhaitez-vous envoyer un colis aujourd&apos;hui ?
+            </Text>
+          </View>
         </View>
 
-        <View>
+        {courseActive && (
+          <Pressable onPress={() => router.push(`/(client)/track/${courseActive.id}`)} className="mt-6">
+            <Carte>
+              <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">Course en cours</Text>
+              <Text className="mt-1 font-texte-medium text-colimo-neutre-fonce">
+                {ZONE_LABELS[courseActive.zoneDepart]} → {ZONE_LABELS[courseActive.zoneArrivee]}
+              </Text>
+              <View className="mt-2 flex-row items-center justify-between">
+                <Text className="font-titre text-colimo-rouge">{formatFCFA(courseActive.prix)}</Text>
+                <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
+                  {COURSE_STATUS_LABELS[courseActive.statut]}
+                </Text>
+              </View>
+            </Carte>
+          </Pressable>
+        )}
+
+        <View className="mt-auto pt-8">
           <Bouton label="Nouvelle course" onPress={() => router.push("/(client)/publish")} />
 
           <Bouton
@@ -34,7 +75,11 @@ export default function ClientHome() {
             className="mt-3"
           />
 
-          <Pressable onPress={() => router.push("/faq")} className="mt-4 py-2">
+          <Pressable onPress={() => router.push("/(client)/profil")} className="mt-4 py-2">
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Mon profil</Text>
+          </Pressable>
+
+          <Pressable onPress={() => router.push("/faq")} className="mt-1 py-2">
             <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">FAQ</Text>
           </Pressable>
 
@@ -42,7 +87,7 @@ export default function ClientHome() {
             <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

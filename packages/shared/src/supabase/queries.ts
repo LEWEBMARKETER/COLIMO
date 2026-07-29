@@ -69,6 +69,7 @@ export async function patchCoursier(
     disponibilite?: boolean;
     typePieceIdentite?: PieceIdentiteType;
     pieceIdentiteUrl?: string;
+    typeVehicule?: VehiculeType;
   }
 ): Promise<Coursier> {
   const update: Record<string, unknown> = {};
@@ -76,6 +77,7 @@ export async function patchCoursier(
   if (typeof body.disponibilite === "boolean") update.disponibilite = body.disponibilite;
   if (body.typePieceIdentite) update.type_piece_identite = body.typePieceIdentite;
   if (body.pieceIdentiteUrl) update.piece_identite_url = body.pieceIdentiteUrl;
+  if (body.typeVehicule) update.type_vehicule = body.typeVehicule;
 
   const { data, error } = await client.from("coursiers").update(update).eq("id", id).select().single();
   if (error) throw error;
@@ -116,9 +118,13 @@ export async function insertUtilisateur(
 export async function updateUtilisateur(
   client: SupabaseClient,
   id: string,
-  body: { photoUrl?: string }
+  body: { nom?: string; prenom?: string; telephone?: string; zone?: Zone; photoUrl?: string }
 ): Promise<Utilisateur> {
   const update: Record<string, unknown> = {};
+  if (body.nom) update.nom = body.nom;
+  if (body.prenom) update.prenom = body.prenom;
+  if (body.telephone) update.telephone = body.telephone;
+  if (body.zone) update.zone = body.zone;
   if (body.photoUrl) update.photo_url = body.photoUrl;
 
   const { data, error } = await client.from("utilisateurs").update(update).eq("id", id).select().single();

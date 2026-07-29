@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Switch, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, Pressable, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course } from "@colimo/shared";
@@ -11,8 +11,17 @@ import { useAuth } from "@/lib/AuthContext";
 export default function CoursierDashboard() {
   const { session, utilisateur, coursier, refreshProfile, signOut } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [gains, setGains] = useState(0);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+    getCourses({ coursierId: session.user.id }).then((mesCourses) => {
+      const total = mesCourses.filter((c) => c.statut === "confirmee").reduce((s, c) => s + c.prix, 0);
+      setGains(total);
+    });
+  }, [session]);
 
   const chargerCourses = useCallback(async () => {
     if (coursier?.disponibilite && utilisateur?.zone) {
@@ -67,6 +76,35 @@ export default function CoursierDashboard() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <View className="flex-1 px-6 py-6">
+        <Pressable onPress={() => router.push("/(coursier)/profil")} className="mb-4 flex-row items-center gap-3">
+          {utilisateur?.photoUrl ? (
+            <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
+          ) : (
+            <View className="h-12 w-12 items-center justify-center rounded-full bg-colimo-rouge-clair">
+              <Text className="font-titre text-colimo-rouge">{(utilisateur?.prenom ?? utilisateur?.nom ?? "?").charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+          <View className="flex-1">
+            <Text className="font-texte-medium text-colimo-neutre-fonce">
+              {utilisateur?.prenom ?? utilisateur?.nom ?? "Mon profil"}
+            </Text>
+            <Text className="font-texte text-xs text-colimo-neutre-fonce/50">Voir mon profil</Text>
+          </View>
+        </Pressable>
+
+        <View className="mb-4 flex-row gap-3">
+          <Carte className="flex-1">
+            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés</Text>
+            <Text className="mt-1 font-titre text-base text-colimo-rouge">{formatFCFA(gains)}</Text>
+          </Carte>
+          <Carte className="flex-1">
+            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>
+            <Text className="mt-1 font-titre text-base text-colimo-neutre-fonce">
+              {coursier?.noteMoyenne ? `${coursier.noteMoyenne} / 5` : "—"}
+            </Text>
+          </Carte>
+        </View>
+
         <Carte className="mb-4 flex-row items-center justify-between">
           <View>
             <Text className="font-texte-medium text-colimo-neutre-fonce">Disponible</Text>
