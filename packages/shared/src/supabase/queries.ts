@@ -5,23 +5,28 @@ import type {
   ModePaiement,
   PieceIdentiteType,
   TypeClient,
+  TypeReductionPromo,
   VehiculeType,
   VerificationStatus,
   Zone,
 } from "../types";
 import {
+  codePromoFromRow,
+  commercantFromRow,
   coursierFromRow,
   courseFromRow,
   messageFromRow,
   notationFromRow,
   utilisateurFromRow,
+  type CodePromoRow,
+  type CommercantRow,
   type CoursierRow,
   type CourseRow,
   type MessageRow,
   type NotationRow,
   type UtilisateurRow,
 } from "./mappers";
-import type { Coursier, Course, Message, Notation, Utilisateur } from "../types";
+import type { CodePromo, Commercant, Coursier, Course, Message, Notation, Utilisateur } from "../types";
 
 export interface CoursierAvecUtilisateur extends Coursier {
   utilisateur: Utilisateur;
@@ -197,6 +202,8 @@ export async function creerCourse(
     modePaiement: ModePaiement;
     valeurDeclaree?: number;
     prix: number;
+    codePromoId?: string;
+    reductionPromo?: number;
   }
 ): Promise<Course> {
   const { data, error } = await client
@@ -217,6 +224,8 @@ export async function creerCourse(
       mode_paiement: input.modePaiement,
       valeur_declaree: input.valeurDeclaree ?? null,
       prix: input.prix,
+      code_promo_id: input.codePromoId ?? null,
+      reduction_promo: input.reductionPromo ?? 0,
     })
     .select()
     .single();
@@ -303,4 +312,93 @@ export async function uploadFichier(
   const { data, error: signedError } = await client.storage.from(bucket).createSignedUrl(chemin, 60 * 60 * 24 * 365);
   if (signedError) throw signedError;
   return data.signedUrl;
+}
+
+// --- Commerçants -----------------------------------------------------------
+
+export async function getCommercantsBruts(client: SupabaseClient): Promise<Commercant[]> {
+  const { data, error } = await client.from("commercants").select("*");
+  if (error) throw error;
+  return (data as CommercantRow[]).map(commercantFromRow);
+}
+
+export async function upsertCommercant(
+  client: SupabaseClient,
+  input: { utilisateurId: string; adresse?: string; responsable?: string; horaires?: string; commissionTaux?: number }
+): Promise<Commercant> {
+  const { data, error } = await client
+    .from("commercants")
+    .upsert(
+      {
+        utilisateur_id: input.utilisateurId,
+        adresse: input.adresse ?? null,
+        responsable: input.responsable ?? null,
+        horaires: input.horaires ?? null,
+        commission_taux: input.commissionTaux ?? 0.15,
+      },
+      { onConflict: "utilisateur_id" }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return commercantFromRow(data as CommercantRow);
+}
+
+// --- Codes promo -------------------------------------------------------------
+
+export async function getCodesPromo(client: SupabaseClient): Promise<CodePromo[]> {
+  const { data, error } = await client.from("codes_promo").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as CodePromoRow[]).map(codePromoFromRow);
+}
+
+export async function getCodePromoParCode(client: SupabaseClient, code: string): Promise<CodePromo | null> {
+  const { data, error } = await client
+    .from("codes_promo")
+    .select("*")
+    .ilike("code", code)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? codePromoFromRow(data as CodePromoRow) : null;
+}
+
+export async function creerCodePromo(
+  client: SupabaseClient,
+  input: {
+    code: string;
+    typeReduction: TypeReductionPromo;
+    valeur: number;
+    dateDebut?: string;
+    dateFin?: string;
+    usageMax?: number;
+  }
+): Promise<CodePromo> {
+  const { data, error } = await client
+    .from("codes_promo")
+    .insert({
+      code: input.code.toUpperCase(),
+      type_reduction: input.typeReduction,
+      valeur: input.valeur,
+      date_debut: input.dateDebut ?? null,
+      date_fin: input.dateFin ?? null,
+      usage_max: input.usageMax ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return codePromoFromRow(data as CodePromoRow);
+}
+
+export async function patchCodePromo(
+  client: SupabaseClient,
+  id: string,
+  body: { actif?: boolean; usageActuel?: number }
+): Promise<CodePromo> {
+  const update: Record<string, unknown> = {};
+  if (typeof body.actif === "boolean") update.actif = body.actif;
+  if (typeof body.usageActuel === "number") update.usage_actuel = body.usageActuel;
+
+  const { data, error } = await client.from("codes_promo").update(update).eq("id", id).select().single();
+  if (error) throw error;
+  return codePromoFromRow(data as CodePromoRow);
 }

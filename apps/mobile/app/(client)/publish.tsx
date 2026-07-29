@@ -6,8 +6,11 @@ import {
   CATEGORIE_COLIS_LABELS,
   MODE_PAIEMENT_LABELS,
   calculatePrice,
+  calculerReductionPromo,
+  codePromoValide,
   isRouteDesservie,
   type CategorieColis,
+  type CodePromo,
   type ModePaiement,
   type Zone,
 } from "@colimo/shared";
@@ -17,7 +20,7 @@ import PriceSummary from "@/components/PriceSummary";
 import Bouton from "@/components/ui/Bouton";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
-import { creerCourse } from "@/lib/api";
+import { creerCourse, getCodePromoParCode } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
@@ -41,6 +44,10 @@ export default function PublishScreen() {
   const [valeurDeclaree, setValeurDeclaree] = useState("");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [codePromoTexte, setCodePromoTexte] = useState("");
+  const [codePromoApplique, setCodePromoApplique] = useState<CodePromo | null>(null);
+  const [verificationPromoEnCours, setVerificationPromoEnCours] = useState(false);
+  const [erreurPromo, setErreurPromo] = useState<string | null>(null);
 
   const pricing = useMemo(() => {
     if (!depart || !arrivee || !isRouteDesservie(depart, arrivee)) return null;
@@ -50,9 +57,31 @@ export default function PublishScreen() {
     });
   }, [depart, arrivee, prioritaire, valeurDeclaree]);
 
+  const reduction =
+    pricing && codePromoApplique ? calculerReductionPromo(pricing.total, codePromoApplique) : 0;
+
   const peutPublier = Boolean(
     pricing && categorieColis && adresseDepart.trim() && adresseArrivee.trim() && !envoiEnCours
   );
+
+  async function appliquerCodePromo() {
+    if (!codePromoTexte.trim()) return;
+    setVerificationPromoEnCours(true);
+    setErreurPromo(null);
+    try {
+      const promo = await getCodePromoParCode(codePromoTexte.trim());
+      if (!promo || !codePromoValide(promo)) {
+        setErreurPromo("Code promo invalide ou expiré.");
+        setCodePromoApplique(null);
+        return;
+      }
+      setCodePromoApplique(promo);
+    } catch {
+      setErreurPromo("Impossible de vérifier ce code. Réessayez.");
+    } finally {
+      setVerificationPromoEnCours(false);
+    }
+  }
 
   async function handlePublier() {
     if (!depart || !arrivee || !pricing || !session || !categorieColis) return;
@@ -74,7 +103,9 @@ export default function PublishScreen() {
         livraisonPrioritaire: prioritaire,
         modePaiement,
         valeurDeclaree: Number(valeurDeclaree) || undefined,
-        prix: pricing.total,
+        prix: Math.max(pricing.total - reduction, 0),
+        codePromoId: codePromoApplique?.id,
+        reductionPromo: reduction,
       });
       router.push(`/(client)/track/${course.id}`);
     } catch {
@@ -154,9 +185,33 @@ export default function PublishScreen() {
           </Text>
         )}
 
+        <View className="mb-4 flex-row items-end gap-2">
+          <ChampTexte
+            label="Code promo (optionnel)"
+            value={codePromoTexte}
+            onChangeText={(t) => {
+              setCodePromoTexte(t.toUpperCase());
+              setCodePromoApplique(null);
+              setErreurPromo(null);
+            }}
+            autoCapitalize="characters"
+            placeholder="Ex : BIENVENUE10"
+            className="mb-0 flex-1"
+          />
+          <Bouton
+            label={codePromoApplique ? "Appliqué ✓" : "Appliquer"}
+            variante="contour"
+            onPress={appliquerCodePromo}
+            disabled={!codePromoTexte.trim() || verificationPromoEnCours}
+            chargement={verificationPromoEnCours}
+            className="px-4 py-3"
+          />
+        </View>
+        {erreurPromo && <Text className="mb-4 -mt-2 font-texte text-xs text-colimo-rouge">{erreurPromo}</Text>}
+
         {pricing && (
           <View className="mb-6">
-            <PriceSummary pricing={pricing} />
+            <PriceSummary pricing={pricing} reduction={reduction} />
           </View>
         )}
 

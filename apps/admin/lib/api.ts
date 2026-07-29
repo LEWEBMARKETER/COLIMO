@@ -1,13 +1,21 @@
 import {
+  creerCodePromo as creerCodePromoQuery,
+  getCodesPromo as getCodesPromoQuery,
+  getCommercantsBruts as getCommercantsBrutsQuery,
   getUtilisateurs as getUtilisateursQuery,
   getCoursiers as getCoursiersQuery,
+  patchCodePromo as patchCodePromoQuery,
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
   updateUtilisateur as updateUtilisateurQuery,
+  upsertCommercant as upsertCommercantQuery,
   getCourses as getCoursesQuery,
+  type CodePromo,
+  type Commercant,
   type Coursier,
   type Course,
   type CourseStatus,
+  type TypeReductionPromo,
   type VerificationStatus,
   type Utilisateur,
   type Zone,
@@ -44,4 +52,37 @@ export function patchCourse(id: string, body: { statut?: CourseStatus; coursierI
 
 export function getCourses(params?: { zone?: Zone; statut?: CourseStatus }): Promise<Course[]> {
   return getCoursesQuery(createClient(), params);
+}
+
+export function getCommercantsBruts(): Promise<Commercant[]> {
+  return getCommercantsBrutsQuery(createClient());
+}
+
+export function upsertCommercant(input: {
+  utilisateurId: string;
+  adresse?: string;
+  responsable?: string;
+  horaires?: string;
+  commissionTaux?: number;
+}): Promise<Commercant> {
+  return upsertCommercantQuery(createClient(), input);
+}
+
+export function getCodesPromo(): Promise<CodePromo[]> {
+  return getCodesPromoQuery(createClient());
+}
+
+export function creerCodePromo(input: {
+  code: string;
+  typeReduction: TypeReductionPromo;
+  valeur: number;
+  dateDebut?: string;
+  dateFin?: string;
+  usageMax?: number;
+}): Promise<CodePromo> {
+  return creerCodePromoQuery(createClient(), input);
+}
+
+export function patchCodePromo(id: string, body: { actif?: boolean }): Promise<CodePromo> {
+  return patchCodePromoQuery(createClient(), id, body);
 }

@@ -88,3 +88,28 @@ export function calculatePrice(
 export function calculerCommission(prix: number): number {
   return Math.round(prix * COMMISSION_PLATEFORME_TAUX);
 }
+
+export interface CodePromoValidation {
+  actif: boolean;
+  dateDebut: string | null;
+  dateFin: string | null;
+  usageMax: number | null;
+  usageActuel: number;
+}
+
+export function codePromoValide(promo: CodePromoValidation, maintenant: Date = new Date()): boolean {
+  if (!promo.actif) return false;
+  if (promo.dateDebut && maintenant < new Date(promo.dateDebut)) return false;
+  if (promo.dateFin && maintenant > new Date(promo.dateFin)) return false;
+  if (promo.usageMax !== null && promo.usageActuel >= promo.usageMax) return false;
+  return true;
+}
+
+export function calculerReductionPromo(
+  total: number,
+  promo: { typeReduction: "pourcentage" | "montant_fixe"; valeur: number }
+): number {
+  const reduction =
+    promo.typeReduction === "pourcentage" ? Math.round((total * promo.valeur) / 100) : Math.round(promo.valeur);
+  return Math.min(reduction, total);
+}

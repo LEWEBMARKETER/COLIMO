@@ -5,7 +5,7 @@ import StatCard from "@/components/StatCard";
 import { getCoursiers, getCourses, getUtilisateurs, type CoursierAvecUtilisateur } from "@/lib/api";
 import { formatFCFA, type Course, type Utilisateur } from "@colimo/shared";
 
-const STATUTS_EN_COURS = new Set(["en_attente", "acceptee", "en_cours"]);
+const STATUTS_EN_COURS = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
 const STATUTS_TERMINES = new Set(["livree", "confirmee"]);
 
 function estAujourdhui(dateIso: string): boolean {

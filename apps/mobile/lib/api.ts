@@ -2,6 +2,7 @@ import {
   creerCourse as creerCourseQuery,
   creerNotation as creerNotationQuery,
   envoyerMessage as envoyerMessageQuery,
+  getCodePromoParCode as getCodePromoParCodeQuery,
   getCourse as getCourseQuery,
   getCoursiers as getCoursiersQuery,
   getCourses as getCoursesQuery,
@@ -14,6 +15,7 @@ import {
   updateUtilisateur as updateUtilisateurQuery,
   uploadFichier,
   type CategorieColis,
+  type CodePromo,
   type Coursier,
   type Course,
   type CourseStatus,
@@ -79,8 +81,14 @@ export function creerCourse(body: {
   modePaiement: ModePaiement;
   valeurDeclaree?: number;
   prix: number;
+  codePromoId?: string;
+  reductionPromo?: number;
 }): Promise<Course> {
   return creerCourseQuery(supabase, body);
+}
+
+export function getCodePromoParCode(code: string): Promise<CodePromo | null> {
+  return getCodePromoParCodeQuery(supabase, code);
 }
 
 export function patchCourse(id: string, body: { statut?: CourseStatus; coursierId?: string | null }): Promise<Course> {

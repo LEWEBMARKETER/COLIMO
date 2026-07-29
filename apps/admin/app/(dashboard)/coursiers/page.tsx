@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
-import { getCoursiers, patchCoursier, type CoursierAvecUtilisateur } from "@/lib/api";
+import { getCoursiers, patchCoursier, updateUtilisateur, type CoursierAvecUtilisateur } from "@/lib/api";
 import { PIECE_IDENTITE_LABELS, type VerificationStatus } from "@colimo/shared";
 
 const LABELS_VERIFICATION: Record<VerificationStatus, string> = {
@@ -26,6 +26,14 @@ export default function CoursiersPage() {
     await patchCoursier(id, { statutVerification: statut });
   }
 
+  async function toggleSuspension(coursier: CoursierAvecUtilisateur) {
+    const nouveauStatut = coursier.utilisateur.statut === "suspendu" ? "actif" : "suspendu";
+    const utilisateurMisAJour = await updateUtilisateur(coursier.utilisateurId, { statut: nouveauStatut });
+    setCoursiers((prev) =>
+      prev.map((c) => (c.id === coursier.id ? { ...c, utilisateur: utilisateurMisAJour } : c))
+    );
+  }
+
   return (
     <div>
       <h1 className="font-titre text-2xl font-semibold text-colimo-neutre-fonce">Coursiers</h1>
@@ -43,78 +51,94 @@ export default function CoursiersPage() {
               <th className="px-4 py-3 font-medium">Véhicule</th>
               <th className="px-4 py-3 font-medium">Pièce d&apos;identité</th>
               <th className="px-4 py-3 font-medium">Note</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
+              <th className="px-4 py-3 font-medium">Vérification</th>
+              <th className="px-4 py-3 font-medium">Disponibilité</th>
               <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {coursiers.map((coursier) => (
-              <tr key={coursier.id} className="border-b border-colimo-neutre-clair last:border-0">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    {coursier.utilisateur.photoUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={coursier.utilisateur.photoUrl}
-                        alt=""
-                        className="h-8 w-8 rounded-full object-cover"
-                      />
-                    )}
-                    <span>
-                      {coursier.utilisateur.prenom ? `${coursier.utilisateur.prenom} ` : ""}
-                      {coursier.utilisateur.nom}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">{coursier.utilisateur.telephone}</td>
-                <td className="px-4 py-3 capitalize">{coursier.utilisateur.zone}</td>
-                <td className="px-4 py-3 capitalize">{coursier.typeVehicule}</td>
-                <td className="px-4 py-3">
-                  {coursier.pieceIdentiteUrl ? (
-                    <a
-                      href={coursier.pieceIdentiteUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-colimo-rouge hover:underline"
-                    >
-                      {coursier.typePieceIdentite ? PIECE_IDENTITE_LABELS[coursier.typePieceIdentite] : "Voir"}
-                    </a>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-                <td className="px-4 py-3">{coursier.noteMoyenne || "—"}</td>
-                <td className="px-4 py-3">
-                  <StatutBadge
-                    statut={coursier.statutVerification}
-                    label={LABELS_VERIFICATION[coursier.statutVerification]}
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  {coursier.statutVerification === "en_attente" ? (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => changerStatut(coursier.id, "valide")}
-                        className="rounded-md bg-colimo-rouge px-2.5 py-1 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
+            {coursiers.map((coursier) => {
+              const suspendu = coursier.utilisateur.statut === "suspendu";
+              return (
+                <tr key={coursier.id} className="border-b border-colimo-neutre-clair last:border-0">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {coursier.utilisateur.photoUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={coursier.utilisateur.photoUrl}
+                          alt=""
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      )}
+                      <span>
+                        {coursier.utilisateur.prenom ? `${coursier.utilisateur.prenom} ` : ""}
+                        {coursier.utilisateur.nom}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">{coursier.utilisateur.telephone}</td>
+                  <td className="px-4 py-3 capitalize">{coursier.utilisateur.zone}</td>
+                  <td className="px-4 py-3 capitalize">{coursier.typeVehicule}</td>
+                  <td className="px-4 py-3">
+                    {coursier.pieceIdentiteUrl ? (
+                      <a
+                        href={coursier.pieceIdentiteUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-colimo-rouge hover:underline"
                       >
-                        Valider
-                      </button>
+                        {coursier.typePieceIdentite ? PIECE_IDENTITE_LABELS[coursier.typePieceIdentite] : "Voir"}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="px-4 py-3">{coursier.noteMoyenne || "—"}</td>
+                  <td className="px-4 py-3">
+                    <StatutBadge
+                      statut={coursier.statutVerification}
+                      label={LABELS_VERIFICATION[coursier.statutVerification]}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatutBadge
+                      statut={suspendu ? "suspendu" : coursier.disponibilite ? "actif" : "hors_ligne"}
+                      label={suspendu ? "Suspendu" : coursier.disponibilite ? "Actif" : "Hors ligne"}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      {coursier.statutVerification === "en_attente" && (
+                        <>
+                          <button
+                            onClick={() => changerStatut(coursier.id, "valide")}
+                            className="rounded-md bg-colimo-rouge px-2.5 py-1 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
+                          >
+                            Valider
+                          </button>
+                          <button
+                            onClick={() => changerStatut(coursier.id, "rejete")}
+                            className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                          >
+                            Rejeter
+                          </button>
+                        </>
+                      )}
                       <button
-                        onClick={() => changerStatut(coursier.id, "rejete")}
+                        onClick={() => toggleSuspension(coursier)}
                         className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                       >
-                        Rejeter
+                        {suspendu ? "Réactiver" : "Suspendre"}
                       </button>
                     </div>
-                  ) : (
-                    <span className="text-colimo-neutre-fonce/40">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
             {!chargement && coursiers.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <td colSpan={9} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
                   Aucun coursier inscrit
                 </td>
               </tr>

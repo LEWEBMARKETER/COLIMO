@@ -19,7 +19,8 @@ import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
-  acceptee: "en_cours",
+  acceptee: "retrait",
+  retrait: "en_cours",
   en_cours: "livree",
 };
 

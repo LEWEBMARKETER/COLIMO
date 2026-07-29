@@ -18,6 +18,7 @@ export type VerificationStatus = "en_attente" | "valide" | "rejete";
 export type CourseStatus =
   | "en_attente"
   | "acceptee"
+  | "retrait"
   | "en_cours"
   | "livree"
   | "confirmee"
@@ -27,7 +28,8 @@ export type CourseStatus =
 export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   en_attente: "En attente",
   acceptee: "Acceptée",
-  en_cours: "En cours",
+  retrait: "En cours de retrait",
+  en_cours: "En cours de livraison",
   livree: "Livrée",
   confirmee: "Confirmée",
   annulee: "Annulée",
@@ -98,6 +100,31 @@ export interface Coursier {
   noteMoyenne: number;
 }
 
+export interface Commercant {
+  id: string;
+  utilisateurId: string;
+  adresse: string | null;
+  responsable: string | null;
+  horaires: string | null;
+  commissionTaux: number;
+  createdAt: string;
+}
+
+export type TypeReductionPromo = "pourcentage" | "montant_fixe";
+
+export interface CodePromo {
+  id: string;
+  code: string;
+  typeReduction: TypeReductionPromo;
+  valeur: number;
+  actif: boolean;
+  dateDebut: string | null;
+  dateFin: string | null;
+  usageMax: number | null;
+  usageActuel: number;
+  createdAt: string;
+}
+
 export interface Course {
   id: string;
   numeroCommande: string;
@@ -118,6 +145,8 @@ export interface Course {
   valeurDeclaree?: number;
   prix: number;
   statut: CourseStatus;
+  codePromoId?: string;
+  reductionPromo: number;
   createdAt: string;
 }
 

@@ -16,7 +16,7 @@ import {
 } from "@colimo/shared";
 
 const ZONES = Object.keys(ZONE_LABELS) as Zone[];
-const STATUTS_ANNULABLES = new Set(["en_attente", "acceptee", "en_cours"]);
+const STATUTS_ANNULABLES = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
 
 export default function CoursesPage() {
   return (

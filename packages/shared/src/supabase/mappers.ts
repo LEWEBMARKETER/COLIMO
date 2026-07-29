@@ -1,5 +1,7 @@
 import type {
   CategorieColis,
+  CodePromo,
+  Commercant,
   Coursier,
   Course,
   CourseStatus,
@@ -8,6 +10,7 @@ import type {
   Notation,
   PieceIdentiteType,
   TypeClient,
+  TypeReductionPromo,
   Utilisateur,
   UserType,
   VehiculeType,
@@ -60,6 +63,31 @@ export interface CourseRow {
   valeur_declaree: number | null;
   prix: number;
   statut: CourseStatus;
+  code_promo_id: string | null;
+  reduction_promo: number;
+  created_at: string;
+}
+
+export interface CommercantRow {
+  id: string;
+  utilisateur_id: string;
+  adresse: string | null;
+  responsable: string | null;
+  horaires: string | null;
+  commission_taux: number;
+  created_at: string;
+}
+
+export interface CodePromoRow {
+  id: string;
+  code: string;
+  type_reduction: TypeReductionPromo;
+  valeur: number;
+  actif: boolean;
+  date_debut: string | null;
+  date_fin: string | null;
+  usage_max: number | null;
+  usage_actuel: number;
   created_at: string;
 }
 
@@ -130,6 +158,8 @@ export function courseFromRow(row: CourseRow): Course {
     valeurDeclaree: row.valeur_declaree ?? undefined,
     prix: row.prix,
     statut: row.statut,
+    codePromoId: row.code_promo_id ?? undefined,
+    reductionPromo: row.reduction_promo,
     createdAt: row.created_at,
   };
 }
@@ -151,6 +181,33 @@ export function messageFromRow(row: MessageRow): Message {
     courseId: row.course_id,
     auteurId: row.auteur_id,
     contenu: row.contenu,
+    createdAt: row.created_at,
+  };
+}
+
+export function commercantFromRow(row: CommercantRow): Commercant {
+  return {
+    id: row.id,
+    utilisateurId: row.utilisateur_id,
+    adresse: row.adresse,
+    responsable: row.responsable,
+    horaires: row.horaires,
+    commissionTaux: row.commission_taux,
+    createdAt: row.created_at,
+  };
+}
+
+export function codePromoFromRow(row: CodePromoRow): CodePromo {
+  return {
+    id: row.id,
+    code: row.code,
+    typeReduction: row.type_reduction,
+    valeur: row.valeur,
+    actif: row.actif,
+    dateDebut: row.date_debut,
+    dateFin: row.date_fin,
+    usageMax: row.usage_max,
+    usageActuel: row.usage_actuel,
     createdAt: row.created_at,
   };
 }

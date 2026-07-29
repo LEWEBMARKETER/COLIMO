@@ -8,8 +8,10 @@ import { createClient } from "@/lib/supabaseClient";
 const LIENS = [
   { href: "/", label: "Dashboard" },
   { href: "/clients", label: "Clients" },
+  { href: "/commercants", label: "Commerçants" },
   { href: "/coursiers", label: "Coursiers" },
   { href: "/courses", label: "Courses" },
+  { href: "/promotions", label: "Promotions" },
   { href: "/litiges", label: "Litiges" },
   { href: "/statistiques", label: "Statistiques" },
 ];
