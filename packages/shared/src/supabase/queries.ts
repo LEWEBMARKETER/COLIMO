@@ -75,6 +75,7 @@ export async function patchCoursier(
     typePieceIdentite?: PieceIdentiteType;
     pieceIdentiteUrl?: string;
     typeVehicule?: VehiculeType;
+    zonesCouvertes?: Zone[];
   }
 ): Promise<Coursier> {
   const update: Record<string, unknown> = {};
@@ -83,6 +84,7 @@ export async function patchCoursier(
   if (body.typePieceIdentite) update.type_piece_identite = body.typePieceIdentite;
   if (body.pieceIdentiteUrl) update.piece_identite_url = body.pieceIdentiteUrl;
   if (body.typeVehicule) update.type_vehicule = body.typeVehicule;
+  if (body.zonesCouvertes) update.zones_couvertes = body.zonesCouvertes;
 
   const { data, error } = await client.from("coursiers").update(update).eq("id", id).select().single();
   if (error) throw error;
@@ -146,6 +148,7 @@ export async function insertCoursier(
     typeVehicule: VehiculeType;
     typePieceIdentite?: PieceIdentiteType;
     pieceIdentiteUrl?: string;
+    zonesCouvertes?: Zone[];
   }
 ): Promise<Coursier> {
   const { data, error } = await client
@@ -156,6 +159,7 @@ export async function insertCoursier(
       type_vehicule: input.typeVehicule,
       type_piece_identite: input.typePieceIdentite ?? null,
       piece_identite_url: input.pieceIdentiteUrl ?? null,
+      zones_couvertes: input.zonesCouvertes ?? [],
     })
     .select()
     .single();
@@ -165,10 +169,11 @@ export async function insertCoursier(
 
 export async function getCourses(
   client: SupabaseClient,
-  params?: { zone?: Zone; statut?: CourseStatus; clientId?: string; coursierId?: string }
+  params?: { zone?: Zone; zones?: Zone[]; statut?: CourseStatus; clientId?: string; coursierId?: string }
 ): Promise<Course[]> {
   let query = client.from("courses").select("*").order("created_at", { ascending: false });
   if (params?.zone) query = query.eq("zone_depart", params.zone);
+  if (params?.zones && params.zones.length > 0) query = query.in("zone_depart", params.zones);
   if (params?.statut) query = query.eq("statut", params.statut);
   if (params?.clientId) query = query.eq("client_id", params.clientId);
   if (params?.coursierId) query = query.eq("coursier_id", params.coursierId);

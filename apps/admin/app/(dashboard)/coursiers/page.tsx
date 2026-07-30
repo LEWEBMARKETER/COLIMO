@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
 import { getCoursiers, patchCoursier, updateUtilisateur, type CoursierAvecUtilisateur } from "@/lib/api";
-import { PIECE_IDENTITE_LABELS, type VerificationStatus } from "@colimo/shared";
+import { PIECE_IDENTITE_LABELS, ZONE_LABELS, type VerificationStatus } from "@colimo/shared";
 
 const LABELS_VERIFICATION: Record<VerificationStatus, string> = {
   en_attente: "En attente",
@@ -47,7 +47,7 @@ export default function CoursiersPage() {
             <tr>
               <th className="px-4 py-3 font-medium">Nom</th>
               <th className="px-4 py-3 font-medium">Téléphone</th>
-              <th className="px-4 py-3 font-medium">Zone</th>
+              <th className="px-4 py-3 font-medium">Zones couvertes</th>
               <th className="px-4 py-3 font-medium">Véhicule</th>
               <th className="px-4 py-3 font-medium">Pièce d&apos;identité</th>
               <th className="px-4 py-3 font-medium">Note</th>
@@ -78,7 +78,13 @@ export default function CoursiersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">{coursier.utilisateur.telephone}</td>
-                  <td className="px-4 py-3 capitalize">{coursier.utilisateur.zone}</td>
+                  <td className="px-4 py-3">
+                    {coursier.zonesCouvertes?.length
+                      ? coursier.zonesCouvertes.map((z) => ZONE_LABELS[z]).join(", ")
+                      : coursier.utilisateur.zone
+                        ? ZONE_LABELS[coursier.utilisateur.zone]
+                        : "—"}
+                  </td>
                   <td className="px-4 py-3 capitalize">{coursier.typeVehicule}</td>
                   <td className="px-4 py-3">
                     {coursier.pieceIdentiteUrl ? (

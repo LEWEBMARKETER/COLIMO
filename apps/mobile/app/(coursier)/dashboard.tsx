@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Image, Pressable, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
-import { formatFCFA, ZONE_LABELS, type Course } from "@colimo/shared";
+import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
@@ -23,22 +23,34 @@ export default function CoursierDashboard() {
     });
   }, [session]);
 
+  const zonesDisponibilite: Zone[] = coursier?.zonesCouvertes?.length
+    ? coursier.zonesCouvertes
+    : utilisateur?.zone
+      ? [utilisateur.zone]
+      : [];
+
   const chargerCourses = useCallback(async () => {
-    if (coursier?.disponibilite && utilisateur?.zone) {
-      setCourses(await getCourses({ zone: utilisateur.zone, statut: "en_attente" }));
+    if (coursier?.disponibilite && zonesDisponibilite.length > 0) {
+      setCourses(await getCourses({ zones: zonesDisponibilite, statut: "en_attente" }));
     } else {
       setCourses([]);
     }
-  }, [coursier?.disponibilite, utilisateur?.zone]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coursier?.disponibilite, JSON.stringify(zonesDisponibilite)]);
 
   useEffect(() => {
     setChargement(true);
     chargerCourses().finally(() => setChargement(false));
   }, [chargerCourses]);
 
+  // Rafraîchit la liste des demandes disponibles pendant que l'écran est
+  // actif, pour voir les nouvelles courses en temps quasi réel sans avoir à
+  // quitter puis rouvrir l'app.
   useFocusEffect(
     useCallback(() => {
       chargerCourses();
+      const intervalle = setInterval(chargerCourses, 5000);
+      return () => clearInterval(intervalle);
     }, [chargerCourses])
   );
 
@@ -73,7 +85,8 @@ export default function CoursierDashboard() {
     );
   }
 
-  const afficherListe = coursier?.statutVerification === "valide" && coursier?.disponibilite;
+  const afficherListe =
+    coursier?.statutVerification === "valide" && coursier?.disponibilite && zonesDisponibilite.length > 0;
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
@@ -116,10 +129,10 @@ export default function CoursierDashboard() {
             </View>
 
             <Carte className="flex-row items-center justify-between">
-              <View>
+              <View className="flex-1 pr-3">
                 <Text className="font-texte-medium text-colimo-neutre-fonce">Disponible</Text>
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
-                  Zone : {utilisateur?.zone ? ZONE_LABELS[utilisateur.zone] : "—"}
+                  Zones : {zonesDisponibilite.length > 0 ? zonesDisponibilite.map((z) => ZONE_LABELS[z]).join(", ") : "Aucune zone sélectionnée"}
                 </Text>
               </View>
               <Switch
@@ -138,8 +151,14 @@ export default function CoursierDashboard() {
               </Text>
             ) : !coursier?.disponibilite ? (
               <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
-                Passez disponible pour voir les courses de votre zone
+                Passez disponible pour voir les courses de vos zones
               </Text>
+            ) : zonesDisponibilite.length === 0 ? (
+              <Pressable onPress={() => router.push("/(coursier)/profil")}>
+                <Text className="mt-6 text-center font-texte text-sm text-colimo-rouge">
+                  Ajoutez des zones couvertes dans votre profil pour voir des demandes
+                </Text>
+              </Pressable>
             ) : null}
           </View>
         }

@@ -41,6 +41,7 @@ export interface CoursierRow {
   statut_verification: VerificationStatus;
   disponibilite: boolean;
   note_moyenne: number;
+  zones_couvertes: Zone[];
 }
 
 export interface CourseRow {
@@ -134,6 +135,7 @@ export function coursierFromRow(row: CoursierRow): Coursier {
     statutVerification: row.statut_verification,
     disponibilite: row.disponibilite,
     noteMoyenne: row.note_moyenne,
+    zonesCouvertes: row.zones_couvertes ?? [],
   };
 }
 

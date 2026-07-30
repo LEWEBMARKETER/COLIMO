@@ -45,6 +45,7 @@ export function patchCoursier(
     typePieceIdentite?: PieceIdentiteType;
     pieceIdentiteUrl?: string;
     typeVehicule?: VehiculeType;
+    zonesCouvertes?: Zone[];
   }
 ): Promise<Coursier> {
   return patchCoursierQuery(supabase, id, body);
@@ -57,7 +58,13 @@ export function updateUtilisateur(
   return updateUtilisateurQuery(supabase, id, body);
 }
 
-export function getCourses(params?: { zone?: Zone; statut?: CourseStatus; clientId?: string; coursierId?: string }): Promise<Course[]> {
+export function getCourses(params?: {
+  zone?: Zone;
+  zones?: Zone[];
+  statut?: CourseStatus;
+  clientId?: string;
+  coursierId?: string;
+}): Promise<Course[]> {
   return getCoursesQuery(supabase, params);
 }
 
@@ -207,6 +214,7 @@ export async function inscrireCoursier(input: {
     typeVehicule: input.typeVehicule,
     typePieceIdentite: input.typePieceIdentite,
     pieceIdentiteUrl,
+    zonesCouvertes: [input.zone],
   });
 
   return { utilisateur, coursier };

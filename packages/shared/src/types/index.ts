@@ -98,6 +98,7 @@ export interface Coursier {
   statutVerification: VerificationStatus;
   disponibilite: boolean;
   noteMoyenne: number;
+  zonesCouvertes: Zone[];
 }
 
 export interface Commercant {

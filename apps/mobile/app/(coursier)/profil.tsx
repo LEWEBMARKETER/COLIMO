@@ -3,6 +3,7 @@ import { ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { VehiculeType, Zone } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
+import ZoneSelectorMultiple from "@/components/ZoneSelectorMultiple";
 import PhotoPicker from "@/components/PhotoPicker";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
@@ -30,6 +31,7 @@ export default function ProfilCoursierScreen() {
   const [nom, setNom] = useState(utilisateur?.nom ?? "");
   const [telephone, setTelephone] = useState(utilisateur?.telephone ?? "");
   const [zone, setZone] = useState<Zone | null>(utilisateur?.zone ?? null);
+  const [zonesCouvertes, setZonesCouvertes] = useState<Zone[]>(coursier?.zonesCouvertes ?? []);
   const [typeVehicule, setTypeVehicule] = useState<VehiculeType | null>(coursier?.typeVehicule ?? null);
   const [photo, setPhoto] = useState<{ uri: string; mimeType: string } | null>(null);
   const [enregistrement, setEnregistrement] = useState(false);
@@ -48,7 +50,7 @@ export default function ProfilCoursierScreen() {
     try {
       const photoUrl = photo ? await uploaderAvatar(session.user.id, photo.uri, photo.mimeType) : undefined;
       await updateUtilisateur(session.user.id, { prenom, nom, telephone, zone, photoUrl });
-      await patchCoursier(coursier.id, { typeVehicule });
+      await patchCoursier(coursier.id, { typeVehicule, zonesCouvertes });
       await refreshProfile();
       setPhoto(null);
       setSucces(true);
@@ -85,7 +87,12 @@ export default function ProfilCoursierScreen() {
           placeholder="+241 XX XXX XXX"
         />
 
-        <ZoneSelector label="Zone d'activité" value={zone} onChange={setZone} />
+        <ZoneSelector label="Zone principale" value={zone} onChange={setZone} />
+        <ZoneSelectorMultiple
+          label="Zones couvertes (voir les demandes de ces zones)"
+          value={zonesCouvertes}
+          onChange={setZonesCouvertes}
+        />
         <GroupePastilles label="Type de véhicule" options={VEHICULES} value={typeVehicule} onChange={setTypeVehicule} />
 
         <Text className="mb-6 font-texte text-xs text-colimo-neutre-fonce/50">Email : {session?.user.email}</Text>

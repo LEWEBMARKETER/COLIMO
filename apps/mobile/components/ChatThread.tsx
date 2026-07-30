@@ -52,7 +52,7 @@ export default function ChatThread({ courseId, moiId }: ChatThreadProps) {
     charger();
     // Filet de secours si Realtime n'est pas disponible (ou pas encore
     // configuré côté Supabase) : on republie la conversation régulièrement.
-    const intervalle = setInterval(charger, 4000);
+    const intervalle = setInterval(charger, 2000);
 
     const channel = supabase
       .channel(`messages-course-${courseId}`)
