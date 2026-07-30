@@ -18,8 +18,8 @@ export default function LoginScreen() {
     try {
       await connecter(email, password);
       router.replace("/");
-    } catch {
-      setErreur("Email ou mot de passe incorrect.");
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Email ou mot de passe incorrect.");
     } finally {
       setEnvoiEnCours(false);
     }
