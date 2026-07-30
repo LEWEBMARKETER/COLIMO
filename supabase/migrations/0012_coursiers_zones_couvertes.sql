@@ -26,7 +26,11 @@ create policy "courses_select_client_coursier_or_admin"
     or (
       statut = 'en_attente'
       and current_user_type() = 'coursier'
-      and zone_depart = any (select zones_couvertes from coursiers where utilisateur_id = auth.uid())
+      and exists (
+        select 1 from coursiers c
+        where c.utilisateur_id = auth.uid()
+          and zone_depart = any (c.zones_couvertes)
+      )
     )
   );
 
@@ -42,7 +46,11 @@ create policy "courses_update_client_coursier_or_admin"
       statut = 'en_attente'
       and coursier_id is null
       and current_user_type() = 'coursier'
-      and zone_depart = any (select zones_couvertes from coursiers where utilisateur_id = auth.uid())
+      and exists (
+        select 1 from coursiers c
+        where c.utilisateur_id = auth.uid()
+          and zone_depart = any (c.zones_couvertes)
+      )
     )
   )
   with check (client_id = auth.uid() or coursier_id = auth.uid() or current_user_type() = 'admin');
