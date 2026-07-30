@@ -73,103 +73,112 @@ export default function CoursierDashboard() {
     );
   }
 
+  const afficherListe = coursier?.statutVerification === "valide" && coursier?.disponibilite;
+
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-      <View className="flex-1 px-6 py-6">
-        <Pressable onPress={() => router.push("/(coursier)/profil")} className="mb-4 flex-row items-center gap-3">
-          {utilisateur?.photoUrl ? (
-            <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
-          ) : (
-            <View className="h-12 w-12 items-center justify-center rounded-full bg-colimo-rouge-clair">
-              <Text className="font-titre text-colimo-rouge">{(utilisateur?.prenom ?? utilisateur?.nom ?? "?").charAt(0).toUpperCase()}</Text>
-            </View>
-          )}
-          <View className="flex-1">
-            <Text className="font-texte-medium text-colimo-neutre-fonce">
-              {utilisateur?.prenom ?? utilisateur?.nom ?? "Mon profil"}
-            </Text>
-            <Text className="font-texte text-xs text-colimo-neutre-fonce/50">Voir mon profil</Text>
-          </View>
-        </Pressable>
-
-        <View className="mb-4 flex-row gap-3">
-          <Carte className="flex-1">
-            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés</Text>
-            <Text className="mt-1 font-titre text-base text-colimo-rouge">{formatFCFA(gains)}</Text>
-          </Carte>
-          <Carte className="flex-1">
-            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>
-            <Text className="mt-1 font-titre text-base text-colimo-neutre-fonce">
-              {coursier?.noteMoyenne ? `${coursier.noteMoyenne} / 5` : "—"}
-            </Text>
-          </Carte>
-        </View>
-
-        <Carte className="mb-4 flex-row items-center justify-between">
-          <View>
-            <Text className="font-texte-medium text-colimo-neutre-fonce">Disponible</Text>
-            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
-              Zone : {utilisateur?.zone ? ZONE_LABELS[utilisateur.zone] : "—"}
-            </Text>
-          </View>
-          <Switch
-            value={coursier?.disponibilite ?? false}
-            onValueChange={toggleDisponibilite}
-            disabled={coursier?.statutVerification !== "valide"}
-          />
-        </Carte>
-
-        {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
-
-        {coursier?.statutVerification !== "valide" ? (
-          <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
-            Votre inscription est en cours de validation par COLIMO. Vous pourrez accepter des
-            courses une fois validé·e.
-          </Text>
-        ) : !coursier?.disponibilite ? (
-          <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
-            Passez disponible pour voir les courses de votre zone
-          </Text>
-        ) : (
-          <FlatList
-            data={courses}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{ gap: 12 }}
-            ListEmptyComponent={
-              <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
-                Aucune course disponible pour l&apos;instant
-              </Text>
-            }
-            renderItem={({ item }) => (
-              <Carte>
-                <Text className="font-texte-medium text-colimo-neutre-fonce">
-                  {item.adresseDepart} → {item.adresseArrivee}
-                </Text>
-                <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/70">{item.typeColis}</Text>
-                <View className="mt-3 flex-row items-center justify-between">
-                  <Text className="font-titre text-colimo-rouge">{formatFCFA(item.prix)}</Text>
-                  <Bouton label="Accepter" onPress={() => accepter(item)} className="px-6 py-2.5" />
+      <FlatList
+        className="flex-1 px-6"
+        contentContainerStyle={{ paddingTop: 24, paddingBottom: 32, gap: 12 }}
+        data={afficherListe ? courses : []}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <View className="mb-4">
+            <Pressable onPress={() => router.push("/(coursier)/profil")} className="mb-4 flex-row items-center gap-3">
+              {utilisateur?.photoUrl ? (
+                <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
+              ) : (
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-colimo-rouge-clair">
+                  <Text className="font-titre text-colimo-rouge">
+                    {(utilisateur?.prenom ?? utilisateur?.nom ?? "?").charAt(0).toUpperCase()}
+                  </Text>
                 </View>
+              )}
+              <View className="flex-1">
+                <Text className="font-texte-medium text-colimo-neutre-fonce">
+                  {utilisateur?.prenom ?? utilisateur?.nom ?? "Mon profil"}
+                </Text>
+                <Text className="font-texte text-xs text-colimo-neutre-fonce/50">Voir mon profil</Text>
+              </View>
+            </Pressable>
+
+            <View className="mb-4 flex-row gap-3">
+              <Carte className="flex-1">
+                <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés</Text>
+                <Text className="mt-1 font-titre text-base text-colimo-rouge">{formatFCFA(gains)}</Text>
               </Carte>
-            )}
-          />
+              <Carte className="flex-1">
+                <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>
+                <Text className="mt-1 font-titre text-base text-colimo-neutre-fonce">
+                  {coursier?.noteMoyenne ? `${coursier.noteMoyenne} / 5` : "—"}
+                </Text>
+              </Carte>
+            </View>
+
+            <Carte className="flex-row items-center justify-between">
+              <View>
+                <Text className="font-texte-medium text-colimo-neutre-fonce">Disponible</Text>
+                <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
+                  Zone : {utilisateur?.zone ? ZONE_LABELS[utilisateur.zone] : "—"}
+                </Text>
+              </View>
+              <Switch
+                value={coursier?.disponibilite ?? false}
+                onValueChange={toggleDisponibilite}
+                disabled={coursier?.statutVerification !== "valide"}
+              />
+            </Carte>
+
+            {erreur && <Text className="mt-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
+
+            {coursier?.statutVerification !== "valide" ? (
+              <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
+                Votre inscription est en cours de validation par COLIMO. Vous pourrez accepter des
+                courses une fois validé·e.
+              </Text>
+            ) : !coursier?.disponibilite ? (
+              <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
+                Passez disponible pour voir les courses de votre zone
+              </Text>
+            ) : null}
+          </View>
+        }
+        ListEmptyComponent={
+          afficherListe ? (
+            <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
+              Aucune course disponible pour l&apos;instant
+            </Text>
+          ) : null
+        }
+        renderItem={({ item }) => (
+          <Carte>
+            <Text className="font-texte-medium text-colimo-neutre-fonce">
+              {item.adresseDepart} → {item.adresseArrivee}
+            </Text>
+            <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/70">{item.typeColis}</Text>
+            <View className="mt-3 flex-row items-center justify-between">
+              <Text className="font-titre text-colimo-rouge">{formatFCFA(item.prix)}</Text>
+              <Bouton label="Accepter" onPress={() => accepter(item)} className="px-6 py-2.5" />
+            </View>
+          </Carte>
         )}
-
-        <Bouton
-          label="Mes gains et notes"
-          variante="contour"
-          onPress={() => router.push("/(coursier)/historique")}
-          className="mt-4 py-3"
-        />
-
-        <Pressable onPress={() => router.push("/faq")} className="mt-3 py-2">
-          <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">FAQ</Text>
-        </Pressable>
-
-        <Pressable onPress={handleDeconnexion} className="mt-1 py-2">
-          <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
-        </Pressable>
-      </View>
+        ListFooterComponent={
+          <View className="mt-4">
+            <Bouton
+              label="Mes gains et notes"
+              variante="contour"
+              onPress={() => router.push("/(coursier)/historique")}
+              className="py-3"
+            />
+            <Pressable onPress={() => router.push("/faq")} className="mt-3 py-2">
+              <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">FAQ</Text>
+            </Pressable>
+            <Pressable onPress={handleDeconnexion} className="mt-1 py-2">
+              <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
+            </Pressable>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }

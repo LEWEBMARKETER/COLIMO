@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, Text, View } from "react-native";
+import { ActivityIndicator, Linking, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { MODE_PAIEMENT_LABELS, ZONE_LABELS, formatFCFA, lienGoogleMaps, type Course } from "@colimo/shared";
@@ -62,7 +62,7 @@ export default function TrackScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-      <View className="flex-1 px-6 py-6">
+      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 32 }}>
         <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">{course.numeroCommande}</Text>
         <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">
           {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
@@ -151,7 +151,7 @@ export default function TrackScreen() {
             titre="Comment s'est passée la livraison ?"
           />
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
