@@ -2,18 +2,21 @@
 
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
-import { getCourses, getUtilisateurs, patchCourse } from "@/lib/api";
+import { getCourses, getLitiges, getUtilisateurs, patchCourse } from "@/lib/api";
 import {
   calculerFraisRetour,
   COURSE_STATUS_LABELS,
   formatFCFA,
+  LITIGE_MOTIF_LABELS,
   ZONE_LABELS,
   type Course,
+  type Litige,
   type Utilisateur,
 } from "@colimo/shared";
 
 export default function LitigesPage() {
   const [litiges, setLitiges] = useState<Course[]>([]);
+  const [rapports, setRapports] = useState<Litige[]>([]);
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [chargement, setChargement] = useState(true);
   const [enCours, setEnCours] = useState<string | null>(null);
@@ -24,9 +27,10 @@ export default function LitigesPage() {
 
   function charger() {
     setChargement(true);
-    return Promise.all([getCourses({ statut: "litige" }), getUtilisateurs()])
-      .then(([courses, users]) => {
+    return Promise.all([getCourses({ statut: "litige" }), getLitiges(), getUtilisateurs()])
+      .then(([courses, litigesDetails, users]) => {
         setLitiges(courses);
+        setRapports(litigesDetails);
         setUtilisateurs(users);
       })
       .finally(() => setChargement(false));
@@ -34,6 +38,11 @@ export default function LitigesPage() {
 
   function nomUtilisateur(id: string): string {
     return utilisateurs.find((u) => u.id === id)?.nom ?? "—";
+  }
+
+  function rapportPourCourse(courseId: string): Litige | undefined {
+    // Le plus récent signalement pour cette course (getLitiges trie déjà par date décroissante).
+    return rapports.find((r) => r.courseId === courseId);
   }
 
   async function resoudre(course: Course, action: "confirmer" | "annuler" | "retour") {
@@ -67,7 +76,9 @@ export default function LitigesPage() {
       <p className="mt-1 text-sm text-colimo-neutre-fonce/70">Courses signalées nécessitant une intervention</p>
 
       <div className="mt-6 space-y-3">
-        {litiges.map((course) => (
+        {litiges.map((course) => {
+          const rapport = rapportPourCourse(course.id);
+          return (
           <div key={course.id} className="rounded-2xl border border-colimo-neutre-clair bg-white p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -82,6 +93,40 @@ export default function LitigesPage() {
               </div>
               <StatutBadge statut={course.statut} label={COURSE_STATUS_LABELS[course.statut]} />
             </div>
+
+            {rapport ? (
+              <div className="mt-4 rounded-xl bg-colimo-fond p-4">
+                <p className="text-sm">
+                  <span className="font-medium text-colimo-neutre-fonce">Motif : </span>
+                  <span className="text-colimo-neutre-fonce/80">{LITIGE_MOTIF_LABELS[rapport.motif]}</span>
+                  <span className="ml-2 text-xs text-colimo-neutre-fonce/50">
+                    (signalé par {nomUtilisateur(rapport.auteurId)})
+                  </span>
+                </p>
+                {rapport.commentaire && (
+                  <p className="mt-2 text-sm text-colimo-neutre-fonce/80">« {rapport.commentaire} »</p>
+                )}
+                {rapport.preuveUrls.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {rapport.preuveUrls.map((url, index) => (
+                      <a
+                        key={url}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-md border border-colimo-neutre-clair bg-white px-2.5 py-1 text-xs text-colimo-rouge hover:underline"
+                      >
+                        Preuve {index + 1}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-colimo-neutre-fonce/50">
+                Aucun détail de signalement disponible pour ce litige.
+              </p>
+            )}
 
             <div className="mt-4 flex flex-wrap gap-2 border-t border-colimo-neutre-clair pt-4">
               <button
@@ -107,7 +152,8 @@ export default function LitigesPage() {
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {!chargement && litiges.length === 0 && (
           <p className="rounded-2xl border border-dashed border-colimo-neutre-clair p-8 text-center text-colimo-neutre-fonce/50">

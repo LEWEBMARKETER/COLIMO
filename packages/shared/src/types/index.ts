@@ -154,6 +154,33 @@ export interface Course {
   createdAt: string;
 }
 
+export type LitigeMotif =
+  | "produit_manquant"
+  | "produit_endommage"
+  | "erreur_commande"
+  | "comportement_inapproprie"
+  | "colis_non_recu"
+  | "autre";
+
+export const LITIGE_MOTIF_LABELS: Record<LitigeMotif, string> = {
+  produit_manquant: "Produit manquant",
+  produit_endommage: "Produit endommagé",
+  erreur_commande: "Erreur de commande",
+  comportement_inapproprie: "Comportement inapproprié",
+  colis_non_recu: "Colis non reçu",
+  autre: "Autre",
+};
+
+export interface Litige {
+  id: string;
+  courseId: string;
+  auteurId: string;
+  motif: LitigeMotif;
+  commentaire: string | null;
+  preuveUrls: string[];
+  createdAt: string;
+}
+
 export interface Message {
   id: string;
   courseId: string;

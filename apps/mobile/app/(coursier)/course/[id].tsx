@@ -31,7 +31,6 @@ export default function CourseDetailScreen() {
   const { session } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [maj, setMaj] = useState(false);
-  const [signalementEnCours, setSignalementEnCours] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -48,17 +47,6 @@ export default function CourseDetailScreen() {
       setCourse(misAJour);
     } finally {
       setMaj(false);
-    }
-  }
-
-  async function signalerProbleme() {
-    if (!course) return;
-    setSignalementEnCours(true);
-    try {
-      const misAJour = await patchCourse(course.id, { statut: "litige" });
-      setCourse(misAJour);
-    } finally {
-      setSignalementEnCours(false);
     }
   }
 
@@ -167,8 +155,7 @@ export default function CourseDetailScreen() {
           <Bouton
             label="Signaler un problème"
             variante="contour"
-            onPress={signalerProbleme}
-            chargement={signalementEnCours}
+            onPress={() => router.push(`/(coursier)/litige/${course.id}`)}
             className="mt-4 py-3"
           />
         )}

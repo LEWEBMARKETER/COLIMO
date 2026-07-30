@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   CategorieColis,
   CourseStatus,
+  LitigeMotif,
   ModePaiement,
   PieceIdentiteType,
   TypeClient,
@@ -15,6 +16,7 @@ import {
   commercantFromRow,
   coursierFromRow,
   courseFromRow,
+  litigeFromRow,
   messageFromRow,
   notationFromRow,
   utilisateurFromRow,
@@ -22,11 +24,12 @@ import {
   type CommercantRow,
   type CoursierRow,
   type CourseRow,
+  type LitigeRow,
   type MessageRow,
   type NotationRow,
   type UtilisateurRow,
 } from "./mappers";
-import type { CodePromo, Commercant, Coursier, Course, Message, Notation, Utilisateur } from "../types";
+import type { CodePromo, Commercant, Coursier, Course, Litige, Message, Notation, Utilisateur } from "../types";
 
 export interface CoursierAvecUtilisateur extends Coursier {
   utilisateur: Utilisateur;
@@ -251,6 +254,33 @@ export async function patchCourse(
   const { data, error } = await client.from("courses").update(update).eq("id", id).select().single();
   if (error) throw error;
   return courseFromRow(data as CourseRow);
+}
+
+export async function creerLitige(
+  client: SupabaseClient,
+  input: { courseId: string; auteurId: string; motif: LitigeMotif; commentaire?: string; preuveUrls?: string[] }
+): Promise<Litige> {
+  const { data, error } = await client
+    .from("litiges")
+    .insert({
+      course_id: input.courseId,
+      auteur_id: input.auteurId,
+      motif: input.motif,
+      commentaire: input.commentaire ?? null,
+      preuve_urls: input.preuveUrls ?? [],
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return litigeFromRow(data as LitigeRow);
+}
+
+export async function getLitiges(client: SupabaseClient, params?: { courseId?: string }): Promise<Litige[]> {
+  let requete = client.from("litiges").select("*").order("created_at", { ascending: false });
+  if (params?.courseId) requete = requete.eq("course_id", params.courseId);
+  const { data, error } = await requete;
+  if (error) throw error;
+  return (data as LitigeRow[]).map(litigeFromRow);
 }
 
 export async function getNotations(client: SupabaseClient, courseId: string): Promise<Notation[]> {

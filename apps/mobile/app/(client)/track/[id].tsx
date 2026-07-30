@@ -18,7 +18,6 @@ export default function TrackScreen() {
   const [course, setCourse] = useState<Course | null>(null);
   const [confirmationEnCours, setConfirmationEnCours] = useState(false);
   const [erreurConfirmation, setErreurConfirmation] = useState<string | null>(null);
-  const [signalementEnCours, setSignalementEnCours] = useState(false);
 
   async function confirmerReception() {
     if (!course) return;
@@ -31,17 +30,6 @@ export default function TrackScreen() {
       setErreurConfirmation("Impossible de confirmer la réception. Réessayez.");
     } finally {
       setConfirmationEnCours(false);
-    }
-  }
-
-  async function signalerProbleme() {
-    if (!course) return;
-    setSignalementEnCours(true);
-    try {
-      const misAJour = await patchCourse(course.id, { statut: "litige" });
-      setCourse(misAJour);
-    } finally {
-      setSignalementEnCours(false);
     }
   }
 
@@ -176,8 +164,7 @@ export default function TrackScreen() {
           <Bouton
             label="Signaler un problème"
             variante="contour"
-            onPress={signalerProbleme}
-            chargement={signalementEnCours}
+            onPress={() => router.push(`/(client)/litige/${course.id}`)}
             className="mt-4 py-3"
           />
         )}

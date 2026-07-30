@@ -2,6 +2,7 @@ import {
   creerCodePromo as creerCodePromoQuery,
   getCodesPromo as getCodesPromoQuery,
   getCommercantsBruts as getCommercantsBrutsQuery,
+  getLitiges as getLitigesQuery,
   getUtilisateurs as getUtilisateursQuery,
   getCoursiers as getCoursiersQuery,
   patchCodePromo as patchCodePromoQuery,
@@ -15,6 +16,7 @@ import {
   type Coursier,
   type Course,
   type CourseStatus,
+  type Litige,
   type TypeReductionPromo,
   type VerificationStatus,
   type Utilisateur,
@@ -88,4 +90,8 @@ export function creerCodePromo(input: {
 
 export function patchCodePromo(id: string, body: { actif?: boolean }): Promise<CodePromo> {
   return patchCodePromoQuery(createClient(), id, body);
+}
+
+export function getLitiges(): Promise<Litige[]> {
+  return getLitigesQuery(createClient());
 }
