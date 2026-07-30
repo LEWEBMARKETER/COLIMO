@@ -7,7 +7,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import Bouton from "@/components/ui/Bouton";
-import { getCourse } from "@/lib/api";
+import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function TrackScreen() {
@@ -119,6 +119,11 @@ export default function TrackScreen() {
             auteurId={session.user.id}
             destinataireId={course.coursierId}
             titre="Comment s'est passée la livraison ?"
+            onEnvoye={() => {
+              if (course.statut === "livree") {
+                patchCourse(course.id, { statut: "confirmee" }).then(setCourse);
+              }
+            }}
           />
         )}
       </View>

@@ -10,9 +10,10 @@ interface NotationFormProps {
   auteurId: string;
   destinataireId: string;
   titre: string;
+  onEnvoye?: () => void;
 }
 
-export default function NotationForm({ courseId, auteurId, destinataireId, titre }: NotationFormProps) {
+export default function NotationForm({ courseId, auteurId, destinataireId, titre, onEnvoye }: NotationFormProps) {
   const [chargement, setChargement] = useState(true);
   const [dejaNote, setDejaNote] = useState(false);
   const [note, setNote] = useState(0);
@@ -31,6 +32,7 @@ export default function NotationForm({ courseId, auteurId, destinataireId, titre
     try {
       await creerNotation({ courseId, auteurId, destinataireId, note, commentaire: commentaire.trim() || undefined });
       setDejaNote(true);
+      onEnvoye?.();
     } finally {
       setEnvoiEnCours(false);
     }
