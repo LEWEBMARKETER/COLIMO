@@ -1,17 +1,53 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { calculatePrice, isRouteDesservie, type Zone } from "@colimo/shared";
+import {
+  CATEGORIE_COLIS_LABELS,
+  MODE_PAIEMENT_LABELS,
+  calculatePrice,
+  calculerReductionPromo,
+  codePromoValide,
+  isRouteDesservie,
+  type CategorieColis,
+  type CodePromo,
+  type ModePaiement,
+  type Zone,
+} from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
+import BoutonPosition from "@/components/BoutonPosition";
 import PriceSummary from "@/components/PriceSummary";
+import Bouton from "@/components/ui/Bouton";
+import ChampTexte from "@/components/ui/ChampTexte";
+import GroupePastilles from "@/components/ui/GroupePastilles";
+import { creerCourse, getCodePromoParCode } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
+
+const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
+  valeur,
+  label: CATEGORIE_COLIS_LABELS[valeur],
+}));
+const MODES_PAIEMENT = Object.keys(MODE_PAIEMENT_LABELS) as ModePaiement[];
 
 export default function PublishScreen() {
+  const { session } = useAuth();
   const [depart, setDepart] = useState<Zone | null>(null);
   const [arrivee, setArrivee] = useState<Zone | null>(null);
-  const [typeColis, setTypeColis] = useState("");
+  const [adresseDepart, setAdresseDepart] = useState("");
+  const [adresseArrivee, setAdresseArrivee] = useState("");
+  const [coordDepart, setCoordDepart] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [coordArrivee, setCoordArrivee] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [categorieColis, setCategorieColis] = useState<CategorieColis | null>(null);
+  const [description, setDescription] = useState("");
+  const [modePaiement, setModePaiement] = useState<ModePaiement>("especes");
   const [prioritaire, setPrioritaire] = useState(false);
   const [valeurDeclaree, setValeurDeclaree] = useState("");
+  const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [codePromoTexte, setCodePromoTexte] = useState("");
+  const [codePromoApplique, setCodePromoApplique] = useState<CodePromo | null>(null);
+  const [verificationPromoEnCours, setVerificationPromoEnCours] = useState(false);
+  const [erreurPromo, setErreurPromo] = useState<string | null>(null);
 
   const pricing = useMemo(() => {
     if (!depart || !arrivee || !isRouteDesservie(depart, arrivee)) return null;
@@ -21,66 +57,173 @@ export default function PublishScreen() {
     });
   }, [depart, arrivee, prioritaire, valeurDeclaree]);
 
-  const peutPublier = Boolean(pricing && typeColis.trim());
+  const reduction =
+    pricing && codePromoApplique ? calculerReductionPromo(pricing.total, codePromoApplique) : 0;
 
-  // TODO: enregistrer la course via Supabase puis notifier les coursiers de la zone.
-  function handlePublier() {
-    router.push("/(client)/track/d1");
+  const peutPublier = Boolean(
+    pricing && categorieColis && adresseDepart.trim() && adresseArrivee.trim() && !envoiEnCours
+  );
+
+  async function appliquerCodePromo() {
+    if (!codePromoTexte.trim()) return;
+    setVerificationPromoEnCours(true);
+    setErreurPromo(null);
+    try {
+      const promo = await getCodePromoParCode(codePromoTexte.trim());
+      if (!promo || !codePromoValide(promo)) {
+        setErreurPromo("Code promo invalide ou expiré.");
+        setCodePromoApplique(null);
+        return;
+      }
+      setCodePromoApplique(promo);
+    } catch {
+      setErreurPromo("Impossible de vérifier ce code. Réessayez.");
+    } finally {
+      setVerificationPromoEnCours(false);
+    }
+  }
+
+  async function handlePublier() {
+    if (!depart || !arrivee || !pricing || !session || !categorieColis) return;
+    setEnvoiEnCours(true);
+    setErreur(null);
+    try {
+      const course = await creerCourse({
+        clientId: session.user.id,
+        adresseDepart,
+        adresseArrivee,
+        latitudeDepart: coordDepart?.latitude,
+        longitudeDepart: coordDepart?.longitude,
+        latitudeArrivee: coordArrivee?.latitude,
+        longitudeArrivee: coordArrivee?.longitude,
+        zoneDepart: depart,
+        zoneArrivee: arrivee,
+        typeColis: description,
+        categorieColis,
+        livraisonPrioritaire: prioritaire,
+        modePaiement,
+        valeurDeclaree: Number(valeurDeclaree) || undefined,
+        prix: Math.max(pricing.total - reduction, 0),
+        codePromoId: codePromoApplique?.id,
+        reductionPromo: reduction,
+      });
+      router.push(`/(client)/track/${course.id}`);
+    } catch {
+      setErreur("Impossible de publier la course. Réessayez.");
+    } finally {
+      setEnvoiEnCours(false);
+    }
   }
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <ScrollView className="flex-1 px-6 py-6">
         <ZoneSelector label="Départ" value={depart} onChange={setDepart} />
-        <ZoneSelector label="Arrivée" value={arrivee} onChange={setArrivee} />
-
-        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">Type de colis</Text>
-        <TextInput
-          value={typeColis}
-          onChangeText={setTypeColis}
-          placeholder="Documents, colis moyen, colis fragile..."
-          className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
+        <ChampTexte
+          label="Adresse de départ"
+          icone="radio-button-on-outline"
+          value={adresseDepart}
+          onChangeText={setAdresseDepart}
+          placeholder="Adresse précise de départ"
+        />
+        <BoutonPosition
+          label={coordDepart ? "Position de départ enregistrée ✓" : "Utiliser ma position actuelle"}
+          onLocalisation={(latitude, longitude) => setCoordDepart({ latitude, longitude })}
         />
 
-        <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">
-          Valeur déclarée (FCFA, optionnel)
-        </Text>
-        <TextInput
+        <ZoneSelector label="Arrivée" value={arrivee} onChange={setArrivee} />
+        <ChampTexte
+          label="Adresse d'arrivée"
+          icone="location-outline"
+          value={adresseArrivee}
+          onChangeText={setAdresseArrivee}
+          placeholder="Adresse précise d'arrivée"
+        />
+        <BoutonPosition
+          label={coordArrivee ? "Position d'arrivée enregistrée ✓" : "Utiliser ma position actuelle"}
+          onLocalisation={(latitude, longitude) => setCoordArrivee({ latitude, longitude })}
+        />
+
+        <GroupePastilles label="Type de colis" options={CATEGORIES} value={categorieColis} onChange={setCategorieColis} />
+
+        <ChampTexte
+          label="Description du colis"
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Ex : 2 plats + 1 boisson, colis fragile..."
+        />
+
+        <ChampTexte
+          label="Valeur déclarée (FCFA, optionnel)"
           value={valeurDeclaree}
           onChangeText={setValeurDeclaree}
           keyboardType="numeric"
           placeholder="0"
-          className="mb-4 rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3 text-colimo-neutre-fonce"
         />
 
         <View className="mb-4 flex-row items-center justify-between rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3">
-          <Text className="text-colimo-neutre-fonce">Livraison prioritaire (+1 000 FCFA)</Text>
+          <Text className="font-texte text-colimo-neutre-fonce">Livraison prioritaire (+1 000 FCFA)</Text>
           <Switch value={prioritaire} onValueChange={setPrioritaire} />
         </View>
 
+        <Text className="mb-2 font-texte-medium text-sm text-colimo-neutre-fonce">Mode de paiement</Text>
+        <View className="mb-4 flex-row gap-2">
+          {MODES_PAIEMENT.map((mode) => (
+            <Bouton
+              key={mode}
+              label={MODE_PAIEMENT_LABELS[mode]}
+              variante={modePaiement === mode ? "primaire" : "contour"}
+              onPress={() => setModePaiement(mode)}
+              className="flex-1 py-3"
+            />
+          ))}
+        </View>
+
         {depart && arrivee && !pricing && (
-          <Text className="mb-4 text-sm text-colimo-rouge">
+          <Text className="mb-4 font-texte text-sm text-colimo-rouge">
             Cette route n&apos;est pas encore desservie.
           </Text>
         )}
 
+        <View className="mb-4 flex-row items-end gap-2">
+          <ChampTexte
+            label="Code promo (optionnel)"
+            value={codePromoTexte}
+            onChangeText={(t) => {
+              setCodePromoTexte(t.toUpperCase());
+              setCodePromoApplique(null);
+              setErreurPromo(null);
+            }}
+            autoCapitalize="characters"
+            placeholder="Ex : BIENVENUE10"
+            className="mb-0 flex-1"
+          />
+          <Bouton
+            label={codePromoApplique ? "Appliqué ✓" : "Appliquer"}
+            variante="contour"
+            onPress={appliquerCodePromo}
+            disabled={!codePromoTexte.trim() || verificationPromoEnCours}
+            chargement={verificationPromoEnCours}
+            className="px-4 py-3"
+          />
+        </View>
+        {erreurPromo && <Text className="mb-4 -mt-2 font-texte text-xs text-colimo-rouge">{erreurPromo}</Text>}
+
         {pricing && (
           <View className="mb-6">
-            <PriceSummary pricing={pricing} />
+            <PriceSummary pricing={pricing} reduction={reduction} />
           </View>
         )}
 
-        <Pressable
-          disabled={!peutPublier}
+        {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
+
+        <Bouton
+          label="Publier la course"
           onPress={handlePublier}
-          className={`mb-8 rounded-xl py-4 ${peutPublier ? "bg-colimo-rouge" : "bg-colimo-neutre-clair"}`}
-        >
-          <Text
-            className={`text-center font-semibold ${peutPublier ? "text-white" : "text-colimo-neutre-fonce/50"}`}
-          >
-            Publier la course
-          </Text>
-        </Pressable>
+          disabled={!peutPublier}
+          chargement={envoiEnCours}
+          className="mb-8"
+        />
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,5 +1,5 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
 import { ZONE_LABELS, type Zone } from "@colimo/shared";
+import GroupePastilles from "./ui/GroupePastilles";
 
 const ZONES = Object.keys(ZONE_LABELS) as Zone[];
 
@@ -11,30 +11,12 @@ interface ZoneSelectorProps {
 
 export default function ZoneSelector({ label, value, onChange }: ZoneSelectorProps) {
   return (
-    <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-colimo-neutre-fonce">{label}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View className="flex-row gap-2">
-          {ZONES.map((zone) => {
-            const selectionne = value === zone;
-            return (
-              <Pressable
-                key={zone}
-                onPress={() => onChange(zone)}
-                className={`rounded-full border px-4 py-2 ${
-                  selectionne
-                    ? "border-colimo-rouge bg-colimo-rouge"
-                    : "border-colimo-neutre-clair bg-white"
-                }`}
-              >
-                <Text className={selectionne ? "text-white" : "text-colimo-neutre-fonce"}>
-                  {ZONE_LABELS[zone]}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </View>
+    <GroupePastilles
+      label={label}
+      options={ZONES.map((zone) => ({ valeur: zone, label: ZONE_LABELS[zone] }))}
+      value={value}
+      onChange={onChange}
+      defilement
+    />
   );
 }

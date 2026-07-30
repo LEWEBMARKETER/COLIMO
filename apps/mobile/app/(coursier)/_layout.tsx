@@ -12,6 +12,9 @@ export default function CoursierLayout() {
     >
       <Stack.Screen name="dashboard" options={{ title: "Courses disponibles" }} />
       <Stack.Screen name="course/[id]" options={{ title: "Détail de la course" }} />
+      <Stack.Screen name="historique" options={{ title: "Mes gains" }} />
+      <Stack.Screen name="profil" options={{ title: "Mon profil" }} />
+      <Stack.Screen name="chat/[courseId]" options={{ title: "Discussion" }} />
     </Stack>
   );
 }

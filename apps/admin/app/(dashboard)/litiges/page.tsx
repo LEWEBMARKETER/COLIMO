@@ -1,13 +1,27 @@
-import StatutBadge from "@/components/StatutBadge";
-import { courses, utilisateurs } from "@/lib/mockData";
-import { COURSE_STATUS_LABELS, formatFCFA, ZONE_LABELS } from "@colimo/shared";
+"use client";
 
-function nomUtilisateur(id: string): string {
-  return utilisateurs.find((u) => u.id === id)?.nom ?? "—";
-}
+import { useEffect, useState } from "react";
+import StatutBadge from "@/components/StatutBadge";
+import { getCourses, getUtilisateurs } from "@/lib/api";
+import { COURSE_STATUS_LABELS, formatFCFA, ZONE_LABELS, type Course, type Utilisateur } from "@colimo/shared";
 
 export default function LitigesPage() {
-  const litiges = courses.filter((c) => c.statut === "litige");
+  const [litiges, setLitiges] = useState<Course[]>([]);
+  const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    Promise.all([getCourses({ statut: "litige" }), getUtilisateurs()])
+      .then(([courses, users]) => {
+        setLitiges(courses);
+        setUtilisateurs(users);
+      })
+      .finally(() => setChargement(false));
+  }, []);
+
+  function nomUtilisateur(id: string): string {
+    return utilisateurs.find((u) => u.id === id)?.nom ?? "—";
+  }
 
   return (
     <div>
@@ -33,7 +47,7 @@ export default function LitigesPage() {
           </div>
         ))}
 
-        {litiges.length === 0 && (
+        {!chargement && litiges.length === 0 && (
           <p className="rounded-2xl border border-dashed border-colimo-neutre-clair p-8 text-center text-colimo-neutre-fonce/50">
             Aucun litige en cours
           </p>

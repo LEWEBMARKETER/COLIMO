@@ -8,6 +8,9 @@ export const colors = {
   neutreFonce: "#2B2622",
   neutreClair: "#F1EDEA",
   fond: "#FAF8F5",
+  // Sections sombres façon "vitrine" (page d'accueil, blocs de mise en avant)
+  noir: "#18140F",
+  noirClair: "#26201A",
 } as const;
 
 export const fonts = {

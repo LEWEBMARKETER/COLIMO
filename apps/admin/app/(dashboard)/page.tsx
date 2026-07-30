@@ -1,25 +1,90 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import StatCard from "@/components/StatCard";
-import { coursiers, courses } from "@/lib/mockData";
-import { formatFCFA } from "@colimo/shared";
+import { getCoursiers, getCourses, getUtilisateurs, type CoursierAvecUtilisateur } from "@/lib/api";
+import { formatFCFA, type Course, type Utilisateur } from "@colimo/shared";
+
+const STATUTS_EN_COURS = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
+const STATUTS_TERMINES = new Set(["livree", "confirmee"]);
+
+function estAujourdhui(dateIso: string): boolean {
+  const d = new Date(dateIso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+  );
+}
+
+function estCeMois(dateIso: string): boolean {
+  const d = new Date(dateIso);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
+
+function estRecent(dateIso: string, jours: number): boolean {
+  const d = new Date(dateIso).getTime();
+  return Date.now() - d <= jours * 24 * 60 * 60 * 1000;
+}
 
 export default function DashboardPage() {
-  const coursesAujourdHui = courses.length;
-  const coursiersActifs = coursiers.filter((c) => c.disponibilite).length;
-  const litigesOuverts = courses.filter((c) => c.statut === "litige").length;
-  const chiffreAffaires = courses
-    .filter((c) => c.statut === "confirmee")
+  const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
+
+  useEffect(() => {
+    getCoursiers().then(setCoursiers);
+    getCourses().then(setCourses);
+    getUtilisateurs().then(setUtilisateurs);
+  }, []);
+
+  const commandesJour = courses.filter((c) => estAujourdhui(c.createdAt)).length;
+  const commandesEnCours = courses.filter((c) => STATUTS_EN_COURS.has(c.statut)).length;
+  const commandesTerminees = courses.filter((c) => STATUTS_TERMINES.has(c.statut)).length;
+  const commandesAnnulees = courses.filter((c) => c.statut === "annulee").length;
+
+  const caJour = courses
+    .filter((c) => estAujourdhui(c.createdAt) && c.statut !== "annulee")
     .reduce((total, c) => total + c.prix, 0);
+  const caMois = courses
+    .filter((c) => estCeMois(c.createdAt) && c.statut !== "annulee")
+    .reduce((total, c) => total + c.prix, 0);
+
+  const nouveauxUtilisateurs = utilisateurs.filter((u) => estRecent(u.createdAt, 7)).length;
+  const coursiersActifs = coursiers.filter((c) => c.disponibilite).length;
+  const commercantsActifs = utilisateurs.filter(
+    (u) => u.type === "client" && u.typeClient === "commerce" && u.statut !== "suspendu"
+  ).length;
+  const litigesOuverts = courses.filter((c) => c.statut === "litige").length;
 
   return (
     <div>
       <h1 className="font-titre text-2xl font-semibold text-colimo-neutre-fonce">Dashboard</h1>
       <p className="mt-1 text-sm text-colimo-neutre-fonce/70">Vue d&apos;ensemble de l&apos;activité COLIMO</p>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Courses aujourd'hui" value={String(coursesAujourdHui)} />
-        <StatCard label="Coursiers disponibles" value={String(coursiersActifs)} />
+      <h2 className="mt-8 text-sm font-medium uppercase tracking-wide text-colimo-neutre-fonce/50">Aujourd&apos;hui</h2>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Commandes du jour" value={String(commandesJour)} />
+        <StatCard label="Chiffre d'affaires du jour" value={formatFCFA(caJour)} />
+        <StatCard label="Commandes en cours" value={String(commandesEnCours)} />
         <StatCard label="Litiges ouverts" value={String(litigesOuverts)} />
-        <StatCard label="Chiffre d'affaires confirmé" value={formatFCFA(chiffreAffaires)} />
+      </div>
+
+      <h2 className="mt-8 text-sm font-medium uppercase tracking-wide text-colimo-neutre-fonce/50">
+        Vue d&apos;ensemble
+      </h2>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Chiffre d'affaires du mois" value={formatFCFA(caMois)} />
+        <StatCard label="Commandes terminées" value={String(commandesTerminees)} />
+        <StatCard label="Commandes annulées" value={String(commandesAnnulees)} />
+        <StatCard label="Nouveaux utilisateurs (7 j)" value={String(nouveauxUtilisateurs)} />
+        <StatCard label="Coursiers actifs" value={String(coursiersActifs)} />
+        <StatCard label="Commerçants actifs" value={String(commercantsActifs)} />
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-dashed border-colimo-neutre-clair bg-white p-5 text-sm text-colimo-neutre-fonce/60">
+        À venir : carte temps réel des coursiers et taux de livraison dans les délais (nécessite de définir un
+        délai cible par course).
       </div>
     </div>
   );

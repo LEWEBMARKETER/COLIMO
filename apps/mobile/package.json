@@ -1,21 +1,31 @@
 {
   "name": "@colimo/mobile",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "expo-router/entry",
   "scripts": {
     "start": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start",
     "web": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --web",
+    "build:web": "mkdir -p node_modules/.cache/nativewind && npx tailwindcss --input ./global.css --output ./node_modules/.cache/nativewind/global.css.web.css --minify && EXPO_USE_METRO_WORKSPACE_ROOT=1 expo export -p web",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@babel/runtime": "^7.24.0",
     "@colimo/shared": "workspace:*",
+    "@expo/vector-icons": "^14.1.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@react-native/assets-registry": "0.74.87",
+    "@supabase/supabase-js": "^2.45.4",
     "expo": "~51.0.28",
     "expo-router": "~3.5.23",
     "expo-status-bar": "~1.12.1",
     "expo-linking": "~6.3.1",
     "expo-constants": "~16.0.2",
+    "expo-image-picker": "~15.0.7",
+    "expo-location": "~17.0.1",
+    "expo-font": "~11.10.3",
+    "@expo-google-fonts/poppins": "^0.2.3",
+    "@expo-google-fonts/inter": "^0.2.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.74.5",
@@ -28,6 +38,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@types/node": "^20.16.0",
     "@types/react": "~18.2.79",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.0"
