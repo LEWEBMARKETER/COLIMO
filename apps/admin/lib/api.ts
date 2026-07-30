@@ -46,7 +46,10 @@ export function updateUtilisateur(
   return updateUtilisateurQuery(createClient(), id, body);
 }
 
-export function patchCourse(id: string, body: { statut?: CourseStatus; coursierId?: string | null }): Promise<Course> {
+export function patchCourse(
+  id: string,
+  body: { statut?: CourseStatus; coursierId?: string | null; fraisRetour?: number | null }
+): Promise<Course> {
   return patchCourseQuery(createClient(), id, body);
 }
 

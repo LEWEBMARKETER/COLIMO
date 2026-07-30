@@ -10,12 +10,15 @@ import Bouton from "@/components/ui/Bouton";
 import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
+const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
+
 export default function TrackScreen() {
   const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [course, setCourse] = useState<Course | null>(null);
   const [confirmationEnCours, setConfirmationEnCours] = useState(false);
   const [erreurConfirmation, setErreurConfirmation] = useState<string | null>(null);
+  const [signalementEnCours, setSignalementEnCours] = useState(false);
 
   async function confirmerReception() {
     if (!course) return;
@@ -28,6 +31,17 @@ export default function TrackScreen() {
       setErreurConfirmation("Impossible de confirmer la réception. Réessayez.");
     } finally {
       setConfirmationEnCours(false);
+    }
+  }
+
+  async function signalerProbleme() {
+    if (!course) return;
+    setSignalementEnCours(true);
+    try {
+      const misAJour = await patchCourse(course.id, { statut: "litige" });
+      setCourse(misAJour);
+    } finally {
+      setSignalementEnCours(false);
     }
   }
 
@@ -149,6 +163,22 @@ export default function TrackScreen() {
             auteurId={session.user.id}
             destinataireId={course.coursierId}
             titre="Comment s'est passée la livraison ?"
+          />
+        )}
+
+        {course.statut === "litige" && (
+          <Text className="mt-6 text-center font-texte text-sm text-colimo-rouge">
+            Ce problème a été signalé à notre équipe, qui va vous contacter pour le résoudre.
+          </Text>
+        )}
+
+        {STATUTS_SIGNALABLES.has(course.statut) && (
+          <Bouton
+            label="Signaler un problème"
+            variante="contour"
+            onPress={signalerProbleme}
+            chargement={signalementEnCours}
+            className="mt-4 py-3"
           />
         )}
       </ScrollView>

@@ -241,11 +241,12 @@ export async function creerCourse(
 export async function patchCourse(
   client: SupabaseClient,
   id: string,
-  body: { statut?: CourseStatus; coursierId?: string | null }
+  body: { statut?: CourseStatus; coursierId?: string | null; fraisRetour?: number | null }
 ): Promise<Course> {
   const update: Record<string, unknown> = {};
   if (body.statut) update.statut = body.statut;
   if (body.coursierId !== undefined) update.coursier_id = body.coursierId;
+  if (body.fraisRetour !== undefined) update.frais_retour = body.fraisRetour;
 
   const { data, error } = await client.from("courses").update(update).eq("id", id).select().single();
   if (error) throw error;

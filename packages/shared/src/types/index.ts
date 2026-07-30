@@ -23,7 +23,8 @@ export type CourseStatus =
   | "livree"
   | "confirmee"
   | "annulee"
-  | "litige";
+  | "litige"
+  | "retournee";
 
 export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   en_attente: "En attente",
@@ -34,6 +35,7 @@ export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   confirmee: "Confirmée",
   annulee: "Annulée",
   litige: "Litige",
+  retournee: "Colis retourné",
 };
 
 export type PaymentOperator = "airtel_money" | "moov_money";
@@ -148,6 +150,7 @@ export interface Course {
   statut: CourseStatus;
   codePromoId?: string;
   reductionPromo: number;
+  fraisRetour: number | null;
   createdAt: string;
 }
 

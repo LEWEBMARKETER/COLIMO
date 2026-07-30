@@ -2,25 +2,63 @@
 
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
-import { getCourses, getUtilisateurs } from "@/lib/api";
-import { COURSE_STATUS_LABELS, formatFCFA, ZONE_LABELS, type Course, type Utilisateur } from "@colimo/shared";
+import { getCourses, getUtilisateurs, patchCourse } from "@/lib/api";
+import {
+  calculerFraisRetour,
+  COURSE_STATUS_LABELS,
+  formatFCFA,
+  ZONE_LABELS,
+  type Course,
+  type Utilisateur,
+} from "@colimo/shared";
 
 export default function LitigesPage() {
   const [litiges, setLitiges] = useState<Course[]>([]);
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [chargement, setChargement] = useState(true);
+  const [enCours, setEnCours] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getCourses({ statut: "litige" }), getUtilisateurs()])
+    charger();
+  }, []);
+
+  function charger() {
+    setChargement(true);
+    return Promise.all([getCourses({ statut: "litige" }), getUtilisateurs()])
       .then(([courses, users]) => {
         setLitiges(courses);
         setUtilisateurs(users);
       })
       .finally(() => setChargement(false));
-  }, []);
+  }
 
   function nomUtilisateur(id: string): string {
     return utilisateurs.find((u) => u.id === id)?.nom ?? "—";
+  }
+
+  async function resoudre(course: Course, action: "confirmer" | "annuler" | "retour") {
+    const confirmations: Record<typeof action, string> = {
+      confirmer: `Confirmer que la course ${course.numeroCommande} a bien été livrée ?`,
+      annuler: `Annuler la course ${course.numeroCommande} sans frais pour le client ?`,
+      retour: `Marquer le colis de ${course.numeroCommande} comme retourné ? Le client sera facturé ${formatFCFA(
+        calculerFraisRetour(course.prix)
+      )} (50% du prix de la course), conformément à la politique de retour.`,
+    };
+    if (!window.confirm(confirmations[action])) return;
+
+    setEnCours(course.id);
+    try {
+      if (action === "confirmer") {
+        await patchCourse(course.id, { statut: "confirmee" });
+      } else if (action === "annuler") {
+        await patchCourse(course.id, { statut: "annulee", fraisRetour: 0 });
+      } else {
+        await patchCourse(course.id, { statut: "retournee", fraisRetour: calculerFraisRetour(course.prix) });
+      }
+      setLitiges((prev) => prev.filter((c) => c.id !== course.id));
+    } finally {
+      setEnCours(null);
+    }
   }
 
   return (
@@ -31,10 +69,10 @@ export default function LitigesPage() {
       <div className="mt-6 space-y-3">
         {litiges.map((course) => (
           <div key={course.id} className="rounded-2xl border border-colimo-neutre-clair bg-white p-5">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="font-medium text-colimo-neutre-fonce">
-                  {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
+                  {course.numeroCommande} · {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
                 </p>
                 <p className="mt-1 text-sm text-colimo-neutre-fonce/70">
                   Client : {nomUtilisateur(course.clientId)} · Coursier :{" "}
@@ -43,6 +81,30 @@ export default function LitigesPage() {
                 <p className="mt-1 text-sm text-colimo-neutre-fonce/70">{formatFCFA(course.prix)}</p>
               </div>
               <StatutBadge statut={course.statut} label={COURSE_STATUS_LABELS[course.statut]} />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-colimo-neutre-clair pt-4">
+              <button
+                onClick={() => resoudre(course, "confirmer")}
+                disabled={enCours === course.id}
+                className="rounded-md bg-colimo-rouge px-3 py-1.5 text-xs font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-60"
+              >
+                Confirmer la livraison
+              </button>
+              <button
+                onClick={() => resoudre(course, "retour")}
+                disabled={enCours === course.id}
+                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
+              >
+                Colis retourné (50% au client — {formatFCFA(calculerFraisRetour(course.prix))})
+              </button>
+              <button
+                onClick={() => resoudre(course, "annuler")}
+                disabled={enCours === course.id}
+                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
+              >
+                Annuler sans frais
+              </button>
             </div>
           </div>
         ))}

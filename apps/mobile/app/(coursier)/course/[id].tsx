@@ -24,11 +24,14 @@ const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
   en_cours: "livree",
 };
 
+const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
+
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [maj, setMaj] = useState(false);
+  const [signalementEnCours, setSignalementEnCours] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -45,6 +48,17 @@ export default function CourseDetailScreen() {
       setCourse(misAJour);
     } finally {
       setMaj(false);
+    }
+  }
+
+  async function signalerProbleme() {
+    if (!course) return;
+    setSignalementEnCours(true);
+    try {
+      const misAJour = await patchCourse(course.id, { statut: "litige" });
+      setCourse(misAJour);
+    } finally {
+      setSignalementEnCours(false);
     }
   }
 
@@ -140,6 +154,22 @@ export default function CourseDetailScreen() {
             auteurId={session.user.id}
             destinataireId={course.clientId}
             titre="Comment s'est passée la course avec ce client ?"
+          />
+        )}
+
+        {course.statut === "litige" && (
+          <Text className="mt-6 text-center font-texte text-sm text-colimo-rouge">
+            Ce problème a été signalé à notre équipe, qui va vous contacter pour le résoudre.
+          </Text>
+        )}
+
+        {STATUTS_SIGNALABLES.has(course.statut) && (
+          <Bouton
+            label="Signaler un problème"
+            variante="contour"
+            onPress={signalerProbleme}
+            chargement={signalementEnCours}
+            className="mt-4 py-3"
           />
         )}
       </ScrollView>

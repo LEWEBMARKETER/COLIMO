@@ -98,7 +98,10 @@ export function getCodePromoParCode(code: string): Promise<CodePromo | null> {
   return getCodePromoParCodeQuery(supabase, code);
 }
 
-export function patchCourse(id: string, body: { statut?: CourseStatus; coursierId?: string | null }): Promise<Course> {
+export function patchCourse(
+  id: string,
+  body: { statut?: CourseStatus; coursierId?: string | null }
+): Promise<Course> {
   return patchCourseQuery(supabase, id, body);
 }
 

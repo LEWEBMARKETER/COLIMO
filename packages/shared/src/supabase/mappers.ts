@@ -66,6 +66,7 @@ export interface CourseRow {
   statut: CourseStatus;
   code_promo_id: string | null;
   reduction_promo: number;
+  frais_retour: number | null;
   created_at: string;
 }
 
@@ -162,6 +163,7 @@ export function courseFromRow(row: CourseRow): Course {
     statut: row.statut,
     codePromoId: row.code_promo_id ?? undefined,
     reductionPromo: row.reduction_promo,
+    fraisRetour: row.frais_retour,
     createdAt: row.created_at,
   };
 }
