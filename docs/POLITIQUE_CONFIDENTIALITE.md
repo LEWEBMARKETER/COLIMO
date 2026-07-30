@@ -1,9 +1,10 @@
 # Politique de Confidentialité — COLIMO
 
-_Dernière mise à jour : [à compléter à la publication]_
+_Dernière mise à jour : 30 juillet 2026_
 
-> **Brouillon à faire relire par un professionnel du droit** avant publication.
-> Les champs entre crochets [ ] sont à compléter.
+> Les champs entre crochets [ ] (raison sociale, contact, durées de
+> conservation précises) restent à compléter avec les informations légales
+> définitives de l'entreprise avant publication.
 
 ## 1. Qui sommes-nous
 
@@ -11,58 +12,69 @@ _Dernière mise à jour : [à compléter à la publication]_
 
 ## 2. Données collectées
 
+COLIMO peut collecter notamment :
+
 | Donnée | Utilisateurs concernés | Finalité |
 |---|---|---|
-| Nom (ou nom du commerce), prénom, numéro de téléphone, email | Client, Coursier | Création de compte, authentification, communication liée aux courses |
+| Nom (ou nom du commerce), prénom, numéro de téléphone, e-mail | Client, Coursier | Création et gestion du compte, authentification, communication liée aux courses |
 | Photo de profil ou logo du commerce | Client, Coursier | Personnalisation du profil affiché à l'autre partie |
 | Zone (Libreville, Akanda, Owendo, PK12, Bikélé, Ntoum) | Client, Coursier | Mise en relation géographique, affichage des courses disponibles |
 | Pièce d'identité (CNI, passeport, carte de séjour ou permis de conduire) | Coursier | Vérification de l'identité et validation de l'inscription |
-| Type de véhicule | Coursier | Information affichée au Client |
-| Adresses de départ/arrivée, catégorie et description du colis, valeur déclarée | Client | Exécution de la course, calcul du tarif |
-| Mode de paiement choisi (Mobile Money ou espèces) et, pour les paiements en espèces, l'historique des sommes dues et reversées par chaque Coursier | Client, Coursier | Traitement des paiements et suivi des reversements de commission |
+| Adresses de livraison, position GPS pendant les livraisons | Client, Coursier | Organisation et suivi des livraisons |
+| Historique des commandes et des paiements | Client, Coursier, Administrateur | Traitement des commandes, support, statistiques internes |
 | Messages échangés entre Client et Coursier pour une course | Client, Coursier | Coordination de la livraison |
-| Notes et commentaires laissés après une course | Client, Coursier | Fiabilité et qualité du service |
-| Historique des courses et statuts | Client, Coursier, Administrateur | Suivi du service, support, statistiques internes |
+| Notes, commentaires et pièces jointes (photos/vidéos) lors d'un litige | Client, Coursier | Gestion et médiation des litiges |
 
 Les pièces d'identité constituent une donnée sensible : leur collecte est strictement limitée à la vérification de l'inscription des Coursiers, n'est accessible qu'à l'équipe d'administration COLIMO, et n'est jamais partagée avec les Clients.
 
-## 3. Base légale et finalités
+## 3. Finalités
 
-Les données sont traitées sur la base de :
-- **l'exécution du contrat** (création de compte, mise en relation, exécution des courses) ;
-- **l'intérêt légitime** de COLIMO (sécurité de la plateforme, prévention de la fraude, amélioration du service) ;
-- **le consentement**, lorsque requis (par exemple pour des communications non essentielles).
+Les données sont utilisées pour :
 
-## 4. Destinataires des données
+- créer et gérer votre compte ;
+- traiter vos commandes ;
+- organiser les livraisons ;
+- assurer le service client, y compris la gestion des litiges ;
+- améliorer la qualité du service ;
+- prévenir la fraude et sécuriser la plateforme.
 
-- Les équipes internes de COLIMO habilitées (validation des coursiers, support, gestion des litiges)
-- Le Coursier assigné à une course a accès aux informations strictement nécessaires à la livraison (adresses, contact du Client, échanges de messagerie pour cette course) ; ces coordonnées ne sont partagées qu'une fois la course acceptée et uniquement pour la durée de celle-ci
-- Notre hébergeur technique (base de données, stockage des documents et infrastructure), lié par un contrat de sous-traitance
-- *À venir : l'opérateur ou l'agrégateur Mobile Money, lors de l'activation du paiement en ligne — les données de paiement transiteront alors par ce partenaire selon ses propres engagements de sécurité*
+## 4. Partage des données
 
-Aucune donnée n'est vendue à des tiers.
+Les données ne sont partagées qu'avec les intervenants nécessaires à l'exécution du service : le commerçant concerné, le coursier assigné à une course (informations strictement nécessaires à la livraison, uniquement pour la durée de celle-ci), les prestataires de paiement, ainsi que les prestataires techniques (hébergement, infrastructure) lorsque cela est nécessaire, liés par un contrat de sous-traitance.
 
-## 5. Durée de conservation
+**COLIMO ne vend pas les données personnelles de ses utilisateurs.**
 
-- Données de compte actif : conservées pendant la durée d'utilisation du service
-- Historique des courses : conservé **[durée à définir, ex. 3 ans]** à des fins de preuve et de gestion des litiges
-- Pièces justificatives des coursiers rejetés ou inactifs : supprimées après **[durée à définir]**
+## 5. Sécurité
 
-## 6. Sécurité
+COLIMO met en œuvre des mesures techniques et organisationnelles destinées à protéger les données contre tout accès non autorisé, perte, destruction ou divulgation, notamment un contrôle d'accès par rôle : un Client ne voit pas les données d'un autre Client, un Coursier ne voit pas les pièces d'identité des autres Coursiers, etc.
 
-Les données sont stockées sur une infrastructure sécurisée (base de données avec contrôle d'accès par rôle). L'accès aux informations est restreint selon le profil de l'utilisateur (un Client ne voit pas les données d'un autre Client, un Coursier ne voit pas les pièces d'identité des autres Coursiers, etc.).
+## 6. Durée de conservation
 
-## 7. Droits des utilisateurs
+Les données sont conservées pendant la durée nécessaire à la gestion des services et au respect des obligations légales applicables :
 
-Conformément à la réglementation applicable, chaque utilisateur dispose d'un droit d'accès, de rectification, de suppression et d'opposition concernant ses données personnelles. Ces droits peuvent être exercés en contactant **[email de contact]**.
+- Données de compte actif : conservées pendant la durée d'utilisation du service ;
+- Historique des courses et des litiges : conservé **[durée à définir, ex. 3 ans]** à des fins de preuve et de gestion des litiges ;
+- Pièces justificatives des coursiers rejetés ou inactifs : supprimées après **[durée à définir]**.
 
-## 8. Cookies et traceurs
+## 7. Vos droits
 
-*[À compléter selon les outils de mesure d'audience ou techniques utilisés sur la version web/PWA.]*
+Sous réserve de la législation applicable, vous pouvez demander :
 
-## 9. Modification de la politique
+- l'accès à vos données ;
+- la rectification de données inexactes ;
+- la suppression de votre compte lorsque cela est possible ;
+- la limitation de certains traitements ;
+- des informations sur l'utilisation de vos données.
 
-Cette politique peut être mise à jour ; les utilisateurs seront informés de toute modification substantielle.
+Les demandes peuvent être adressées au service client COLIMO : **[email de contact]**.
+
+## 8. Cookies et technologies similaires
+
+Le site web et l'application peuvent utiliser des cookies et technologies similaires afin d'améliorer l'expérience utilisateur, de mémoriser certaines préférences et de produire des statistiques de fréquentation.
+
+## 9. Évolution de la politique
+
+Cette politique de confidentialité peut être mise à jour afin de tenir compte des évolutions légales, techniques ou des services proposés. Les utilisateurs seront informés des modifications importantes.
 
 ## 10. Contact
 

@@ -158,6 +158,7 @@ export type LitigeMotif =
   | "produit_manquant"
   | "produit_endommage"
   | "erreur_commande"
+  | "retard_important"
   | "comportement_inapproprie"
   | "colis_non_recu"
   | "autre";
@@ -166,6 +167,7 @@ export const LITIGE_MOTIF_LABELS: Record<LitigeMotif, string> = {
   produit_manquant: "Produit manquant",
   produit_endommage: "Produit endommagé",
   erreur_commande: "Erreur de commande",
+  retard_important: "Retard important",
   comportement_inapproprie: "Comportement inapproprié",
   colis_non_recu: "Colis non reçu",
   autre: "Autre",

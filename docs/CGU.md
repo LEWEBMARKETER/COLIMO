@@ -1,77 +1,65 @@
 # Conditions Générales d'Utilisation — COLIMO
 
-_Dernière mise à jour : [à compléter à la publication]_
+_Dernière mise à jour : 30 juillet 2026_
 
-> **Brouillon à faire relire par un professionnel du droit** avant publication,
-> notamment au regard du droit gabonais des télécommunications, de la protection
-> des données et du commerce électronique. Les champs entre crochets [ ] sont à
-> compléter (raison sociale, contact, adresse).
+> Les champs entre crochets [ ] (raison sociale, adresse, contact) restent à
+> compléter avec les informations légales définitives de l'entreprise avant
+> publication.
 
 ## 1. Objet
 
-Les présentes Conditions Générales d'Utilisation (« CGU ») régissent l'accès et l'utilisation de la plateforme COLIMO (application mobile/web et back-office), éditée par **[Raison sociale de COLIMO]**, dont le siège est situé **[adresse]**, immatriculée sous le numéro **[RCCM/numéro d'identification]** (« COLIMO », « nous »).
+Les présentes Conditions Générales d'Utilisation (« CGU ») régissent l'utilisation de la plateforme COLIMO (application mobile/web et back-office), éditée par **[Raison sociale de COLIMO]**, dont le siège est situé **[adresse]**, immatriculée sous le numéro **[RCCM/numéro d'identification]** (« COLIMO », « nous »).
 
-COLIMO met en relation des **Clients** (particuliers ou commerces) souhaitant faire livrer un colis et des **Coursiers**, indépendants ou salariés d'une structure de livraison partenaire, sur les zones de Libreville, Akanda, Owendo, PK12, Bikélé et Ntoum (Gabon), susceptibles d'évoluer.
+COLIMO est une plateforme de mise en relation entre Clients (particuliers ou commerces), Commerçants et Coursiers, permettant de commander un produit, de demander une livraison ou de faire transporter tout type de colis et marchandises, sur les zones de Libreville, Akanda, Owendo, PK12, Bikélé et Ntoum (Gabon), susceptibles d'évoluer.
 
-L'utilisation de la plateforme implique l'acceptation pleine et entière des présentes CGU.
+## 2. Acceptation
 
-## 2. Comptes utilisateurs
+Toute utilisation de COLIMO implique l'acceptation pleine et entière des présentes conditions.
 
-### 2.1 Client
-Toute personne physique (Particulier) ou tout commerce (restaurant, pharmacie, boutique, e-commerçant) peut créer un compte Client pour publier des demandes de course. Un compte est personnel (ou propre au commerce déclaré) et non transférable.
+## 3. Création de compte
 
-### 2.2 Coursier
-Deux profils sont acceptés : les **coursiers indépendants**, qui s'inscrivent individuellement avec leur propre moyen de transport, et les **structures de livraison**, entreprises disposant de plusieurs coursiers salariés pouvant gérer leur équipe depuis la plateforme.
+L'utilisateur s'engage à fournir des informations exactes et à maintenir leur mise à jour (nom, téléphone, zone, documents). Un compte est personnel (ou propre au commerce déclaré) et non transférable. Toute fausse déclaration peut entraîner la suspension du compte.
 
-L'inscription en tant que Coursier nécessite la fourniture d'une pièce d'identité valide (CNI, passeport, carte de séjour ou permis de conduire) et, selon le véhicule utilisé, des documents complémentaires. Le compte n'est activé qu'après validation manuelle par l'équipe COLIMO. COLIMO se réserve le droit de refuser ou de suspendre une inscription, notamment en cas de documents invalides ou de manquements constatés ; le motif est communiqué en cas de refus.
+L'inscription en tant que Coursier nécessite en plus la fourniture d'une pièce d'identité valide (CNI, passeport, carte de séjour ou permis de conduire) et, selon le véhicule utilisé, des documents complémentaires. Le compte n'est activé qu'après validation manuelle par l'équipe COLIMO ; le motif est communiqué en cas de refus.
 
-### 2.3 Exactitude des informations
-L'utilisateur s'engage à fournir des informations exactes et à jour (nom, téléphone, zone, documents). Toute fausse déclaration peut entraîner la suspension du compte.
+## 4. Responsabilités
 
-## 3. Rôle de COLIMO et fonctionnement du service
+**COLIMO** agit en qualité de plateforme de mise en relation et s'engage à fournir un service fiable, tout en mettant en œuvre des moyens raisonnables pour assurer le bon déroulement des livraisons. COLIMO n'est pas elle-même transporteur.
 
-COLIMO agit en tant qu'intermédiaire technique mettant en relation Clients et Coursiers ; elle n'est pas elle-même transporteur. La responsabilité du bon déroulement matériel de la course incombe au Coursier ou à la structure qui l'exécute, dans les limites prévues par les présentes CGU.
+**Clients** — Les clients s'engagent à fournir des informations exactes, à être joignables et à respecter les conditions de paiement.
 
-1. Le Client publie une demande de course (adresses, catégorie et description du colis, options) ; un tarif est calculé automatiquement selon la grille en vigueur et un numéro de commande unique est attribué.
-2. La demande est proposée aux Coursiers disponibles dans la zone de départ ; si aucun n'accepte dans un délai donné, elle est élargie à un périmètre plus large.
-3. Le premier Coursier à accepter prend la course en charge.
-4. Le statut de la course est mis à jour à chaque étape (acceptée, en cours, livrée, confirmée) et un échange par messagerie est disponible entre Client et Coursier pour la durée de la course.
-5. Client et Coursier peuvent se noter mutuellement à l'issue de la course.
+**Commerçants** — Les commerçants sont responsables de la qualité, de la conformité et de la disponibilité des produits proposés.
 
-## 4. Tarification et paiement
+**Coursiers** — Les coursiers s'engagent à effectuer les livraisons avec professionnalisme, dans le respect des délais, des règles de sécurité et de la législation applicable au Gabon.
 
-Les tarifs affichés sur la plateforme sont indicatifs et calculés automatiquement selon la zone de départ et d'arrivée. Le Client voit le prix estimé avant de confirmer sa demande. Des options comme la livraison prioritaire ou l'assurance colis peuvent s'ajouter au tarif de base. COLIMO perçoit une commission sur chaque course, quel que soit le mode de paiement retenu.
+## 5. Paiements
 
-Deux modes de paiement sont proposés au moment de la confirmation de la demande :
+Deux modes de paiement sont proposés au moment de la confirmation de la commande : le paiement Mobile Money (Airtel Money ou Moov Money — *l'intégration technique de ce mode de paiement n'est pas encore active à ce stade ; les modalités seront précisées lors de son activation*), ou le paiement à la livraison, réglé directement au coursier en espèces. Lorsqu'une course est réglée en espèces, un contrat distinct entre COLIMO et le coursier (ou la structure de livraison) fixe le pourcentage de commission dû à la plateforme ainsi que les modalités de reversement.
 
-- **Mobile Money**, réglé directement dans l'application (Airtel Money ou Moov Money) — *l'intégration technique de ce mode de paiement n'est pas encore active à ce stade ; les modalités seront précisées lors de son activation.*
-- **Paiement à la livraison**, le Client règle directement le Coursier en espèces au moment de la remise du colis.
+## 6. Annulation
 
-## 5. Reversement des commissions sur paiement en espèces
+Les conditions d'annulation dépendent de l'état de la commande. Des frais peuvent s'appliquer lorsque la préparation ou la livraison a déjà commencé.
 
-Lorsqu'une course est réglée en espèces à la livraison, le Coursier (ou la structure de livraison) encaisse directement le montant auprès du Client. Un contrat distinct signé entre COLIMO et le Coursier (ou la structure) fixe le pourcentage de commission dû à la plateforme sur l'ensemble de ces courses, ainsi que la périodicité et les modalités de reversement. Le non-respect de ces obligations de reversement peut entraîner la suspension du compte, conformément aux termes dudit contrat.
+## 7. Retour de colis
 
-## 6. Obligations du Coursier
+Lorsqu'une livraison ne peut pas aboutir et que le colis doit être retourné, des frais de retour correspondant à **50% du prix de la course** restent à la charge du Client, le Coursier ayant déjà effectué le déplacement nécessaire à la tentative de livraison.
 
-Le Coursier s'engage à fournir des documents d'identité et de véhicule authentiques, à exécuter les courses acceptées avec diligence, à respecter les règles de sécurité routière en vigueur au Gabon, et à honorer ses obligations de reversement de commission telles que définies dans son contrat avec COLIMO.
+## 8. Litiges
 
-## 7. Obligations du Client
+Tout litige doit être déclaré depuis l'application dans les **24 heures** suivant la livraison. COLIMO met en œuvre une procédure de médiation avant toute autre démarche :
 
-Le Client s'engage à fournir des informations exactes sur le colis et l'adresse de livraison, à confirmer la réception dans des délais raisonnables, et à régler le montant dû selon le mode de paiement choisi lors de la commande. Les colis interdits, dangereux ou illicites sont proscrits.
+1. **Déclaration** — Le Client (ou le Coursier) ouvre un litige directement depuis la course et sélectionne un motif : produit manquant, produit endommagé, erreur de commande, retard important, comportement inapproprié, colis non reçu, ou autre.
+2. **Constitution du dossier** — Chaque partie peut transmettre photos, vidéos, captures d'écran ou commentaires à l'appui de sa déclaration.
+3. **Analyse** — Le service qualité COLIMO examine les éléments transmis et, si nécessaire, contacte les parties et vérifie l'historique et les statuts de la course.
+4. **Décision** — Une réponse est généralement apportée sous 48 à 72 heures ouvrables : confirmation de la livraison, remboursement total ou partiel, retour de colis (frais de 50% à la charge du Client conformément à l'article 7), ou rejet motivé de la demande.
 
-## 8. Responsabilité
+## 9. Suspension des comptes
 
-- COLIMO met tout en œuvre pour assurer la fiabilité de la mise en relation mais ne garantit pas la disponibilité continue du service.
-- Le Coursier est seul responsable de la bonne exécution de la livraison (respect des délais, intégrité du colis pendant le transport).
-- COLIMO n'est pas assureur du contenu transporté, sauf souscription à l'option assurance colis.
+COLIMO peut suspendre ou supprimer un compte en cas de fraude, d'usurpation d'identité, d'utilisation abusive de la plateforme, de manquement aux obligations de reversement de commission, ou de non-respect des présentes CGU.
 
-## 9. Litiges et modération
+## 10. Limitation de responsabilité
 
-En cas de litige (colis endommagé, perdu, retard, comportement), chaque partie peut signaler un problème via l'application. COLIMO examine l'historique de la course et les échanges, et peut intervenir pour arbitrer, rembourser, avertir ou suspendre un compte selon la gravité constatée. Les décisions de modération sont historisées. Le système de notation mutuelle après chaque course contribue également à identifier les comportements récurrents.
-
-## 10. Suspension et résiliation
-
-Tout utilisateur peut demander la suppression de son compte à tout moment. COLIMO peut également suspendre ou résilier un compte en cas de violation des présentes CGU, de fraude, de manquement aux obligations de reversement de commission, ou de signalement répété par d'autres utilisateurs.
+COLIMO ne pourra être tenue responsable des dommages résultant d'informations erronées fournies par les utilisateurs, de cas de force majeure ou de faits imputables aux partenaires, sauf faute qui lui serait directement imputable. COLIMO n'est pas assureur du contenu transporté, sauf souscription à l'option assurance colis.
 
 ## 11. Données personnelles
 
@@ -81,9 +69,9 @@ Le traitement des données personnelles est décrit dans notre [Politique de Con
 
 COLIMO peut modifier les présentes CGU à tout moment. Les utilisateurs seront informés de toute modification substantielle avant son entrée en vigueur.
 
-## 13. Droit applicable et litiges
+## 13. Droit applicable
 
-Les présentes CGU sont soumises au droit gabonais. En cas de litige, une solution amiable sera recherchée avant toute action contentieuse devant les juridictions compétentes du Gabon.
+Les présentes CGU sont régies par le droit en vigueur en République Gabonaise. En cas de litige persistant après la procédure de médiation, une solution amiable sera recherchée avant toute action contentieuse devant les juridictions compétentes du Gabon.
 
 ## 14. Contact
 
