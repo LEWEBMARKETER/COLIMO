@@ -19,6 +19,7 @@ export default function NotationForm({ courseId, auteurId, destinataireId, titre
   const [note, setNote] = useState(0);
   const [commentaire, setCommentaire] = useState("");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
 
   useEffect(() => {
     getNotations(courseId)
@@ -29,10 +30,13 @@ export default function NotationForm({ courseId, auteurId, destinataireId, titre
   async function envoyer() {
     if (note === 0) return;
     setEnvoiEnCours(true);
+    setErreur(null);
     try {
       await creerNotation({ courseId, auteurId, destinataireId, note, commentaire: commentaire.trim() || undefined });
       setDejaNote(true);
       onEnvoye?.();
+    } catch {
+      setErreur("Impossible d'envoyer votre avis. Réessayez.");
     } finally {
       setEnvoiEnCours(false);
     }
@@ -67,6 +71,7 @@ export default function NotationForm({ courseId, auteurId, destinataireId, titre
         multiline
         className="mt-3 min-h-[60px] rounded-xl border border-colimo-neutre-clair px-4 py-3 font-texte text-colimo-neutre-fonce"
       />
+      {erreur && <Text className="mt-2 font-texte text-xs text-colimo-rouge">{erreur}</Text>}
       <Bouton
         label="Envoyer la note"
         onPress={envoyer}

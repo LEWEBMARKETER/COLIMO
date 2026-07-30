@@ -14,6 +14,22 @@ export default function TrackScreen() {
   const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [course, setCourse] = useState<Course | null>(null);
+  const [confirmationEnCours, setConfirmationEnCours] = useState(false);
+  const [erreurConfirmation, setErreurConfirmation] = useState<string | null>(null);
+
+  async function confirmerReception() {
+    if (!course) return;
+    setConfirmationEnCours(true);
+    setErreurConfirmation(null);
+    try {
+      const misAJour = await patchCourse(course.id, { statut: "confirmee" });
+      setCourse(misAJour);
+    } catch {
+      setErreurConfirmation("Impossible de confirmer la réception. Réessayez.");
+    } finally {
+      setConfirmationEnCours(false);
+    }
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -113,17 +129,26 @@ export default function TrackScreen() {
           />
         )}
 
+        {course.statut === "livree" && (
+          <View className="mt-4">
+            <Bouton
+              label="Confirmer la réception du colis"
+              onPress={confirmerReception}
+              chargement={confirmationEnCours}
+              className="py-3"
+            />
+            {erreurConfirmation && (
+              <Text className="mt-2 text-center font-texte text-xs text-colimo-rouge">{erreurConfirmation}</Text>
+            )}
+          </View>
+        )}
+
         {(course.statut === "livree" || course.statut === "confirmee") && course.coursierId && session && (
           <NotationForm
             courseId={course.id}
             auteurId={session.user.id}
             destinataireId={course.coursierId}
             titre="Comment s'est passée la livraison ?"
-            onEnvoye={() => {
-              if (course.statut === "livree") {
-                patchCourse(course.id, { statut: "confirmee" }).then(setCourse);
-              }
-            }}
           />
         )}
       </View>
