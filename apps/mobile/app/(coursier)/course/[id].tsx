@@ -68,6 +68,11 @@ export default function CourseDetailScreen() {
           {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
         </Text>
         <Text className="mt-1 font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
+        {course.telephoneDestinataire && (
+          <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/70">
+            Destinataire : {course.telephoneDestinataire}
+          </Text>
+        )}
         <View className="mt-1 flex-row items-center justify-between">
           <Text className="font-titre text-colimo-rouge">{formatFCFA(course.prix)}</Text>
           <Text className="font-texte text-xs text-colimo-neutre-fonce/60">

@@ -70,11 +70,12 @@ export const CATEGORIE_COLIS_LABELS: Record<CategorieColis, string> = {
   autres: "Autres",
 };
 
-export type ModePaiement = "mobile_money" | "especes";
+export type ModePaiement = "mobile_money" | "especes" | "deja_paye";
 
 export const MODE_PAIEMENT_LABELS: Record<ModePaiement, string> = {
   mobile_money: "Mobile Money",
   especes: "Espèces à la livraison",
+  deja_paye: "Déjà payé (par le client au commerce)",
 };
 
 export interface Utilisateur {
@@ -103,6 +104,36 @@ export interface Coursier {
   zonesCouvertes: Zone[];
 }
 
+export type ActiviteCommerce =
+  | "restaurant"
+  | "pharmacie"
+  | "boutique"
+  | "ecommerce"
+  | "fleuriste"
+  | "patisserie"
+  | "librairie"
+  | "autre";
+
+export const ACTIVITE_COMMERCE_LABELS: Record<ActiviteCommerce, string> = {
+  restaurant: "Restaurant",
+  pharmacie: "Pharmacie",
+  boutique: "Boutique",
+  ecommerce: "E-commerce",
+  fleuriste: "Fleuriste",
+  patisserie: "Pâtisserie",
+  librairie: "Librairie",
+  autre: "Autre",
+};
+
+export type VolumeLivraisons = "un_a_cinq" | "cinq_a_dix" | "dix_a_vingt" | "plus_de_vingt";
+
+export const VOLUME_LIVRAISONS_LABELS: Record<VolumeLivraisons, string> = {
+  un_a_cinq: "1 à 5 par jour",
+  cinq_a_dix: "5 à 10 par jour",
+  dix_a_vingt: "10 à 20 par jour",
+  plus_de_vingt: "Plus de 20 par jour",
+};
+
 export interface Commercant {
   id: string;
   utilisateurId: string;
@@ -110,6 +141,10 @@ export interface Commercant {
   responsable: string | null;
   horaires: string | null;
   commissionTaux: number;
+  activite: ActiviteCommerce | null;
+  volumeQuotidien: VolumeLivraisons | null;
+  whatsapp: string | null;
+  photoCommerceUrl: string | null;
   createdAt: string;
 }
 
@@ -152,6 +187,14 @@ export interface Course {
   reductionPromo: number;
   fraisRetour: number | null;
   commission: number;
+  telephoneDestinataire: string | null;
+  poidsEstime: number | null;
+  programmeePour: string | null;
+  accepteeAt: string | null;
+  recupereeAt: string | null;
+  livreeAt: string | null;
+  confirmeeAt: string | null;
+  annuleeAt: string | null;
   createdAt: string;
 }
 

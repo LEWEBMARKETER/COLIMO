@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  ActiviteCommerce,
   CategorieColis,
   CourseStatus,
   LitigeMotif,
@@ -9,6 +10,7 @@ import type {
   TypeReductionPromo,
   VehiculeType,
   VerificationStatus,
+  VolumeLivraisons,
   Zone,
 } from "../types";
 import {
@@ -212,6 +214,9 @@ export async function creerCourse(
     prix: number;
     codePromoId?: string;
     reductionPromo?: number;
+    telephoneDestinataire?: string;
+    poidsEstime?: number;
+    programmeePour?: string;
   }
 ): Promise<Course> {
   const { data, error } = await client
@@ -234,6 +239,9 @@ export async function creerCourse(
       prix: input.prix,
       code_promo_id: input.codePromoId ?? null,
       reduction_promo: input.reductionPromo ?? 0,
+      telephone_destinataire: input.telephoneDestinataire ?? null,
+      poids_estime: input.poidsEstime ?? null,
+      programmee_pour: input.programmeePour ?? null,
     })
     .select()
     .single();
@@ -360,20 +368,31 @@ export async function getCommercantsBruts(client: SupabaseClient): Promise<Comme
 
 export async function upsertCommercant(
   client: SupabaseClient,
-  input: { utilisateurId: string; adresse?: string; responsable?: string; horaires?: string; commissionTaux?: number }
+  input: {
+    utilisateurId: string;
+    adresse?: string;
+    responsable?: string;
+    horaires?: string;
+    commissionTaux?: number;
+    activite?: ActiviteCommerce;
+    volumeQuotidien?: VolumeLivraisons;
+    whatsapp?: string;
+    photoCommerceUrl?: string;
+  }
 ): Promise<Commercant> {
+  const payload: Record<string, unknown> = { utilisateur_id: input.utilisateurId };
+  if (input.adresse !== undefined) payload.adresse = input.adresse;
+  if (input.responsable !== undefined) payload.responsable = input.responsable;
+  if (input.horaires !== undefined) payload.horaires = input.horaires;
+  if (input.commissionTaux !== undefined) payload.commission_taux = input.commissionTaux;
+  if (input.activite !== undefined) payload.activite = input.activite;
+  if (input.volumeQuotidien !== undefined) payload.volume_quotidien = input.volumeQuotidien;
+  if (input.whatsapp !== undefined) payload.whatsapp = input.whatsapp;
+  if (input.photoCommerceUrl !== undefined) payload.photo_commerce_url = input.photoCommerceUrl;
+
   const { data, error } = await client
     .from("commercants")
-    .upsert(
-      {
-        utilisateur_id: input.utilisateurId,
-        adresse: input.adresse ?? null,
-        responsable: input.responsable ?? null,
-        horaires: input.horaires ?? null,
-        commission_taux: input.commissionTaux ?? 0.15,
-      },
-      { onConflict: "utilisateur_id" }
-    )
+    .upsert(payload, { onConflict: "utilisateur_id" })
     .select()
     .single();
   if (error) throw error;

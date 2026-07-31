@@ -1,4 +1,5 @@
 import type {
+  ActiviteCommerce,
   CategorieColis,
   CodePromo,
   Commercant,
@@ -17,6 +18,7 @@ import type {
   UserType,
   VehiculeType,
   VerificationStatus,
+  VolumeLivraisons,
   Zone,
 } from "../types";
 
@@ -70,6 +72,14 @@ export interface CourseRow {
   reduction_promo: number;
   frais_retour: number | null;
   commission: number;
+  telephone_destinataire: string | null;
+  poids_estime: number | null;
+  programmee_pour: string | null;
+  acceptee_at: string | null;
+  recuperee_at: string | null;
+  livree_at: string | null;
+  confirmee_at: string | null;
+  annulee_at: string | null;
   created_at: string;
 }
 
@@ -80,6 +90,10 @@ export interface CommercantRow {
   responsable: string | null;
   horaires: string | null;
   commission_taux: number;
+  activite: ActiviteCommerce | null;
+  volume_quotidien: VolumeLivraisons | null;
+  whatsapp: string | null;
+  photo_commerce_url: string | null;
   created_at: string;
 }
 
@@ -178,6 +192,14 @@ export function courseFromRow(row: CourseRow): Course {
     reductionPromo: row.reduction_promo,
     fraisRetour: row.frais_retour,
     commission: row.commission,
+    telephoneDestinataire: row.telephone_destinataire,
+    poidsEstime: row.poids_estime,
+    programmeePour: row.programmee_pour,
+    accepteeAt: row.acceptee_at,
+    recupereeAt: row.recuperee_at,
+    livreeAt: row.livree_at,
+    confirmeeAt: row.confirmee_at,
+    annuleeAt: row.annulee_at,
     createdAt: row.created_at,
   };
 }
@@ -223,6 +245,10 @@ export function commercantFromRow(row: CommercantRow): Commercant {
     responsable: row.responsable,
     horaires: row.horaires,
     commissionTaux: row.commission_taux,
+    activite: row.activite,
+    volumeQuotidien: row.volume_quotidien,
+    whatsapp: row.whatsapp,
+    photoCommerceUrl: row.photo_commerce_url,
     createdAt: row.created_at,
   };
 }
