@@ -3,74 +3,75 @@ export interface SectionLegale {
   paragraphes: string[];
 }
 
-export const CGU_DERNIERE_MAJ = "Version provisoire — en attente de validation juridique";
+export const CGU_DERNIERE_MAJ = "Dernière mise à jour : 30 juillet 2026";
 
 export const CGU: SectionLegale[] = [
   {
     titre: "1. Objet",
     paragraphes: [
-      "Les présentes Conditions Générales d'Utilisation (« CGU ») régissent l'accès et l'utilisation de la plateforme COLIMO (application mobile/web et back-office).",
-      "COLIMO met en relation des Clients (particuliers ou commerces) souhaitant faire livrer un colis et des Coursiers, indépendants ou salariés d'une structure de livraison partenaire, sur les zones de Libreville, Akanda, Owendo, PK12, Bikélé et Ntoum (Gabon), susceptibles d'évoluer.",
-      "L'utilisation de la plateforme implique l'acceptation pleine et entière des présentes CGU.",
+      "Les présentes Conditions Générales d'Utilisation (« CGU ») régissent l'utilisation de la plateforme COLIMO (application mobile/web et back-office).",
+      "COLIMO est une plateforme de mise en relation entre Clients (particuliers ou commerces), Commerçants et Coursiers, permettant de commander un produit, de demander une livraison ou de faire transporter tout type de colis et marchandises, sur les zones de Libreville, Akanda, Owendo, PK12, Bikélé et Ntoum (Gabon), susceptibles d'évoluer.",
     ],
   },
   {
-    titre: "2. Comptes utilisateurs",
+    titre: "2. Acceptation",
+    paragraphes: ["Toute utilisation de COLIMO implique l'acceptation pleine et entière des présentes conditions."],
+  },
+  {
+    titre: "3. Création de compte",
     paragraphes: [
-      "Client : toute personne physique (particulier) ou tout commerce (restaurant, pharmacie, boutique, e-commerçant) peut créer un compte Client pour publier des demandes de course. Un compte est personnel (ou propre au commerce déclaré) et non transférable.",
-      "Coursier : deux profils sont acceptés, les coursiers indépendants qui s'inscrivent individuellement avec leur propre moyen de transport, et les structures de livraison, entreprises disposant de plusieurs coursiers salariés.",
-      "L'inscription en tant que Coursier nécessite la fourniture d'une pièce d'identité valide (CNI, passeport, carte de séjour ou permis de conduire). Le compte n'est activé qu'après validation manuelle par l'équipe COLIMO.",
-      "L'utilisateur s'engage à fournir des informations exactes et à jour. Toute fausse déclaration peut entraîner la suspension du compte.",
+      "L'utilisateur s'engage à fournir des informations exactes et à maintenir leur mise à jour (nom, téléphone, zone, documents). Un compte est personnel (ou propre au commerce déclaré) et non transférable. Toute fausse déclaration peut entraîner la suspension du compte.",
+      "L'inscription en tant que Coursier nécessite en plus la fourniture d'une pièce d'identité valide (CNI, passeport, carte de séjour ou permis de conduire) et, selon le véhicule utilisé, des documents complémentaires. Le compte n'est activé qu'après validation manuelle par l'équipe COLIMO ; le motif est communiqué en cas de refus.",
     ],
   },
   {
-    titre: "3. Rôle de COLIMO et fonctionnement du service",
+    titre: "4. Responsabilités",
     paragraphes: [
-      "COLIMO agit en tant qu'intermédiaire technique mettant en relation Clients et Coursiers ; elle n'est pas elle-même transporteur.",
-      "Le Client publie une demande de course (adresses, catégorie et description du colis, options) ; un tarif est calculé automatiquement et un numéro de commande unique est attribué. La demande est proposée aux Coursiers disponibles dans la zone de départ. Le statut de la course est mis à jour à chaque étape et un échange par messagerie est disponible entre Client et Coursier. Client et Coursier peuvent se noter mutuellement à l'issue de la course.",
+      "COLIMO agit en qualité de plateforme de mise en relation et s'engage à fournir un service fiable, tout en mettant en œuvre des moyens raisonnables pour assurer le bon déroulement des livraisons. COLIMO n'est pas elle-même transporteur.",
+      "Clients : les clients s'engagent à fournir des informations exactes, à être joignables et à respecter les conditions de paiement.",
+      "Commerçants : les commerçants sont responsables de la qualité, de la conformité et de la disponibilité des produits proposés.",
+      "Coursiers : les coursiers s'engagent à effectuer les livraisons avec professionnalisme, dans le respect des délais, des règles de sécurité et de la législation applicable au Gabon.",
     ],
   },
   {
-    titre: "4. Tarification et paiement",
+    titre: "5. Paiements",
     paragraphes: [
-      "Les tarifs affichés sont indicatifs et calculés automatiquement selon la zone de départ et d'arrivée. Le Client voit le prix estimé avant de confirmer sa demande. COLIMO perçoit une commission sur chaque course, quel que soit le mode de paiement retenu.",
-      "Deux modes de paiement sont proposés : Mobile Money (Airtel Money ou Moov Money — intégration technique pas encore active à ce stade) ou paiement à la livraison en espèces directement au Coursier.",
+      "Deux modes de paiement sont proposés au moment de la confirmation de la commande : le paiement Mobile Money (Airtel Money ou Moov Money — l'intégration technique de ce mode de paiement n'est pas encore active à ce stade), ou le paiement à la livraison, réglé directement au coursier en espèces.",
+      "Lorsqu'une course est réglée en espèces, un contrat distinct entre COLIMO et le coursier (ou la structure de livraison) fixe le pourcentage de commission dû à la plateforme ainsi que les modalités de reversement.",
     ],
   },
   {
-    titre: "5. Reversement des commissions sur paiement en espèces",
+    titre: "6. Annulation",
     paragraphes: [
-      "Lorsqu'une course est réglée en espèces, le Coursier (ou la structure) encaisse directement le montant. Un contrat distinct entre COLIMO et le Coursier fixe le pourcentage de commission dû à la plateforme et les modalités de reversement. Le non-respect de ces obligations peut entraîner la suspension du compte.",
+      "Les conditions d'annulation dépendent de l'état de la commande. Des frais peuvent s'appliquer lorsque la préparation ou la livraison a déjà commencé.",
     ],
   },
   {
-    titre: "6. Obligations du Coursier",
+    titre: "7. Retour de colis",
     paragraphes: [
-      "Fournir des documents d'identité et de véhicule authentiques, exécuter les courses acceptées avec diligence, respecter les règles de sécurité routière en vigueur au Gabon, et honorer ses obligations de reversement de commission.",
+      "Lorsqu'une livraison ne peut pas aboutir et que le colis doit être retourné, des frais de retour correspondant à 50% du prix de la course restent à la charge du Client, le Coursier ayant déjà effectué le déplacement nécessaire à la tentative de livraison.",
     ],
   },
   {
-    titre: "7. Obligations du Client",
+    titre: "8. Litiges",
     paragraphes: [
-      "Fournir des informations exactes sur le colis et l'adresse de livraison, confirmer la réception dans des délais raisonnables, régler le montant dû selon le mode de paiement choisi. Les colis interdits, dangereux ou illicites sont proscrits.",
+      "Tout litige doit être déclaré depuis l'application dans les 24 heures suivant la livraison. COLIMO met en œuvre une procédure de médiation avant toute autre démarche.",
+      "Déclaration : le Client (ou le Coursier) ouvre un litige directement depuis la course et sélectionne un motif (produit manquant, produit endommagé, erreur de commande, retard important, comportement inapproprié, colis non reçu, ou autre).",
+      "Constitution du dossier : chaque partie peut transmettre photos, vidéos, captures d'écran ou commentaires à l'appui de sa déclaration.",
+      "Analyse : le service qualité COLIMO examine les éléments transmis et, si nécessaire, contacte les parties et vérifie l'historique et les statuts de la course.",
+      "Décision : une réponse est généralement apportée sous 48 à 72 heures ouvrables : confirmation de la livraison, remboursement total ou partiel, retour de colis (frais de 50% à la charge du Client, cf. article 7), ou rejet motivé de la demande.",
     ],
   },
   {
-    titre: "8. Responsabilité",
+    titre: "9. Suspension des comptes",
     paragraphes: [
-      "COLIMO met tout en œuvre pour assurer la fiabilité de la mise en relation mais ne garantit pas la disponibilité continue du service. Le Coursier est seul responsable de la bonne exécution de la livraison. COLIMO n'est pas assureur du contenu transporté, sauf souscription à l'option assurance colis.",
+      "COLIMO peut suspendre ou supprimer un compte en cas de fraude, d'usurpation d'identité, d'utilisation abusive de la plateforme, de manquement aux obligations de reversement de commission, ou de non-respect des présentes CGU.",
     ],
   },
   {
-    titre: "9. Litiges et modération",
+    titre: "10. Limitation de responsabilité",
     paragraphes: [
-      "En cas de litige (colis endommagé, perdu, retard, comportement), chaque partie peut signaler un problème via l'application. COLIMO examine l'historique de la course et peut arbitrer, rembourser, avertir ou suspendre un compte selon la gravité constatée.",
-    ],
-  },
-  {
-    titre: "10. Suspension et résiliation",
-    paragraphes: [
-      "Tout utilisateur peut demander la suppression de son compte à tout moment. COLIMO peut suspendre ou résilier un compte en cas de violation des présentes CGU, de fraude, ou de manquement aux obligations de reversement de commission.",
+      "COLIMO ne pourra être tenue responsable des dommages résultant d'informations erronées fournies par les utilisateurs, de cas de force majeure ou de faits imputables aux partenaires, sauf faute qui lui serait directement imputable. COLIMO n'est pas assureur du contenu transporté, sauf souscription à l'option assurance colis.",
     ],
   },
   {
@@ -86,66 +87,69 @@ export const CGU: SectionLegale[] = [
   {
     titre: "13. Droit applicable",
     paragraphes: [
-      "Les présentes CGU sont soumises au droit gabonais. En cas de litige, une solution amiable sera recherchée avant toute action contentieuse devant les juridictions compétentes du Gabon.",
+      "Les présentes CGU sont régies par le droit en vigueur en République Gabonaise. En cas de litige persistant après la procédure de médiation, une solution amiable sera recherchée avant toute action contentieuse devant les juridictions compétentes du Gabon.",
     ],
   },
 ];
 
-export const CONFIDENTIALITE_DERNIERE_MAJ = "Version provisoire — en attente de validation juridique";
+export const CONFIDENTIALITE_DERNIERE_MAJ = "Dernière mise à jour : 30 juillet 2026";
 
 export const CONFIDENTIALITE: SectionLegale[] = [
   {
     titre: "1. Données collectées",
     paragraphes: [
-      "Nom (ou nom du commerce), prénom, téléphone, email — création de compte et communication liée aux courses.",
+      "Nom (ou nom du commerce), prénom, numéro de téléphone, e-mail — création et gestion du compte, authentification, communication liée aux courses.",
       "Photo de profil ou logo du commerce — personnalisation du profil affiché à l'autre partie.",
-      "Zone d'activité — mise en relation géographique.",
-      "Pièce d'identité (coursier) — vérification et validation de l'inscription.",
-      "Adresses, catégorie et description du colis, valeur déclarée — exécution de la course, calcul du tarif.",
-      "Mode de paiement choisi et, pour les paiements en espèces, l'historique des sommes dues et reversées — traitement des paiements.",
+      "Zone (Libreville, Akanda, Owendo, PK12, Bikélé, Ntoum) — mise en relation géographique, affichage des courses disponibles.",
+      "Pièce d'identité (CNI, passeport, carte de séjour ou permis de conduire, pour les Coursiers) — vérification de l'identité et validation de l'inscription.",
+      "Adresses de livraison, position GPS pendant les livraisons — organisation et suivi des livraisons.",
+      "Historique des commandes et des paiements — traitement des commandes, support, statistiques internes.",
       "Messages échangés entre Client et Coursier pour une course — coordination de la livraison.",
-      "Notes et commentaires laissés après une course, historique des courses — fiabilité et suivi du service.",
+      "Notes, commentaires et pièces jointes (photos/vidéos) lors d'un litige — gestion et médiation des litiges.",
       "Les pièces d'identité constituent une donnée sensible : leur collecte est strictement limitée à la vérification de l'inscription des Coursiers, n'est accessible qu'à l'équipe d'administration COLIMO, et n'est jamais partagée avec les Clients.",
     ],
   },
   {
-    titre: "2. Base légale et finalités",
+    titre: "2. Finalités",
     paragraphes: [
-      "Les données sont traitées sur la base de l'exécution du contrat (création de compte, mise en relation, exécution des courses), de l'intérêt légitime de COLIMO (sécurité, prévention de la fraude, amélioration du service), et du consentement lorsque requis.",
+      "Les données sont utilisées pour créer et gérer votre compte, traiter vos commandes, organiser les livraisons, assurer le service client (y compris la gestion des litiges), améliorer la qualité du service, et prévenir la fraude et sécuriser la plateforme.",
     ],
   },
   {
-    titre: "3. Destinataires des données",
+    titre: "3. Partage des données",
     paragraphes: [
-      "Les équipes internes de COLIMO habilitées (validation des coursiers, support, gestion des litiges).",
-      "Le Coursier assigné à une course a accès aux informations strictement nécessaires à la livraison, uniquement pour la durée de celle-ci.",
-      "Notre hébergeur technique (base de données, stockage des documents et infrastructure), lié par un contrat de sous-traitance.",
-      "À venir : l'opérateur ou l'agrégateur Mobile Money, lors de l'activation du paiement en ligne.",
-      "Aucune donnée n'est vendue à des tiers.",
+      "Les données ne sont partagées qu'avec les intervenants nécessaires à l'exécution du service : le commerçant concerné, le coursier assigné à une course (informations strictement nécessaires à la livraison, uniquement pour la durée de celle-ci), les prestataires de paiement, ainsi que les prestataires techniques (hébergement, infrastructure) lorsque cela est nécessaire, liés par un contrat de sous-traitance.",
+      "COLIMO ne vend pas les données personnelles de ses utilisateurs.",
     ],
   },
   {
-    titre: "4. Durée de conservation",
+    titre: "4. Sécurité",
     paragraphes: [
-      "Les données de compte actif sont conservées pendant la durée d'utilisation du service. L'historique des courses est conservé à des fins de preuve et de gestion des litiges. Les pièces justificatives des coursiers rejetés ou inactifs sont supprimées après un délai défini.",
+      "COLIMO met en œuvre des mesures techniques et organisationnelles destinées à protéger les données contre tout accès non autorisé, perte, destruction ou divulgation, notamment un contrôle d'accès par rôle : un Client ne voit pas les données d'un autre Client, un Coursier ne voit pas les pièces d'identité des autres Coursiers, etc.",
     ],
   },
   {
-    titre: "5. Sécurité",
+    titre: "5. Durée de conservation",
     paragraphes: [
-      "Les données sont stockées sur une infrastructure sécurisée avec contrôle d'accès par rôle. L'accès aux informations est restreint selon le profil de l'utilisateur.",
+      "Les données sont conservées pendant la durée nécessaire à la gestion des services et au respect des obligations légales applicables : les données de compte actif pendant la durée d'utilisation du service, et l'historique des courses et des litiges à des fins de preuve et de gestion des litiges.",
     ],
   },
   {
-    titre: "6. Droits des utilisateurs",
+    titre: "6. Vos droits",
     paragraphes: [
-      "Conformément à la réglementation applicable, chaque utilisateur dispose d'un droit d'accès, de rectification, de suppression et d'opposition concernant ses données personnelles.",
+      "Sous réserve de la législation applicable, vous pouvez demander l'accès à vos données, la rectification de données inexactes, la suppression de votre compte lorsque cela est possible, la limitation de certains traitements, ou des informations sur l'utilisation de vos données. Les demandes peuvent être adressées au service client COLIMO.",
     ],
   },
   {
-    titre: "7. Modification de la politique",
+    titre: "7. Cookies et technologies similaires",
     paragraphes: [
-      "Cette politique peut être mise à jour ; les utilisateurs seront informés de toute modification substantielle.",
+      "Le site web et l'application peuvent utiliser des cookies et technologies similaires afin d'améliorer l'expérience utilisateur, de mémoriser certaines préférences et de produire des statistiques de fréquentation.",
+    ],
+  },
+  {
+    titre: "8. Évolution de la politique",
+    paragraphes: [
+      "Cette politique de confidentialité peut être mise à jour afin de tenir compte des évolutions légales, techniques ou des services proposés. Les utilisateurs seront informés des modifications importantes.",
     ],
   },
 ];
