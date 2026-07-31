@@ -151,6 +151,7 @@ export interface Course {
   codePromoId?: string;
   reductionPromo: number;
   fraisRetour: number | null;
+  commission: number;
   createdAt: string;
 }
 

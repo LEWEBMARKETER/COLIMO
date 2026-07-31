@@ -49,6 +49,13 @@ export default function DashboardPage() {
   const caMois = courses
     .filter((c) => estCeMois(c.createdAt) && c.statut !== "annulee")
     .reduce((total, c) => total + c.prix, 0);
+  // Contrairement au CA ci-dessus (qui inclut les courses encore en cours),
+  // la commission n'est comptée que sur les courses confirmées : c'est le
+  // seul moment où la livraison — et donc la commission — est effectivement
+  // réalisée, quel que soit le mode de paiement (espèces ou mobile money).
+  const commissionsMois = courses
+    .filter((c) => estCeMois(c.createdAt) && c.statut === "confirmee")
+    .reduce((total, c) => total + c.commission, 0);
 
   const nouveauxUtilisateurs = utilisateurs.filter((u) => estRecent(u.createdAt, 7)).length;
   const coursiersActifs = coursiers.filter((c) => c.disponibilite).length;
@@ -75,6 +82,7 @@ export default function DashboardPage() {
       </h2>
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Chiffre d'affaires du mois" value={formatFCFA(caMois)} />
+        <StatCard label="Commissions du mois" value={formatFCFA(commissionsMois)} />
         <StatCard label="Commandes terminées" value={String(commandesTerminees)} />
         <StatCard label="Commandes annulées" value={String(commandesAnnulees)} />
         <StatCard label="Nouveaux utilisateurs (7 j)" value={String(nouveauxUtilisateurs)} />

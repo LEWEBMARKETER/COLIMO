@@ -12,6 +12,8 @@ function lignesExport(courses: Course[], utilisateurs: Utilisateur[]) {
     Départ: ZONE_LABELS[c.zoneDepart],
     Arrivée: ZONE_LABELS[c.zoneArrivee],
     Prix: c.prix,
+    Commission: c.commission,
+    "Net coursier": c.prix - c.commission,
     Paiement: MODE_PAIEMENT_LABELS[c.modePaiement],
     Statut: COURSE_STATUS_LABELS[c.statut],
     Date: new Date(c.createdAt).toLocaleDateString("fr-FR"),

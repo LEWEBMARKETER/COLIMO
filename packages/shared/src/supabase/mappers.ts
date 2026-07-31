@@ -69,6 +69,7 @@ export interface CourseRow {
   code_promo_id: string | null;
   reduction_promo: number;
   frais_retour: number | null;
+  commission: number;
   created_at: string;
 }
 
@@ -176,6 +177,7 @@ export function courseFromRow(row: CourseRow): Course {
     codePromoId: row.code_promo_id ?? undefined,
     reductionPromo: row.reduction_promo,
     fraisRetour: row.frais_retour,
+    commission: row.commission,
     createdAt: row.created_at,
   };
 }

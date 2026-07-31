@@ -148,6 +148,9 @@ function CoursesContenu() {
                 <td className="px-4 py-3">{CATEGORIE_COLIS_LABELS[course.categorieColis]}</td>
                 <td className="px-4 py-3">
                   {formatFCFA(course.prix)}
+                  <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">
+                    Commission : {formatFCFA(course.commission)}
+                  </p>
                   {course.fraisRetour !== null && (
                     <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">
                       Retour : {formatFCFA(course.fraisRetour)}
