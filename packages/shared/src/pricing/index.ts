@@ -89,6 +89,14 @@ export function calculerCommission(prix: number): number {
   return Math.round(prix * COMMISSION_PLATEFORME_TAUX);
 }
 
+// Politique de retour colis : si la livraison échoue et que le colis doit
+// être retourné, le client assume 50% du montant de la course.
+export const TAUX_FRAIS_RETOUR_COLIS = 0.5;
+
+export function calculerFraisRetour(prix: number): number {
+  return Math.round(prix * TAUX_FRAIS_RETOUR_COLIS);
+}
+
 export interface CodePromoValidation {
   actif: boolean;
   dateDebut: string | null;

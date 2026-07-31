@@ -11,15 +11,17 @@ import { useAuth } from "@/lib/AuthContext";
 export default function CoursierDashboard() {
   const { session, utilisateur, coursier, refreshProfile, signOut } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
-  const [gains, setGains] = useState(0);
+  const [gainsBruts, setGainsBruts] = useState(0);
+  const [gainsNets, setGainsNets] = useState(0);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
     getCourses({ coursierId: session.user.id }).then((mesCourses) => {
-      const total = mesCourses.filter((c) => c.statut === "confirmee").reduce((s, c) => s + c.prix, 0);
-      setGains(total);
+      const confirmees = mesCourses.filter((c) => c.statut === "confirmee");
+      setGainsBruts(confirmees.reduce((s, c) => s + c.prix, 0));
+      setGainsNets(confirmees.reduce((s, c) => s + (c.prix - c.commission), 0));
     });
   }, [session]);
 
@@ -117,8 +119,11 @@ export default function CoursierDashboard() {
 
             <View className="mb-4 flex-row gap-3">
               <Carte className="flex-1">
-                <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés</Text>
-                <Text className="mt-1 font-titre text-base text-colimo-rouge">{formatFCFA(gains)}</Text>
+                <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés (net)</Text>
+                <Text className="mt-1 font-titre text-base text-colimo-rouge">{formatFCFA(gainsNets)}</Text>
+                <Text className="mt-0.5 font-texte text-[10px] text-colimo-neutre-fonce/50">
+                  Brut {formatFCFA(gainsBruts)} · Commission {formatFCFA(gainsBruts - gainsNets)}
+                </Text>
               </Carte>
               <Carte className="flex-1">
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>

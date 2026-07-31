@@ -23,7 +23,8 @@ export type CourseStatus =
   | "livree"
   | "confirmee"
   | "annulee"
-  | "litige";
+  | "litige"
+  | "retournee";
 
 export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   en_attente: "En attente",
@@ -34,6 +35,7 @@ export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   confirmee: "Confirmée",
   annulee: "Annulée",
   litige: "Litige",
+  retournee: "Colis retourné",
 };
 
 export type PaymentOperator = "airtel_money" | "moov_money";
@@ -148,6 +150,37 @@ export interface Course {
   statut: CourseStatus;
   codePromoId?: string;
   reductionPromo: number;
+  fraisRetour: number | null;
+  commission: number;
+  createdAt: string;
+}
+
+export type LitigeMotif =
+  | "produit_manquant"
+  | "produit_endommage"
+  | "erreur_commande"
+  | "retard_important"
+  | "comportement_inapproprie"
+  | "colis_non_recu"
+  | "autre";
+
+export const LITIGE_MOTIF_LABELS: Record<LitigeMotif, string> = {
+  produit_manquant: "Produit manquant",
+  produit_endommage: "Produit endommagé",
+  erreur_commande: "Erreur de commande",
+  retard_important: "Retard important",
+  comportement_inapproprie: "Comportement inapproprié",
+  colis_non_recu: "Colis non reçu",
+  autre: "Autre",
+};
+
+export interface Litige {
+  id: string;
+  courseId: string;
+  auteurId: string;
+  motif: LitigeMotif;
+  commentaire: string | null;
+  preuveUrls: string[];
   createdAt: string;
 }
 

@@ -3,9 +3,18 @@
 import { useEffect, useState } from "react";
 import StatCard from "@/components/StatCard";
 import { getCourses, getUtilisateurs } from "@/lib/api";
-import { formatFCFA, ZONE_LABELS, type Course, type Utilisateur, type Zone } from "@colimo/shared";
+import {
+  formatFCFA,
+  MODE_PAIEMENT_LABELS,
+  ZONE_LABELS,
+  type Course,
+  type ModePaiement,
+  type Utilisateur,
+  type Zone,
+} from "@colimo/shared";
 
 const ZONES = Object.keys(ZONE_LABELS) as Zone[];
+const MODES_PAIEMENT = Object.keys(MODE_PAIEMENT_LABELS) as ModePaiement[];
 
 export default function StatistiquesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -22,6 +31,23 @@ export default function StatistiquesPage() {
   const parZone = ZONES.map((zone) => ({ zone, count: courses.filter((c) => c.zoneDepart === zone).length })).filter(
     (z) => z.count > 0
   );
+
+  // Chiffre d'affaires et commissions ne portent que sur les courses
+  // effectivement confirmées par le client (livraison réellement payée),
+  // quel que soit le mode de paiement retenu (espèces ou mobile money).
+  const coursesConfirmees = courses.filter((c) => c.statut === "confirmee");
+  const chiffreAffairesTotal = coursesConfirmees.reduce((s, c) => s + c.prix, 0);
+  const commissionsGenerees = coursesConfirmees.reduce((s, c) => s + c.commission, 0);
+  const gainsCoursiersNets = chiffreAffairesTotal - commissionsGenerees;
+
+  const parModePaiement = MODES_PAIEMENT.map((mode) => {
+    const sousEnsemble = coursesConfirmees.filter((c) => c.modePaiement === mode);
+    return {
+      mode,
+      ca: sousEnsemble.reduce((s, c) => s + c.prix, 0),
+      commission: sousEnsemble.reduce((s, c) => s + c.commission, 0),
+    };
+  });
 
   return (
     <div>
@@ -52,6 +78,32 @@ export default function StatistiquesPage() {
         <StatCard label="Courses totales" value={String(totalCourses)} />
         <StatCard label="Prix moyen" value={formatFCFA(prixMoyen)} />
         <StatCard label="Zones actives" value={String(parZone.length)} />
+      </div>
+
+      <h2 className="mt-8 text-sm font-medium uppercase tracking-wide text-colimo-neutre-fonce/50">
+        Revenus (courses confirmées)
+      </h2>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard label="Chiffre d'affaires total" value={formatFCFA(chiffreAffairesTotal)} />
+        <StatCard label="Commissions générées" value={formatFCFA(commissionsGenerees)} />
+        <StatCard label="Gains coursiers (net)" value={formatFCFA(gainsCoursiersNets)} />
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-colimo-neutre-clair bg-white p-5">
+        <h2 className="font-titre text-base font-semibold text-colimo-neutre-fonce">Par mode de paiement</h2>
+        <ul className="mt-4 space-y-3">
+          {parModePaiement.map(({ mode, ca, commission }) => (
+            <li key={mode} className="flex items-center justify-between text-sm">
+              <span>{MODE_PAIEMENT_LABELS[mode]}</span>
+              <span>
+                <span className="font-medium">{formatFCFA(ca)}</span>
+                <span className="ml-2 text-xs text-colimo-neutre-fonce/50">
+                  dont {formatFCFA(commission)} de commission
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="mt-6 rounded-2xl border border-colimo-neutre-clair bg-white p-5">

@@ -7,51 +7,56 @@ export const FAQ: QuestionReponse[] = [
   {
     question: "Qu'est-ce que COLIMO ?",
     reponse:
-      "COLIMO est une plateforme web et mobile qui met en relation, à Libreville et ses environs, des personnes ayant besoin d'une livraison avec des coursiers disponibles. Elle s'adresse aussi bien aux particuliers qu'aux commerces (restaurants, pharmacies, boutiques, e-commerçants) qui expédient régulièrement des colis.",
+      "COLIMO est une plateforme de mise en relation entre clients, commerçants et coursiers. Elle permet de commander un produit, de demander une livraison ou de faire transporter tout type de colis et marchandises en toute simplicité, à Libreville, Akanda, Owendo, PK12, Bikélé et Ntoum.",
   },
   {
-    question: "Quelles zones sont couvertes actuellement ?",
+    question: "Comment fonctionne COLIMO ?",
     reponse:
-      "Au lancement, COLIMO couvre Libreville, Akanda, Owendo, PK12, Bikélé et Ntoum. L'extension vers l'intérieur du pays est prévue dans une phase ultérieure, une fois le service stabilisé sur ces zones pilotes.",
+      "Le fonctionnement est simple : le client crée un compte, il passe une commande ou demande une livraison, la plateforme attribue un coursier, le coursier récupère la commande, le client suit la livraison en temps réel, puis la livraison est confirmée à la réception.",
   },
   {
-    question: "Qui peut devenir coursier sur COLIMO ?",
+    question: "Quels sont les moyens de paiement disponibles ?",
     reponse:
-      "Deux profils sont acceptés : les coursiers indépendants, qui s'inscrivent individuellement avec leur propre moyen de transport (moto le plus souvent), et les structures de livraison, des entreprises disposant de plusieurs coursiers salariés. Dans les deux cas, une vérification d'identité et des documents (pièce d'identité, permis de conduire, carte grise du véhicule) est obligatoire avant toute activation du compte.",
+      "COLIMO accepte, selon les services proposés, le paiement par Airtel Money, par Moov Money, ou en espèces à la livraison. Les moyens disponibles sont affichés avant la validation de la commande.",
   },
   {
-    question: "Comment se passe la vérification d'un coursier ?",
+    question: "Comment suivre ma livraison ?",
     reponse:
-      "Après l'inscription, le dossier du coursier (ou de la structure) est examiné manuellement par l'équipe COLIMO. Le compte reste inactif tant que la validation n'a pas été faite. En cas de refus, le motif est communiqué pour permettre une régularisation.",
+      "Après validation de votre commande, vous pouvez consulter le statut de la livraison, le nom du coursier assigné et discuter avec lui directement via l'application.",
   },
   {
-    question: "Comment est calculé le prix d'une livraison ?",
+    question: "Que faire si ma commande est en retard ?",
     reponse:
-      "Le tarif dépend de la zone de départ et de la zone d'arrivée, selon une grille fixée à l'avance. Le client voit le prix estimé avant de confirmer sa demande. Des options comme la livraison prioritaire ou l'assurance colis peuvent s'ajouter au tarif de base.",
+      "Vous pouvez consulter le suivi en temps réel, contacter le coursier via l'application, ou contacter le service client COLIMO. Notre équipe analysera rapidement la situation.",
   },
   {
-    question: "Comment se fait le paiement ?",
+    question: "Que faire si je reçois un produit endommagé ou incomplet ?",
     reponse:
-      "Deux modes de paiement sont proposés au moment de la confirmation de la demande : le paiement Mobile Money (Airtel Money ou Moov Money, avec confirmation automatique) ou le paiement à la livraison, réglé directement au coursier en espèces. Dans ce dernier cas, un contrat entre le coursier (ou la structure) et COLIMO définit le pourcentage à reverser à la plateforme.",
+      "Signalez le problème depuis l'application, dans un délai maximum de 24 heures après la livraison, en précisant le motif et en joignant si possible des photos ou vidéos ainsi qu'un commentaire décrivant le problème. Le dossier sera étudié par l'équipe COLIMO.",
   },
   {
-    question: "Que se passe-t-il en cas de litige (colis endommagé, retard, comportement) ?",
+    question: "Comment sont gérés les litiges ?",
     reponse:
-      "Chaque partie peut signaler un problème via l'application. L'équipe COLIMO examine l'historique de la course et peut prendre différentes mesures : remboursement, avertissement, ou suspension du compte concerné en cas de manquement grave. Le système de notation mutuelle contribue aussi à identifier les comportements récurrents.",
+      "En cas de litige, COLIMO agit comme médiateur entre le client et le coursier. Le client (ou le coursier) ouvre un litige directement depuis la course en sélectionnant un motif (produit manquant, produit endommagé, erreur de commande, retard important, comportement inapproprié, colis non reçu ou autre), puis peut y joindre photos, vidéos ou commentaires. L'équipe COLIMO examine le dossier — au besoin en contactant les deux parties et en vérifiant l'historique de la course — et apporte une réponse sous 48 à 72 heures ouvrables : confirmation de la livraison, remboursement (total ou partiel via la politique de retour), ou rejet motivé de la demande.",
   },
   {
-    question: "Une entreprise peut-elle avoir plusieurs livraisons gérées en même temps ?",
+    question: "Comment devenir coursier ?",
     reponse:
-      "Oui. Les commerces et entreprises qui expédient régulièrement peuvent utiliser un compte de type Commerce. Les particuliers, eux, peuvent utiliser la plateforme sans abonnement, à la course.",
+      "Il suffit de créer un compte, de fournir une pièce d'identité valide (CNI, passeport, carte de séjour ou permis de conduire) et les documents demandés pour votre moyen de transport, puis de suivre la procédure de validation. Votre dossier sera étudié par l'équipe COLIMO avant activation.",
   },
   {
-    question: "Que faire si aucun coursier n'accepte ma demande ?",
+    question: "Que se passe-t-il si un colis doit être retourné ?",
     reponse:
-      "Si aucun coursier disponible dans la zone n'accepte la course après un délai donné, la demande est automatiquement élargie à un périmètre plus large pour maximiser les chances de prise en charge. Le client reste informé de l'évolution de sa demande à chaque étape.",
+      "Lorsqu'une livraison ne peut pas aboutir et que le colis doit être retourné à l'expéditeur, des frais de retour correspondant à 50% du prix de la course restent à la charge du client, le coursier ayant déjà effectué le déplacement.",
   },
   {
-    question: "Mes données personnelles et mes documents sont-ils protégés ?",
+    question: "Mes informations personnelles sont-elles protégées ?",
     reponse:
-      "Oui. Les informations personnelles et les documents d'identité des coursiers sont stockés de façon sécurisée et ne sont accessibles qu'aux personnes autorisées (l'utilisateur concerné et l'équipe d'administration à des fins de vérification). Le détail complet de ces engagements figure dans la Politique de confidentialité.",
+      "Oui. COLIMO applique des mesures de sécurité afin de protéger les données personnelles et les informations de paiement de ses utilisateurs. Le détail de ces engagements figure dans la Politique de confidentialité.",
+  },
+  {
+    question: "Comment contacter COLIMO ?",
+    reponse:
+      "Vous pouvez nous joindre via le support intégré à l'application, par téléphone, par e-mail, ou via nos réseaux sociaux officiels.",
   },
 ];

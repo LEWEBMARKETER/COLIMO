@@ -5,6 +5,8 @@ import type {
   Coursier,
   Course,
   CourseStatus,
+  Litige,
+  LitigeMotif,
   Message,
   ModePaiement,
   Notation,
@@ -66,6 +68,8 @@ export interface CourseRow {
   statut: CourseStatus;
   code_promo_id: string | null;
   reduction_promo: number;
+  frais_retour: number | null;
+  commission: number;
   created_at: string;
 }
 
@@ -89,6 +93,16 @@ export interface CodePromoRow {
   date_fin: string | null;
   usage_max: number | null;
   usage_actuel: number;
+  created_at: string;
+}
+
+export interface LitigeRow {
+  id: string;
+  course_id: string;
+  auteur_id: string;
+  motif: LitigeMotif;
+  commentaire: string | null;
+  preuve_urls: string[];
   created_at: string;
 }
 
@@ -162,6 +176,20 @@ export function courseFromRow(row: CourseRow): Course {
     statut: row.statut,
     codePromoId: row.code_promo_id ?? undefined,
     reductionPromo: row.reduction_promo,
+    fraisRetour: row.frais_retour,
+    commission: row.commission,
+    createdAt: row.created_at,
+  };
+}
+
+export function litigeFromRow(row: LitigeRow): Litige {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    auteurId: row.auteur_id,
+    motif: row.motif,
+    commentaire: row.commentaire,
+    preuveUrls: row.preuve_urls ?? [],
     createdAt: row.created_at,
   };
 }

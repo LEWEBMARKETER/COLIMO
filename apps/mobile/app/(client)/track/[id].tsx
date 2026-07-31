@@ -10,6 +10,8 @@ import Bouton from "@/components/ui/Bouton";
 import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
+const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
+
 export default function TrackScreen() {
   const { session } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -149,6 +151,21 @@ export default function TrackScreen() {
             auteurId={session.user.id}
             destinataireId={course.coursierId}
             titre="Comment s'est passée la livraison ?"
+          />
+        )}
+
+        {course.statut === "litige" && (
+          <Text className="mt-6 text-center font-texte text-sm text-colimo-rouge">
+            Ce problème a été signalé à notre équipe, qui va vous contacter pour le résoudre.
+          </Text>
+        )}
+
+        {STATUTS_SIGNALABLES.has(course.statut) && (
+          <Bouton
+            label="Signaler un problème"
+            variante="contour"
+            onPress={() => router.push(`/(client)/litige/${course.id}`)}
+            className="mt-4 py-3"
           />
         )}
       </ScrollView>

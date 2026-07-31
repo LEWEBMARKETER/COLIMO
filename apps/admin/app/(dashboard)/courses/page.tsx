@@ -9,6 +9,7 @@ import {
   COURSE_STATUS_LABELS,
   MODE_PAIEMENT_LABELS,
   ZONE_LABELS,
+  calculerFraisRetour,
   formatFCFA,
   type Course,
   type Utilisateur,
@@ -17,6 +18,7 @@ import {
 
 const ZONES = Object.keys(ZONE_LABELS) as Zone[];
 const STATUTS_ANNULABLES = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
+const STATUTS_RETOURNABLES = new Set(["retrait", "en_cours", "livree"]);
 
 export default function CoursesPage() {
   return (
@@ -62,6 +64,20 @@ function CoursesContenu() {
   async function annuler(course: Course) {
     if (!window.confirm(`Annuler la course ${course.numeroCommande} ?`)) return;
     const misAJour = await patchCourse(course.id, { statut: "annulee" });
+    setCourses((prev) => prev.map((c) => (c.id === course.id ? misAJour : c)));
+  }
+
+  async function marquerRetournee(course: Course) {
+    const frais = calculerFraisRetour(course.prix);
+    if (
+      !window.confirm(
+        `Marquer le colis de ${course.numeroCommande} comme retourné ? Le client sera facturé ${formatFCFA(
+          frais
+        )} (50% du prix), conformément à la politique de retour.`
+      )
+    )
+      return;
+    const misAJour = await patchCourse(course.id, { statut: "retournee", fraisRetour: frais });
     setCourses((prev) => prev.map((c) => (c.id === course.id ? misAJour : c)));
   }
 
@@ -130,7 +146,17 @@ function CoursesContenu() {
                   {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
                 </td>
                 <td className="px-4 py-3">{CATEGORIE_COLIS_LABELS[course.categorieColis]}</td>
-                <td className="px-4 py-3">{formatFCFA(course.prix)}</td>
+                <td className="px-4 py-3">
+                  {formatFCFA(course.prix)}
+                  <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">
+                    Commission : {formatFCFA(course.commission)}
+                  </p>
+                  {course.fraisRetour !== null && (
+                    <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">
+                      Retour : {formatFCFA(course.fraisRetour)}
+                    </p>
+                  )}
+                </td>
                 <td className="px-4 py-3">{MODE_PAIEMENT_LABELS[course.modePaiement]}</td>
                 <td className="px-4 py-3">
                   <StatutBadge statut={course.statut} label={COURSE_STATUS_LABELS[course.statut]} />
@@ -156,6 +182,14 @@ function CoursesContenu() {
                         className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                       >
                         Annuler
+                      </button>
+                    )}
+                    {STATUTS_RETOURNABLES.has(course.statut) && (
+                      <button
+                        onClick={() => marquerRetournee(course)}
+                        className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                      >
+                        Colis retourné
                       </button>
                     )}
                   </div>

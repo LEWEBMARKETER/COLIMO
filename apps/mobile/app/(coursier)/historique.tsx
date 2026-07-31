@@ -27,17 +27,20 @@ export default function HistoriqueCoursierScreen() {
     );
   }
 
-  const gains = courses
-    .filter((c) => c.statut === "confirmee")
-    .reduce((total, c) => total + c.prix, 0);
+  const coursesConfirmees = courses.filter((c) => c.statut === "confirmee");
+  const gainsBruts = coursesConfirmees.reduce((total, c) => total + c.prix, 0);
+  const gainsNets = coursesConfirmees.reduce((total, c) => total + (c.prix - c.commission), 0);
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <View className="flex-1 px-6 py-6">
         <View className="mb-4 flex-row gap-3">
           <Carte className="flex-1">
-            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés</Text>
-            <Text className="mt-1 font-titre text-lg text-colimo-rouge">{formatFCFA(gains)}</Text>
+            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés (net)</Text>
+            <Text className="mt-1 font-titre text-lg text-colimo-rouge">{formatFCFA(gainsNets)}</Text>
+            <Text className="mt-0.5 font-texte text-[10px] text-colimo-neutre-fonce/50">
+              Brut {formatFCFA(gainsBruts)} · Commission {formatFCFA(gainsBruts - gainsNets)}
+            </Text>
           </Carte>
           <Carte className="flex-1">
             <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>
@@ -76,6 +79,11 @@ export default function HistoriqueCoursierScreen() {
                     {COURSE_STATUS_LABELS[item.statut]}
                   </Text>
                 </View>
+                {item.statut === "confirmee" && (
+                  <Text className="mt-1 font-texte text-[11px] text-colimo-neutre-fonce/50">
+                    Net perçu : {formatFCFA(item.prix - item.commission)} (commission {formatFCFA(item.commission)})
+                  </Text>
+                )}
               </Carte>
             </Pressable>
           )}

@@ -1,11 +1,13 @@
 import {
   creerCourse as creerCourseQuery,
+  creerLitige as creerLitigeQuery,
   creerNotation as creerNotationQuery,
   envoyerMessage as envoyerMessageQuery,
   getCodePromoParCode as getCodePromoParCodeQuery,
   getCourse as getCourseQuery,
   getCoursiers as getCoursiersQuery,
   getCourses as getCoursesQuery,
+  getLitiges as getLitigesQuery,
   getMessages as getMessagesQuery,
   getNotations as getNotationsQuery,
   insertCoursier,
@@ -19,6 +21,8 @@ import {
   type Coursier,
   type Course,
   type CourseStatus,
+  type Litige,
+  type LitigeMotif,
   type Message,
   type ModePaiement,
   type Notation,
@@ -98,7 +102,10 @@ export function getCodePromoParCode(code: string): Promise<CodePromo | null> {
   return getCodePromoParCodeQuery(supabase, code);
 }
 
-export function patchCourse(id: string, body: { statut?: CourseStatus; coursierId?: string | null }): Promise<Course> {
+export function patchCourse(
+  id: string,
+  body: { statut?: CourseStatus; coursierId?: string | null }
+): Promise<Course> {
   return patchCourseQuery(supabase, id, body);
 }
 
@@ -114,6 +121,20 @@ export function creerNotation(body: {
 
 export function getNotations(courseId: string): Promise<Notation[]> {
   return getNotationsQuery(supabase, courseId);
+}
+
+export function creerLitige(body: {
+  courseId: string;
+  auteurId: string;
+  motif: LitigeMotif;
+  commentaire?: string;
+  preuveUrls?: string[];
+}): Promise<Litige> {
+  return creerLitigeQuery(supabase, body);
+}
+
+export function getLitiges(courseId: string): Promise<Litige[]> {
+  return getLitigesQuery(supabase, { courseId });
 }
 
 export function getMessages(courseId: string): Promise<Message[]> {
@@ -141,6 +162,18 @@ export async function uploaderPieceIdentite(utilisateurId: string, uri: string, 
   const donnees = await uriVersArrayBuffer(uri);
   const extension = mimeType.includes("png") ? "png" : "jpg";
   return uploadFichier(supabase, "documents", `${utilisateurId}/piece_identite.${extension}`, donnees, mimeType);
+}
+
+export async function uploaderPreuveLitige(
+  utilisateurId: string,
+  courseId: string,
+  uri: string,
+  mimeType: string
+): Promise<string> {
+  const donnees = await uriVersArrayBuffer(uri);
+  const extension = mimeType.split("/")[1] ?? "jpg";
+  const nomFichier = `${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
+  return uploadFichier(supabase, "documents", `${utilisateurId}/litiges/${courseId}/${nomFichier}`, donnees, mimeType);
 }
 
 // --- Authentification et inscription ------------------------------------
