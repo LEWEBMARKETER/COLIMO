@@ -12,6 +12,8 @@ import type {
   ModePaiement,
   Notation,
   PieceIdentiteType,
+  QuiPaie,
+  TailleColis,
   TypeClient,
   TypeReductionPromo,
   Utilisateur,
@@ -73,6 +75,14 @@ export interface CourseRow {
   frais_retour: number | null;
   commission: number;
   telephone_destinataire: string | null;
+  nom_destinataire: string | null;
+  nom_expediteur: string | null;
+  telephone_expediteur: string | null;
+  repere_depart: string | null;
+  repere_arrivee: string | null;
+  taille_colis: TailleColis | null;
+  qui_paie: QuiPaie;
+  instructions: string | null;
   poids_estime: number | null;
   programmee_pour: string | null;
   acceptee_at: string | null;
@@ -193,6 +203,14 @@ export function courseFromRow(row: CourseRow): Course {
     fraisRetour: row.frais_retour,
     commission: row.commission,
     telephoneDestinataire: row.telephone_destinataire,
+    nomDestinataire: row.nom_destinataire,
+    nomExpediteur: row.nom_expediteur,
+    telephoneExpediteur: row.telephone_expediteur,
+    repereDepart: row.repere_depart,
+    repereArrivee: row.repere_arrivee,
+    tailleColis: row.taille_colis,
+    quiPaie: row.qui_paie,
+    instructions: row.instructions,
     poidsEstime: row.poids_estime,
     programmeePour: row.programmee_pour,
     accepteeAt: row.acceptee_at,

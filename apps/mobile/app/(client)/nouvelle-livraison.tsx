@@ -3,8 +3,10 @@ import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
+  CATEGORIE_COLIS_EMOJIS,
   CATEGORIE_COLIS_LABELS,
   calculatePrice,
+  formatFCFA,
   isRouteDesservie,
   type CategorieColis,
   type Zone,
@@ -13,6 +15,7 @@ import ZoneSelector from "@/components/ZoneSelector";
 import BoutonPosition from "@/components/BoutonPosition";
 import PriceSummary from "@/components/PriceSummary";
 import Bouton from "@/components/ui/Bouton";
+import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import { creerCourse, getMonCommerce } from "@/lib/api";
@@ -20,23 +23,31 @@ import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
   valeur,
-  label: CATEGORIE_COLIS_LABELS[valeur],
+  label: `${CATEGORIE_COLIS_EMOJIS[valeur]} ${CATEGORIE_COLIS_LABELS[valeur]}`,
 }));
 
 type TypeLivraison = "standard" | "express" | "programmee";
 
 const TYPES_LIVRAISON: { valeur: TypeLivraison; label: string }[] = [
   { valeur: "standard", label: "Standard" },
-  { valeur: "express", label: "Express (urgente)" },
+  { valeur: "express", label: "Express" },
   { valeur: "programmee", label: "Programmée" },
 ];
 
 type ModePaiementCommerce = "deja_paye" | "especes";
 
 const MODES_PAIEMENT_COMMERCE: { valeur: ModePaiementCommerce; label: string }[] = [
-  { valeur: "deja_paye", label: "Déjà payé" },
-  { valeur: "especes", label: "Paiement à la livraison" },
+  { valeur: "deja_paye", label: "Déjà payée" },
+  { valeur: "especes", label: "Paiement à la livraison (contre-remboursement)" },
 ];
+
+function TitreSection({ children }: { children: string }) {
+  return (
+    <Text className="mb-3 mt-6 font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
+      {children}
+    </Text>
+  );
+}
 
 export default function NouvelleLivraisonScreen() {
   const { session, utilisateur } = useAuth();
@@ -44,15 +55,17 @@ export default function NouvelleLivraisonScreen() {
   const [adresseCommerce, setAdresseCommerce] = useState("Adresse du commerce");
   const [arrivee, setArrivee] = useState<Zone | null>(null);
   const [adresseArrivee, setAdresseArrivee] = useState("");
+  const [repereArrivee, setRepereArrivee] = useState("");
   const [coordArrivee, setCoordArrivee] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [nomDestinataire, setNomDestinataire] = useState("");
   const [telephoneDestinataire, setTelephoneDestinataire] = useState("");
-  const [categorieColis, setCategorieColis] = useState<CategorieColis | null>(null);
-  const [description, setDescription] = useState("");
-  const [valeurDeclaree, setValeurDeclaree] = useState("");
+  const [natureCommande, setNatureCommande] = useState("");
+  const [montant, setMontant] = useState("");
   const [poidsEstime, setPoidsEstime] = useState("");
   const [typeLivraison, setTypeLivraison] = useState<TypeLivraison>("standard");
   const [datePreference, setDatePreference] = useState("");
   const [modePaiement, setModePaiement] = useState<ModePaiementCommerce>("especes");
+  const [instructions, setInstructions] = useState("");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -63,24 +76,19 @@ export default function NouvelleLivraisonScreen() {
     });
   }, [session]);
 
+  const categorieColis: CategorieColis = "articles";
+
   const pricing = useMemo(() => {
     if (!depart || !arrivee || !isRouteDesservie(depart, arrivee)) return null;
-    return calculatePrice(depart, arrivee, {
-      livraisonPrioritaire: typeLivraison === "express",
-      valeurDeclaree: Number(valeurDeclaree) || undefined,
-    });
-  }, [depart, arrivee, typeLivraison, valeurDeclaree]);
+    return calculatePrice(depart, arrivee, { livraisonPrioritaire: typeLivraison === "express" });
+  }, [depart, arrivee, typeLivraison]);
 
   const peutPublier = Boolean(
-    pricing &&
-      categorieColis &&
-      telephoneDestinataire.trim() &&
-      adresseArrivee.trim() &&
-      !envoiEnCours
+    pricing && telephoneDestinataire.trim() && adresseArrivee.trim() && natureCommande.trim() && !envoiEnCours
   );
 
   async function handlePublier() {
-    if (!depart || !arrivee || !pricing || !session || !categorieColis) return;
+    if (!depart || !arrivee || !pricing || !session) return;
 
     let programmeePour: string | undefined;
     if (typeLivraison === "programmee") {
@@ -103,14 +111,17 @@ export default function NouvelleLivraisonScreen() {
         longitudeArrivee: coordArrivee?.longitude,
         zoneDepart: depart,
         zoneArrivee: arrivee,
-        typeColis: description,
+        typeColis: natureCommande,
         categorieColis,
         livraisonPrioritaire: typeLivraison === "express",
         modePaiement,
-        valeurDeclaree: Number(valeurDeclaree) || undefined,
+        valeurDeclaree: Number(montant) || undefined,
         prix: pricing.total,
+        nomDestinataire: nomDestinataire.trim() || undefined,
         telephoneDestinataire: telephoneDestinataire.trim(),
+        repereArrivee: repereArrivee.trim() || undefined,
         poidsEstime: Number(poidsEstime) || undefined,
+        instructions: instructions.trim() || undefined,
         programmeePour,
       });
       router.push(`/(client)/track/${course.id}`);
@@ -124,9 +135,11 @@ export default function NouvelleLivraisonScreen() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <ScrollView className="flex-1 px-6 py-6">
-        <Text className="mb-1 font-titre text-lg text-colimo-neutre-fonce">Nouvelle livraison</Text>
+        <Text className="font-titre text-lg text-colimo-neutre-fonce">Nouvelle livraison</Text>
+        <Text className="mt-0.5 font-texte text-xs text-colimo-neutre-fonce/50">Départ : {adresseCommerce}</Text>
 
-        <Text className="mb-2 mt-4 font-texte-medium text-sm text-colimo-neutre-fonce">Informations du client</Text>
+        <TitreSection>Renseignement client</TitreSection>
+        <ChampTexte label="Nom" value={nomDestinataire} onChangeText={setNomDestinataire} placeholder="Nom du client" />
         <ChampTexte
           label="Téléphone"
           value={telephoneDestinataire}
@@ -136,9 +149,15 @@ export default function NouvelleLivraisonScreen() {
         />
         <ZoneSelector label="Quartier" value={arrivee} onChange={setArrivee} />
         <ChampTexte
-          label="Adresse précise / repère"
+          label="Adresse"
           value={adresseArrivee}
           onChangeText={setAdresseArrivee}
+          placeholder="Adresse précise de livraison"
+        />
+        <ChampTexte
+          label="Repère (optionnel)"
+          value={repereArrivee}
+          onChangeText={setRepereArrivee}
           placeholder="Ex : Immeuble bleu en face de la pharmacie"
         />
         <BoutonPosition
@@ -146,20 +165,12 @@ export default function NouvelleLivraisonScreen() {
           onLocalisation={(latitude, longitude) => setCoordArrivee({ latitude, longitude })}
         />
 
-        <Text className="mb-2 mt-4 font-texte-medium text-sm text-colimo-neutre-fonce">Informations du colis</Text>
-        <GroupePastilles label="Type de colis" options={CATEGORIES} value={categorieColis} onChange={setCategorieColis} />
+        <TitreSection>Informations de la commande</TitreSection>
         <ChampTexte
-          label="Description"
-          value={description}
-          onChangeText={setDescription}
+          label="Nature de la commande"
+          value={natureCommande}
+          onChangeText={setNatureCommande}
           placeholder="Ex : Commande n°42, 2 plats"
-        />
-        <ChampTexte
-          label="Valeur déclarée (FCFA, optionnel)"
-          value={valeurDeclaree}
-          onChangeText={setValeurDeclaree}
-          keyboardType="numeric"
-          placeholder="0"
         />
         <ChampTexte
           label="Poids estimé (kg, optionnel)"
@@ -169,7 +180,28 @@ export default function NouvelleLivraisonScreen() {
           placeholder="0"
         />
 
-        <Text className="mb-2 mt-4 font-texte-medium text-sm text-colimo-neutre-fonce">Livraison</Text>
+        <TitreSection>Montant</TitreSection>
+        <ChampTexte
+          label="Valeur de la commande (FCFA)"
+          value={montant}
+          onChangeText={setMontant}
+          keyboardType="numeric"
+          placeholder="0"
+        />
+        {Number(montant) > 0 && (
+          <Carte sombre className="mb-4 -mt-2">
+            <Text className="font-texte text-xs text-white/60">Valeur de la commande</Text>
+            <Text className="mt-1 font-titre text-white">{formatFCFA(Number(montant))}</Text>
+          </Carte>
+        )}
+        <GroupePastilles
+          label="Statut du paiement"
+          options={MODES_PAIEMENT_COMMERCE}
+          value={modePaiement}
+          onChange={setModePaiement}
+        />
+
+        <TitreSection>Livraison</TitreSection>
         <ZoneSelector label="Zone de départ (votre commerce)" value={depart} onChange={setDepart} />
         <GroupePastilles
           label="Type de livraison"
@@ -186,12 +218,15 @@ export default function NouvelleLivraisonScreen() {
           />
         )}
 
-        <Text className="mb-2 mt-4 font-texte-medium text-sm text-colimo-neutre-fonce">Paiement</Text>
-        <GroupePastilles
-          label="Mode de paiement"
-          options={MODES_PAIEMENT_COMMERCE}
-          value={modePaiement}
-          onChange={setModePaiement}
+        <TitreSection>Instructions</TitreSection>
+        <ChampTexte
+          label="Instructions pour le coursier (optionnel)"
+          value={instructions}
+          onChangeText={setInstructions}
+          multiline
+          numberOfLines={3}
+          placeholder="Ex : Le client préfère être appelé avant l'arrivée. Le colis est fragile."
+          style={{ minHeight: 72, textAlignVertical: "top" }}
         />
 
         {depart && arrivee && !pricing && (
@@ -209,7 +244,7 @@ export default function NouvelleLivraisonScreen() {
         {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 
         <Bouton
-          label="Publier la livraison"
+          label="Demander un coursier"
           onPress={handlePublier}
           disabled={!peutPublier}
           chargement={envoiEnCours}

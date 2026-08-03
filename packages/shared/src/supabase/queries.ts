@@ -6,6 +6,8 @@ import type {
   LitigeMotif,
   ModePaiement,
   PieceIdentiteType,
+  QuiPaie,
+  TailleColis,
   TypeClient,
   TypeReductionPromo,
   VehiculeType,
@@ -215,6 +217,14 @@ export async function creerCourse(
     codePromoId?: string;
     reductionPromo?: number;
     telephoneDestinataire?: string;
+    nomDestinataire?: string;
+    nomExpediteur?: string;
+    telephoneExpediteur?: string;
+    repereDepart?: string;
+    repereArrivee?: string;
+    tailleColis?: TailleColis;
+    quiPaie?: QuiPaie;
+    instructions?: string;
     poidsEstime?: number;
     programmeePour?: string;
   }
@@ -240,6 +250,14 @@ export async function creerCourse(
       code_promo_id: input.codePromoId ?? null,
       reduction_promo: input.reductionPromo ?? 0,
       telephone_destinataire: input.telephoneDestinataire ?? null,
+      nom_destinataire: input.nomDestinataire ?? null,
+      nom_expediteur: input.nomExpediteur ?? null,
+      telephone_expediteur: input.telephoneExpediteur ?? null,
+      repere_depart: input.repereDepart ?? null,
+      repere_arrivee: input.repereArrivee ?? null,
+      taille_colis: input.tailleColis ?? null,
+      qui_paie: input.quiPaie ?? "expediteur",
+      instructions: input.instructions ?? null,
       poids_estime: input.poidsEstime ?? null,
       programmee_pour: input.programmeePour ?? null,
     })

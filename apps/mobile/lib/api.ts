@@ -31,6 +31,8 @@ import {
   type ModePaiement,
   type Notation,
   type PieceIdentiteType,
+  type QuiPaie,
+  type TailleColis,
   type TypeClient,
   type Utilisateur,
   type VehiculeType,
@@ -100,6 +102,14 @@ export function creerCourse(body: {
   codePromoId?: string;
   reductionPromo?: number;
   telephoneDestinataire?: string;
+  nomDestinataire?: string;
+  nomExpediteur?: string;
+  telephoneExpediteur?: string;
+  repereDepart?: string;
+  repereArrivee?: string;
+  tailleColis?: TailleColis;
+  quiPaie?: QuiPaie;
+  instructions?: string;
   poidsEstime?: number;
   programmeePour?: string;
 }): Promise<Course> {

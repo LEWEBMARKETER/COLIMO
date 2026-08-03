@@ -57,6 +57,8 @@ export type CategorieColis =
   | "repas"
   | "courses_alimentaires"
   | "documents"
+  | "vetement"
+  | "medicament"
   | "articles"
   | "electromenager"
   | "autres";
@@ -64,10 +66,38 @@ export type CategorieColis =
 export const CATEGORIE_COLIS_LABELS: Record<CategorieColis, string> = {
   repas: "Repas",
   courses_alimentaires: "Courses alimentaires",
-  documents: "Documents",
+  documents: "Document",
+  vetement: "Vêtement",
+  medicament: "Médicament",
   articles: "Articles",
   electromenager: "Électroménager",
-  autres: "Autres",
+  autres: "Autre",
+};
+
+export const CATEGORIE_COLIS_EMOJIS: Record<CategorieColis, string> = {
+  repas: "🍰",
+  courses_alimentaires: "🛒",
+  documents: "📄",
+  vetement: "👕",
+  medicament: "💊",
+  articles: "🎁",
+  electromenager: "🔌",
+  autres: "🛍️",
+};
+
+export type TailleColis = "petit" | "moyen" | "grand";
+
+export const TAILLE_COLIS_LABELS: Record<TailleColis, string> = {
+  petit: "Petit",
+  moyen: "Moyen",
+  grand: "Grand",
+};
+
+export type QuiPaie = "expediteur" | "destinataire";
+
+export const QUI_PAIE_LABELS: Record<QuiPaie, string> = {
+  expediteur: "Expéditeur",
+  destinataire: "Destinataire",
 };
 
 export type ModePaiement = "mobile_money" | "especes" | "deja_paye";
@@ -188,6 +218,14 @@ export interface Course {
   fraisRetour: number | null;
   commission: number;
   telephoneDestinataire: string | null;
+  nomDestinataire: string | null;
+  nomExpediteur: string | null;
+  telephoneExpediteur: string | null;
+  repereDepart: string | null;
+  repereArrivee: string | null;
+  tailleColis: TailleColis | null;
+  quiPaie: QuiPaie;
+  instructions: string | null;
   poidsEstime: number | null;
   programmeePour: string | null;
   accepteeAt: string | null;
