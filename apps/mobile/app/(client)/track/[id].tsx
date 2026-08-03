@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { MODE_PAIEMENT_LABELS, distanceKm, formatFCFA, type Course } from "@colimo/shared";
+import { MODE_PAIEMENT_LABELS, distanceKm, formatFCFA, type Coursier, type Course, type Utilisateur } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
+import NoteEtoiles from "@/components/NoteEtoiles";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
-import { getCourse, patchCourse } from "@/lib/api";
+import { getCourse, getCoursierByUtilisateurId, getUtilisateur, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/notifications";
 
@@ -20,6 +21,8 @@ export default function TrackScreen() {
   const [course, setCourse] = useState<Course | null>(null);
   const [confirmationEnCours, setConfirmationEnCours] = useState(false);
   const [erreurConfirmation, setErreurConfirmation] = useState<string | null>(null);
+  const [coursier, setCoursier] = useState<Coursier | null>(null);
+  const [coursierUtilisateur, setCoursierUtilisateur] = useState<Utilisateur | null>(null);
 
   async function confirmerReception() {
     if (!course || !session) return;
@@ -61,6 +64,16 @@ export default function TrackScreen() {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (!course?.coursierId) {
+      setCoursier(null);
+      setCoursierUtilisateur(null);
+      return;
+    }
+    getCoursierByUtilisateurId(course.coursierId).then(setCoursier);
+    getUtilisateur(course.coursierId).then(setCoursierUtilisateur);
+  }, [course?.coursierId]);
+
   if (!course) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-colimo-fond">
@@ -79,6 +92,8 @@ export default function TrackScreen() {
           { latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }
         )
       : null;
+
+  const contactsFermes = course.statut === "confirmee";
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
@@ -103,6 +118,21 @@ export default function TrackScreen() {
           </View>
         </Carte>
 
+        {coursierUtilisateur && (
+          <Carte className="mt-3">
+            <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
+              Votre coursier
+            </Text>
+            <Text className="mt-1 font-texte-medium text-colimo-neutre-fonce">
+              {coursierUtilisateur.prenom ? `${coursierUtilisateur.prenom} ` : ""}
+              {coursierUtilisateur.nom}
+            </Text>
+            <View className="mt-1">
+              <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
+            </View>
+          </Carte>
+        )}
+
         <View className="mt-4">
           <ContactCarte
             titre="Récupération"
@@ -112,6 +142,7 @@ export default function TrackScreen() {
             repere={course.repereDepart}
             latitude={course.latitudeDepart}
             longitude={course.longitudeDepart}
+            appelFerme={contactsFermes}
           />
           <ContactCarte
             titre="Livraison"
@@ -121,6 +152,7 @@ export default function TrackScreen() {
             repere={course.repereArrivee}
             latitude={course.latitudeArrivee}
             longitude={course.longitudeArrivee}
+            appelFerme={contactsFermes}
           />
         </View>
 
@@ -132,10 +164,10 @@ export default function TrackScreen() {
         )}
 
         <View className="mt-2">
-          <StatusTimeline statutActuel={course.statut} />
+          <StatusTimeline course={course} />
         </View>
 
-        {course.coursierId && (
+        {course.coursierId && !contactsFermes && (
           <Bouton
             label="Discuter avec le coursier"
             variante="contour"

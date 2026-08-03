@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
+import NoteEtoiles from "@/components/NoteEtoiles";
 import { getCoursiers, patchCoursier, updateUtilisateur, type CoursierAvecUtilisateur } from "@/lib/api";
 import { PIECE_IDENTITE_LABELS, ZONE_LABELS, type VerificationStatus } from "@colimo/shared";
 
@@ -100,7 +101,9 @@ export default function CoursiersPage() {
                       "—"
                     )}
                   </td>
-                  <td className="px-4 py-3">{coursier.noteMoyenne || "—"}</td>
+                  <td className="px-4 py-3">
+                    <NoteEtoiles note={coursier.noteMoyenne} />
+                  </td>
                   <td className="px-4 py-3">
                     <StatutBadge
                       statut={coursier.statutVerification}

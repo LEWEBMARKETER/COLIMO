@@ -12,9 +12,19 @@ interface ContactCarteProps {
   repere: string | null;
   latitude?: number;
   longitude?: number;
+  appelFerme?: boolean;
 }
 
-export default function ContactCarte({ titre, nom, telephone, adresse, repere, latitude, longitude }: ContactCarteProps) {
+export default function ContactCarte({
+  titre,
+  nom,
+  telephone,
+  adresse,
+  repere,
+  latitude,
+  longitude,
+  appelFerme = false,
+}: ContactCarteProps) {
   return (
     <Carte className="mb-3">
       <View className="flex-row items-center justify-between">
@@ -29,7 +39,7 @@ export default function ContactCarte({ titre, nom, telephone, adresse, repere, l
       <Text className="mt-1 font-texte-medium text-colimo-neutre-fonce">{nom ?? titre}</Text>
       <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/70">{adresse}</Text>
       {repere && <Text className="mt-0.5 font-texte text-xs text-colimo-neutre-fonce/50">Repère : {repere}</Text>}
-      {telephone && (
+      {telephone && !appelFerme && (
         <Bouton
           label={`Appeler${nom ? ` ${nom}` : ""}`}
           variante="contour"

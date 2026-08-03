@@ -6,11 +6,13 @@ import {
   getCodePromoParCode as getCodePromoParCodeQuery,
   getCommercantsBruts as getCommercantsBrutsQuery,
   getCourse as getCourseQuery,
+  getCoursierByUtilisateurId as getCoursierByUtilisateurIdQuery,
   getCoursiers as getCoursiersQuery,
   getCourses as getCoursesQuery,
   getLitiges as getLitigesQuery,
   getMessages as getMessagesQuery,
   getNotations as getNotationsQuery,
+  getUtilisateur as getUtilisateurQuery,
   insertCoursier,
   insertUtilisateur,
   patchCoursier as patchCoursierQuery,
@@ -46,6 +48,14 @@ export type { CoursierAvecUtilisateur } from "@colimo/shared";
 
 export function getCoursiers() {
   return getCoursiersQuery(supabase);
+}
+
+export function getCoursierByUtilisateurId(utilisateurId: string): Promise<Coursier | null> {
+  return getCoursierByUtilisateurIdQuery(supabase, utilisateurId);
+}
+
+export function getUtilisateur(id: string): Promise<Utilisateur | null> {
+  return getUtilisateurQuery(supabase, id);
 }
 
 export function patchCoursier(

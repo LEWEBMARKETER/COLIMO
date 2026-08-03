@@ -91,6 +91,8 @@ export default function CourseDetailScreen() {
         )
       : null;
 
+  const contactsFermes = course.statut === "confirmee";
+
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 32 }}>
@@ -123,6 +125,7 @@ export default function CourseDetailScreen() {
             repere={course.repereDepart}
             latitude={course.latitudeDepart}
             longitude={course.longitudeDepart}
+            appelFerme={contactsFermes}
           />
           <ContactCarte
             titre="Destinataire"
@@ -132,6 +135,7 @@ export default function CourseDetailScreen() {
             repere={course.repereArrivee}
             latitude={course.latitudeArrivee}
             longitude={course.longitudeArrivee}
+            appelFerme={contactsFermes}
           />
         </View>
 
@@ -143,7 +147,7 @@ export default function CourseDetailScreen() {
         )}
 
         <View className="mt-2">
-          <StatusTimeline statutActuel={course.statut} />
+          <StatusTimeline course={course} />
         </View>
 
         {prochain && (
@@ -155,12 +159,14 @@ export default function CourseDetailScreen() {
           />
         )}
 
-        <Bouton
-          label="Discuter avec le client"
-          variante="contour"
-          onPress={() => router.push(`/(coursier)/chat/${course.id}`)}
-          className="mt-3 py-3"
-        />
+        {!contactsFermes && (
+          <Bouton
+            label="Discuter avec le client"
+            variante="contour"
+            onPress={() => router.push(`/(coursier)/chat/${course.id}`)}
+            className="mt-3 py-3"
+          />
+        )}
 
         {(course.statut === "livree" || course.statut === "confirmee") && session && (
           <NotationForm
