@@ -5,6 +5,7 @@ import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
+import NoteEtoiles from "@/components/NoteEtoiles";
 import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/notifications";
@@ -138,9 +139,9 @@ export default function CoursierDashboard() {
               </Carte>
               <Carte className="flex-1">
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>
-                <Text className="mt-1 font-titre text-base text-colimo-neutre-fonce">
-                  {coursier?.noteMoyenne ? `${coursier.noteMoyenne} / 5` : "—"}
-                </Text>
+                <View className="mt-1.5">
+                  <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
+                </View>
               </Carte>
             </View>
 

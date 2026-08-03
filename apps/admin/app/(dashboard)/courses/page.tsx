@@ -131,6 +131,7 @@ function CoursesContenu() {
           <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
             <tr>
               <th className="px-4 py-3 font-medium">N° commande</th>
+              <th className="px-4 py-3 font-medium">Date</th>
               <th className="px-4 py-3 font-medium">Client</th>
               <th className="px-4 py-3 font-medium">Coursier</th>
               <th className="px-4 py-3 font-medium">Trajet</th>
@@ -145,6 +146,15 @@ function CoursesContenu() {
             {coursesAffichees.map((course) => (
               <tr key={course.id} className="border-b border-colimo-neutre-clair last:border-0">
                 <td className="px-4 py-3 font-mono text-xs text-colimo-neutre-fonce/70">{course.numeroCommande}</td>
+                <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                  {new Date(course.createdAt).toLocaleString("fr-FR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </td>
                 <td className="px-4 py-3">{nomUtilisateur(course.clientId)}</td>
                 <td className="px-4 py-3">{course.coursierId ? nomUtilisateur(course.coursierId) : "—"}</td>
                 <td className="px-4 py-3">
@@ -203,7 +213,7 @@ function CoursesContenu() {
             ))}
             {!chargement && coursesAffichees.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <td colSpan={10} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
                   Aucune course pour ce filtre
                 </td>
               </tr>

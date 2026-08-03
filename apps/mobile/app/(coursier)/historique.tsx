@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { COURSE_STATUS_LABELS, ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
 import Carte from "@/components/ui/Carte";
+import NoteEtoiles from "@/components/NoteEtoiles";
 import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -44,9 +45,9 @@ export default function HistoriqueCoursierScreen() {
           </Carte>
           <Carte className="flex-1">
             <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>
-            <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">
-              {coursier?.noteMoyenne ? `${coursier.noteMoyenne} / 5` : "—"}
-            </Text>
+            <View className="mt-1.5">
+              <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
+            </View>
           </Carte>
         </View>
 
