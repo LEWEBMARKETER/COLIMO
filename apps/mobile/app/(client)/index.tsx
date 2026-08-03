@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { COURSE_STATUS_LABELS, ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
+import CommerceDashboard from "@/components/CommerceDashboard";
 import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -25,6 +26,22 @@ export default function ClientHome() {
   async function handleDeconnexion() {
     await signOut();
     router.replace("/(auth)/login");
+  }
+
+  if (utilisateur?.typeClient === "commerce") {
+    return (
+      <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
+        <ScrollView className="flex-1 px-6 py-8" contentContainerStyle={{ paddingBottom: 32 }}>
+          <CommerceDashboard />
+          <Pressable onPress={() => router.push("/(client)/profil")} className="mt-4 py-2">
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Mon profil</Text>
+          </Pressable>
+          <Pressable onPress={handleDeconnexion} className="mt-1 py-2">
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    );
   }
 
   return (

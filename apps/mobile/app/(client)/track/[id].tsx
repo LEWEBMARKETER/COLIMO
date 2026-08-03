@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { MODE_PAIEMENT_LABELS, ZONE_LABELS, formatFCFA, lienGoogleMaps, type Course } from "@colimo/shared";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { MODE_PAIEMENT_LABELS, distanceKm, formatFCFA, type Course } from "@colimo/shared";
+import ContactCarte from "@/components/ContactCarte";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import Bouton from "@/components/ui/Bouton";
+import Carte from "@/components/ui/Carte";
 import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -62,63 +63,69 @@ export default function TrackScreen() {
     );
   }
 
+  const distance =
+    course.latitudeDepart !== undefined &&
+    course.longitudeDepart !== undefined &&
+    course.latitudeArrivee !== undefined &&
+    course.longitudeArrivee !== undefined
+      ? distanceKm(
+          { latitude: course.latitudeDepart, longitude: course.longitudeDepart },
+          { latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }
+        )
+      : null;
+
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 32 }}>
         <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">{course.numeroCommande}</Text>
-        <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">
-          {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
-        </Text>
         <Text className="mt-1 font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
-        <View className="mt-2 flex-row items-center justify-between">
-          <Text className="font-titre text-colimo-rouge">{formatFCFA(course.prix)}</Text>
-          <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
-            {MODE_PAIEMENT_LABELS[course.modePaiement]}
-          </Text>
+
+        <Carte sombre className="mt-3">
+          <View className="flex-row items-center justify-between">
+            <Text className="font-texte text-xs text-white/60">Prix</Text>
+            <Text className="font-titre text-white">{formatFCFA(course.prix)}</Text>
+          </View>
+          <View className="mt-1 flex-row items-center justify-between">
+            <Text className="font-texte text-xs text-white/60">Paiement</Text>
+            <Text className="font-texte text-sm text-white">{MODE_PAIEMENT_LABELS[course.modePaiement]}</Text>
+          </View>
+          <View className="mt-1 flex-row items-center justify-between">
+            <Text className="font-texte text-xs text-white/60">Distance</Text>
+            <Text className="font-texte text-sm text-white">
+              {distance !== null ? `${distance.toFixed(1)} km` : "Non disponible"}
+            </Text>
+          </View>
+        </Carte>
+
+        <View className="mt-4">
+          <ContactCarte
+            titre="Récupération"
+            nom={course.nomExpediteur}
+            telephone={course.telephoneExpediteur}
+            adresse={course.adresseDepart}
+            repere={course.repereDepart}
+            latitude={course.latitudeDepart}
+            longitude={course.longitudeDepart}
+          />
+          <ContactCarte
+            titre="Livraison"
+            nom={course.nomDestinataire}
+            telephone={course.telephoneDestinataire}
+            adresse={course.adresseArrivee}
+            repere={course.repereArrivee}
+            latitude={course.latitudeArrivee}
+            longitude={course.longitudeArrivee}
+          />
         </View>
 
-        <View className="mt-6 gap-3">
-          <View className="flex-row items-center justify-between rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3">
-            <Text className="flex-1 font-texte text-sm text-colimo-neutre-fonce/80" numberOfLines={1}>
-              {course.adresseDepart}
-            </Text>
-            <Ionicons
-              name="navigate-outline"
-              size={18}
-              color="#C41E24"
-              onPress={() =>
-                Linking.openURL(
-                  lienGoogleMaps({
-                    latitude: course.latitudeDepart,
-                    longitude: course.longitudeDepart,
-                    adresse: course.adresseDepart,
-                  })
-                )
-              }
-            />
+        {course.instructions && (
+          <View className="mb-3 rounded-2xl bg-colimo-rouge-clair p-4">
+            <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-rouge">Instructions</Text>
+            <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce">{course.instructions}</Text>
           </View>
-          <View className="flex-row items-center justify-between rounded-xl border border-colimo-neutre-clair bg-white px-4 py-3">
-            <Text className="flex-1 font-texte text-sm text-colimo-neutre-fonce/80" numberOfLines={1}>
-              {course.adresseArrivee}
-            </Text>
-            <Ionicons
-              name="navigate-outline"
-              size={18}
-              color="#C41E24"
-              onPress={() =>
-                Linking.openURL(
-                  lienGoogleMaps({
-                    latitude: course.latitudeArrivee,
-                    longitude: course.longitudeArrivee,
-                    adresse: course.adresseArrivee,
-                  })
-                )
-              }
-            />
-          </View>
-        </View>
+        )}
 
-        <View className="mt-6">
+        <View className="mt-2">
           <StatusTimeline statutActuel={course.statut} />
         </View>
 

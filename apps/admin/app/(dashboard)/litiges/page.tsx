@@ -90,6 +90,11 @@ export default function LitigesPage() {
                   {course.coursierId ? nomUtilisateur(course.coursierId) : "—"}
                 </p>
                 <p className="mt-1 text-sm text-colimo-neutre-fonce/70">{formatFCFA(course.prix)}</p>
+                {course.instructions && (
+                  <p className="mt-1 text-xs italic text-colimo-neutre-fonce/50">
+                    Instructions : {course.instructions}
+                  </p>
+                )}
               </div>
               <StatutBadge statut={course.statut} label={COURSE_STATUS_LABELS[course.statut]} />
             </div>

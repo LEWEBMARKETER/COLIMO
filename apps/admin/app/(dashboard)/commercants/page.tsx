@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getUtilisateurs, getCourses, getCommercantsBruts, upsertCommercant } from "@/lib/api";
-import { formatFCFA, type Commercant, type Course, type Utilisateur } from "@colimo/shared";
+import {
+  ACTIVITE_COMMERCE_LABELS,
+  VOLUME_LIVRAISONS_LABELS,
+  formatFCFA,
+  type Commercant,
+  type Course,
+  type Utilisateur,
+} from "@colimo/shared";
 
 interface Brouillon {
   adresse: string;
@@ -169,6 +176,12 @@ export default function CommercantsPage() {
                         <p>
                           {f.responsable || "Responsable non renseigné"} · {f.horaires || "Horaires non renseignés"}{" "}
                           · Commission {Math.round(f.commissionTaux * 100)}%
+                        </p>
+                        <p className="mt-1 text-xs text-colimo-neutre-fonce/50">
+                          {f.activite ? ACTIVITE_COMMERCE_LABELS[f.activite] : "Activité non renseignée"}
+                          {" · "}
+                          {f.volumeQuotidien ? VOLUME_LIVRAISONS_LABELS[f.volumeQuotidien] : "Volume non renseigné"}
+                          {f.whatsapp && ` · WhatsApp ${f.whatsapp}`}
                         </p>
                       </>
                     ) : (

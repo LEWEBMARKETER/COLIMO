@@ -4,6 +4,7 @@ import {
   creerNotation as creerNotationQuery,
   envoyerMessage as envoyerMessageQuery,
   getCodePromoParCode as getCodePromoParCodeQuery,
+  getCommercantsBruts as getCommercantsBrutsQuery,
   getCourse as getCourseQuery,
   getCoursiers as getCoursiersQuery,
   getCourses as getCoursesQuery,
@@ -15,9 +16,12 @@ import {
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
   updateUtilisateur as updateUtilisateurQuery,
+  upsertCommercant as upsertCommercantQuery,
   uploadFichier,
+  type ActiviteCommerce,
   type CategorieColis,
   type CodePromo,
+  type Commercant,
   type Coursier,
   type Course,
   type CourseStatus,
@@ -27,10 +31,13 @@ import {
   type ModePaiement,
   type Notation,
   type PieceIdentiteType,
+  type QuiPaie,
+  type TailleColis,
   type TypeClient,
   type Utilisateur,
   type VehiculeType,
   type VerificationStatus,
+  type VolumeLivraisons,
   type Zone,
 } from "@colimo/shared";
 import { supabase } from "./supabaseClient";
@@ -94,8 +101,38 @@ export function creerCourse(body: {
   prix: number;
   codePromoId?: string;
   reductionPromo?: number;
+  telephoneDestinataire?: string;
+  nomDestinataire?: string;
+  nomExpediteur?: string;
+  telephoneExpediteur?: string;
+  repereDepart?: string;
+  repereArrivee?: string;
+  tailleColis?: TailleColis;
+  quiPaie?: QuiPaie;
+  instructions?: string;
+  poidsEstime?: number;
+  programmeePour?: string;
 }): Promise<Course> {
   return creerCourseQuery(supabase, body);
+}
+
+export function upsertCommercant(input: {
+  utilisateurId: string;
+  adresse?: string;
+  responsable?: string;
+  horaires?: string;
+  commissionTaux?: number;
+  activite?: ActiviteCommerce;
+  volumeQuotidien?: VolumeLivraisons;
+  whatsapp?: string;
+  photoCommerceUrl?: string;
+}): Promise<Commercant> {
+  return upsertCommercantQuery(supabase, input);
+}
+
+export async function getMonCommerce(utilisateurId: string): Promise<Commercant | null> {
+  const commercants = await getCommercantsBrutsQuery(supabase);
+  return commercants.find((c) => c.utilisateurId === utilisateurId) ?? null;
 }
 
 export function getCodePromoParCode(code: string): Promise<CodePromo | null> {
@@ -158,6 +195,12 @@ export async function uploaderAvatar(utilisateurId: string, uri: string, mimeTyp
   return uploadFichier(supabase, "avatars", `${utilisateurId}/avatar.${extension}`, donnees, mimeType);
 }
 
+export async function uploaderPhotoCommerce(utilisateurId: string, uri: string, mimeType: string): Promise<string> {
+  const donnees = await uriVersArrayBuffer(uri);
+  const extension = mimeType.includes("png") ? "png" : "jpg";
+  return uploadFichier(supabase, "avatars", `${utilisateurId}/photo-commerce.${extension}`, donnees, mimeType);
+}
+
 export async function uploaderPieceIdentite(utilisateurId: string, uri: string, mimeType: string): Promise<string> {
   const donnees = await uriVersArrayBuffer(uri);
   const extension = mimeType.includes("png") ? "png" : "jpg";
@@ -191,6 +234,11 @@ export async function inscrireClient(input: {
   telephone: string;
   zone?: Zone;
   photo?: { uri: string; mimeType: string };
+  responsable?: string;
+  whatsapp?: string;
+  activite?: ActiviteCommerce;
+  volumeQuotidien?: VolumeLivraisons;
+  photoCommerce?: { uri: string; mimeType: string };
 }): Promise<Utilisateur> {
   const { data, error } = await supabase.auth.signUp({ email: input.email, password: input.password });
   if (error) throw error;
@@ -198,7 +246,7 @@ export async function inscrireClient(input: {
 
   const photoUrl = input.photo ? await uploaderAvatar(data.user.id, input.photo.uri, input.photo.mimeType) : undefined;
 
-  return insertUtilisateur(supabase, {
+  const utilisateur = await insertUtilisateur(supabase, {
     id: data.user.id,
     nom: input.nom,
     telephone: input.telephone,
@@ -207,6 +255,22 @@ export async function inscrireClient(input: {
     zone: input.zone ?? null,
     photoUrl,
   });
+
+  if (input.typeClient === "commerce") {
+    const photoCommerceUrl = input.photoCommerce
+      ? await uploaderPhotoCommerce(data.user.id, input.photoCommerce.uri, input.photoCommerce.mimeType)
+      : undefined;
+    await upsertCommercantQuery(supabase, {
+      utilisateurId: data.user.id,
+      responsable: input.responsable,
+      whatsapp: input.whatsapp,
+      activite: input.activite,
+      volumeQuotidien: input.volumeQuotidien,
+      photoCommerceUrl,
+    });
+  }
+
+  return utilisateur;
 }
 
 export async function inscrireCoursier(input: {

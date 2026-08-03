@@ -8,12 +8,27 @@ import Bouton from "@/components/ui/Bouton";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import { inscrireClient } from "@/lib/api";
-import type { TypeClient, Zone } from "@colimo/shared";
+import {
+  ACTIVITE_COMMERCE_LABELS,
+  VOLUME_LIVRAISONS_LABELS,
+  type ActiviteCommerce,
+  type TypeClient,
+  type VolumeLivraisons,
+  type Zone,
+} from "@colimo/shared";
 
 const TYPES_CLIENT: { valeur: TypeClient; label: string }[] = [
   { valeur: "particulier", label: "Particulier" },
   { valeur: "commerce", label: "Commerce" },
 ];
+
+const ACTIVITES: { valeur: ActiviteCommerce; label: string }[] = (
+  Object.keys(ACTIVITE_COMMERCE_LABELS) as ActiviteCommerce[]
+).map((valeur) => ({ valeur, label: ACTIVITE_COMMERCE_LABELS[valeur] }));
+
+const VOLUMES: { valeur: VolumeLivraisons; label: string }[] = (
+  Object.keys(VOLUME_LIVRAISONS_LABELS) as VolumeLivraisons[]
+).map((valeur) => ({ valeur, label: VOLUME_LIVRAISONS_LABELS[valeur] }));
 
 export default function RegisterClientScreen() {
   const [typeClient, setTypeClient] = useState<TypeClient>("particulier");
@@ -23,6 +38,11 @@ export default function RegisterClientScreen() {
   const [password, setPassword] = useState("");
   const [zone, setZone] = useState<Zone | null>(null);
   const [photo, setPhoto] = useState<{ uri: string; mimeType: string } | null>(null);
+  const [responsable, setResponsable] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [activite, setActivite] = useState<ActiviteCommerce | null>(null);
+  const [volumeQuotidien, setVolumeQuotidien] = useState<VolumeLivraisons | null>(null);
+  const [photoCommerce, setPhotoCommerce] = useState<{ uri: string; mimeType: string } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
 
@@ -40,6 +60,11 @@ export default function RegisterClientScreen() {
         typeClient,
         zone: zone ?? undefined,
         photo: photo ?? undefined,
+        responsable: typeClient === "commerce" ? responsable || undefined : undefined,
+        whatsapp: typeClient === "commerce" ? whatsapp || undefined : undefined,
+        activite: typeClient === "commerce" ? activite ?? undefined : undefined,
+        volumeQuotidien: typeClient === "commerce" ? volumeQuotidien ?? undefined : undefined,
+        photoCommerce: typeClient === "commerce" ? photoCommerce ?? undefined : undefined,
       });
       router.replace("/");
     } catch {
@@ -77,6 +102,15 @@ export default function RegisterClientScreen() {
           placeholder="+241 XX XXX XXX"
         />
 
+        {typeClient === "commerce" && (
+          <ChampTexte
+            label="Nom du responsable (optionnel)"
+            value={responsable}
+            onChangeText={setResponsable}
+            placeholder="Personne à contacter"
+          />
+        )}
+
         <ChampTexte
           label="Email"
           value={email}
@@ -85,6 +119,16 @@ export default function RegisterClientScreen() {
           keyboardType="email-address"
           placeholder="vous@exemple.com"
         />
+
+        {typeClient === "commerce" && (
+          <ChampTexte
+            label="WhatsApp (optionnel)"
+            value={whatsapp}
+            onChangeText={setWhatsapp}
+            keyboardType="phone-pad"
+            placeholder="+241 XX XXX XXX"
+          />
+        )}
 
         <ChampTexte
           label="Mot de passe"
@@ -96,11 +140,32 @@ export default function RegisterClientScreen() {
 
         <ZoneSelector label="Zone (optionnel)" value={zone} onChange={setZone} />
 
+        {typeClient === "commerce" && (
+          <>
+            <GroupePastilles label="Activité" options={ACTIVITES} value={activite} onChange={setActivite} />
+            <GroupePastilles
+              label="Combien de livraisons effectuez-vous par jour ?"
+              options={VOLUMES}
+              value={volumeQuotidien}
+              onChange={setVolumeQuotidien}
+            />
+          </>
+        )}
+
         <PhotoPicker
           label={typeClient === "commerce" ? "Logo du commerce (optionnel)" : "Photo de profil (optionnel)"}
           uri={photo?.uri ?? null}
           onChange={(uri, mimeType) => setPhoto({ uri, mimeType })}
         />
+
+        {typeClient === "commerce" && (
+          <PhotoPicker
+            label="Photo du commerce (optionnel)"
+            rond={false}
+            uri={photoCommerce?.uri ?? null}
+            onChange={(uri, mimeType) => setPhotoCommerce({ uri, mimeType })}
+          />
+        )}
 
         {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 

@@ -59,6 +59,11 @@ export default function HistoriqueClientScreen() {
                 <Text className="mt-1 font-texte-medium text-colimo-neutre-fonce">
                   {ZONE_LABELS[item.zoneDepart]} → {ZONE_LABELS[item.zoneArrivee]}
                 </Text>
+                {item.telephoneDestinataire && (
+                  <Text className="mt-0.5 font-texte text-xs text-colimo-neutre-fonce/60">
+                    Client : {item.telephoneDestinataire}
+                  </Text>
+                )}
                 <View className="mt-2 flex-row items-center justify-between">
                   <Text className="font-titre text-colimo-rouge">{formatFCFA(item.prix)}</Text>
                   <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
