@@ -12,7 +12,7 @@ import {
   type Zone,
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
-import BoutonPosition from "@/components/BoutonPosition";
+import SelecteurPointCarte from "@/components/SelecteurPointCarte";
 import PriceSummary from "@/components/PriceSummary";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
@@ -169,9 +169,13 @@ export default function NouvelleLivraisonScreen() {
           onChangeText={setRepereArrivee}
           placeholder="Ex : Immeuble bleu en face de la pharmacie"
         />
-        <BoutonPosition
-          label={coordArrivee ? "Position enregistrée ✓" : "Utiliser la position du client"}
-          onLocalisation={(latitude, longitude) => setCoordArrivee({ latitude, longitude })}
+        <SelecteurPointCarte
+          id="arrivee"
+          coordonnees={coordArrivee}
+          onChangerCoordonnees={setCoordArrivee}
+          adresseRecherche={adresseArrivee}
+          zone={arrivee}
+          couleur="#2563EB"
         />
 
         <TitreSection>Informations de la commande</TitreSection>

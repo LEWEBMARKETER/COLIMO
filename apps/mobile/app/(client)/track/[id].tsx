@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { MODE_PAIEMENT_LABELS, distanceKm, formatFCFA, type Coursier, type Course, type Utilisateur } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
+import CarteItineraire from "@/components/CarteItineraire";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import NoteEtoiles from "@/components/NoteEtoiles";
@@ -117,6 +118,18 @@ export default function TrackScreen() {
             </Text>
           </View>
         </Carte>
+
+        {course.latitudeDepart !== undefined &&
+          course.longitudeDepart !== undefined &&
+          course.latitudeArrivee !== undefined &&
+          course.longitudeArrivee !== undefined && (
+            <View className="mt-3">
+              <CarteItineraire
+                depart={{ latitude: course.latitudeDepart, longitude: course.longitudeDepart }}
+                arrivee={{ latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }}
+              />
+            </View>
+          )}
 
         {coursierUtilisateur && (
           <Carte className="mt-3">

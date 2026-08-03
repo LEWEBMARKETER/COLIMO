@@ -12,6 +12,7 @@ import {
   type EvenementNotification,
 } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
+import CarteItineraire from "@/components/CarteItineraire";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import Bouton from "@/components/ui/Bouton";
@@ -115,6 +116,20 @@ export default function CourseDetailScreen() {
             </Text>
           </View>
         </Carte>
+
+        {course.latitudeDepart !== undefined &&
+          course.longitudeDepart !== undefined &&
+          course.latitudeArrivee !== undefined &&
+          course.longitudeArrivee !== undefined && (
+            <View className="mt-3">
+              <CarteItineraire
+                depart={{ latitude: course.latitudeDepart, longitude: course.longitudeDepart }}
+                arrivee={{ latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }}
+                labelDepart="Expéditeur"
+                labelArrivee="Destinataire"
+              />
+            </View>
+          )}
 
         <View className="mt-4">
           <ContactCarte
