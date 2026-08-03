@@ -84,7 +84,7 @@ export default function StatistiquesPage() {
         Revenus (courses confirmées)
       </h2>
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Chiffre d'affaires total" value={formatFCFA(chiffreAffairesTotal)} />
+        <StatCard label="Chiffre d'affaires total" value={formatFCFA(chiffreAffairesTotal)} sombre />
         <StatCard label="Commissions générées" value={formatFCFA(commissionsGenerees)} />
         <StatCard label="Gains coursiers (net)" value={formatFCFA(gainsCoursiersNets)} />
       </div>

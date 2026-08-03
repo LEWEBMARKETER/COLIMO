@@ -125,7 +125,7 @@ export default function DashboardPage() {
         </select>
       </div>
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Chiffre d'affaires" value={formatFCFA(caPeriode)} />
+        <StatCard label="Chiffre d'affaires" value={formatFCFA(caPeriode)} sombre />
         <StatCard label="Commissions générées" value={formatFCFA(commissionsPeriode)} />
         <StatCard label="Commandes terminées" value={String(commandesTerminees)} />
         <StatCard label="Commandes annulées" value={String(commandesAnnulees)} />

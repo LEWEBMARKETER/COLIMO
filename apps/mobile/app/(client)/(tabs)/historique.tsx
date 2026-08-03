@@ -2,14 +2,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import {
-  COURSE_STATUS_LABELS,
-  MODE_PAIEMENT_LABELS,
-  ZONE_LABELS,
-  formatFCFA,
-  type Course,
-} from "@colimo/shared";
-import Carte from "@/components/ui/Carte";
+import { MODE_PAIEMENT_LABELS, ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
+import StatutChip from "@/components/ui/StatutChip";
 import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -36,10 +30,11 @@ export default function HistoriqueClientScreen() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <View className="flex-1 px-6 py-6">
+        <Text className="mb-4 font-titre text-2xl text-colimo-neutre-fonce">Mes courses</Text>
         <FlatList
           data={courses}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ gap: 12 }}
+          contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
           ListEmptyComponent={
             <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
               Aucune course pour l&apos;instant
@@ -47,7 +42,7 @@ export default function HistoriqueClientScreen() {
           }
           renderItem={({ item }) => (
             <Pressable onPress={() => router.push(`/(client)/track/${item.id}`)}>
-              <Carte>
+              <View className="rounded-2xl bg-white p-4 shadow-sm">
                 <View className="flex-row items-center justify-between">
                   <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">
                     {item.numeroCommande}
@@ -64,13 +59,16 @@ export default function HistoriqueClientScreen() {
                     Client : {item.telephoneDestinataire}
                   </Text>
                 )}
-                <View className="mt-2 flex-row items-center justify-between">
+                <View className="mt-2.5 flex-row items-center justify-between">
                   <Text className="font-titre text-colimo-rouge">{formatFCFA(item.prix)}</Text>
-                  <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
-                    {COURSE_STATUS_LABELS[item.statut]} · {MODE_PAIEMENT_LABELS[item.modePaiement]}
-                  </Text>
+                  <View className="flex-row items-center gap-2">
+                    <Text className="font-texte text-xs text-colimo-neutre-fonce/50">
+                      {MODE_PAIEMENT_LABELS[item.modePaiement]}
+                    </Text>
+                    <StatutChip statut={item.statut} intensite="douce" />
+                  </View>
                 </View>
-              </Carte>
+              </View>
             </Pressable>
           )}
         />

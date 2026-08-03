@@ -22,7 +22,7 @@ import {
   type Zone,
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
-import BoutonPosition from "@/components/BoutonPosition";
+import SelecteurPointCarte from "@/components/SelecteurPointCarte";
 import PriceSummary from "@/components/PriceSummary";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
@@ -234,9 +234,13 @@ export default function PublishScreen() {
               onChangeText={setRepereDepart}
               placeholder='Ex : "Maison jaune derrière la pharmacie"'
             />
-            <BoutonPosition
-              label={coordDepart ? "Position de départ enregistrée ✓" : "Utiliser ma position actuelle"}
-              onLocalisation={(latitude, longitude) => setCoordDepart({ latitude, longitude })}
+            <SelecteurPointCarte
+              id="depart"
+              coordonnees={coordDepart}
+              onChangerCoordonnees={setCoordDepart}
+              adresseRecherche={adresseDepart}
+              zone={depart}
+              couleur="#C41E24"
             />
             <ChampTexte
               label="Nom du contact"
@@ -270,9 +274,14 @@ export default function PublishScreen() {
               onChangeText={setRepereArrivee}
               placeholder="Ex : Immeuble bleu en face de la pharmacie"
             />
-            <BoutonPosition
-              label={coordArrivee ? "Position d'arrivée enregistrée ✓" : "Utiliser la position du destinataire"}
-              onLocalisation={(latitude, longitude) => setCoordArrivee({ latitude, longitude })}
+            <SelecteurPointCarte
+              id="arrivee"
+              coordonnees={coordArrivee}
+              onChangerCoordonnees={setCoordArrivee}
+              adresseRecherche={adresseArrivee}
+              zone={arrivee}
+              couleur="#2563EB"
+              pointContexte={coordDepart ? { coordonnees: coordDepart, couleur: "#C41E24", label: "Départ" } : null}
             />
             <ChampTexte
               label="Nom du destinataire"

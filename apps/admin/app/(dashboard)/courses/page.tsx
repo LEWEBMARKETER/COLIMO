@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StatutBadge from "@/components/StatutBadge";
+import CarteCourses from "@/components/CarteCourses";
 import { getCourses, getUtilisateurs, getCoursiers, patchCourse, type CoursierAvecUtilisateur } from "@/lib/api";
 import { notifierEvenement } from "@/lib/notifications";
 import {
@@ -20,6 +21,7 @@ import {
 const ZONES = Object.keys(ZONE_LABELS) as Zone[];
 const STATUTS_ANNULABLES = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
 const STATUTS_RETOURNABLES = new Set(["retrait", "en_cours", "livree"]);
+const STATUTS_ACTIFS = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
 
 export default function CoursesPage() {
   return (
@@ -60,6 +62,11 @@ function CoursesContenu() {
   const nomUtilisateur = useMemo(
     () => (id: string) => utilisateurs.find((u) => u.id === id)?.nom ?? "—",
     [utilisateurs]
+  );
+
+  const coursesActives = useMemo(
+    () => coursesAffichees.filter((c) => STATUTS_ACTIFS.has(c.statut)),
+    [coursesAffichees]
   );
 
   async function annuler(course: Course) {
@@ -125,6 +132,16 @@ function CoursesContenu() {
           </button>
         </div>
       )}
+
+      <div className="mt-6">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="font-titre text-base font-semibold text-colimo-neutre-fonce">Courses actives sur la carte</h2>
+          <span className="text-xs text-colimo-neutre-fonce/50">
+            {coursesActives.length} course{coursesActives.length > 1 ? "s" : ""} en cours
+          </span>
+        </div>
+        <CarteCourses courses={coursesActives} nomUtilisateur={nomUtilisateur} />
+      </div>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
         <table className="w-full text-left text-sm">

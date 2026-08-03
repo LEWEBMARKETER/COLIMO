@@ -1,19 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, Pressable, Switch, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
-import Carte from "@/components/ui/Carte";
-import NoteEtoiles from "@/components/NoteEtoiles";
 import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/notifications";
 
 export default function CoursierDashboard() {
-  const { session, utilisateur, coursier, refreshProfile, signOut } = useAuth();
+  const { session, utilisateur, coursier, refreshProfile } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
-  const [gainsBruts, setGainsBruts] = useState(0);
   const [gainsNets, setGainsNets] = useState(0);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -22,7 +19,6 @@ export default function CoursierDashboard() {
     if (!session) return;
     getCourses({ coursierId: session.user.id }).then((mesCourses) => {
       const confirmees = mesCourses.filter((c) => c.statut === "confirmee");
-      setGainsBruts(confirmees.reduce((s, c) => s + c.prix, 0));
       setGainsNets(confirmees.reduce((s, c) => s + (c.prix - c.commission), 0));
     });
   }, [session]);
@@ -86,11 +82,6 @@ export default function CoursierDashboard() {
     }
   }
 
-  async function handleDeconnexion() {
-    await signOut();
-    router.replace("/(auth)/login");
-  }
-
   if (chargement) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-colimo-fond">
@@ -105,77 +96,65 @@ export default function CoursierDashboard() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <FlatList
-        className="flex-1 px-6"
-        contentContainerStyle={{ paddingTop: 24, paddingBottom: 32, gap: 12 }}
+        className="flex-1 px-5"
+        contentContainerStyle={{ paddingTop: 20, paddingBottom: 28, gap: 12 }}
         data={afficherListe ? courses : []}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
-          <View className="mb-4">
-            <Pressable onPress={() => router.push("/(coursier)/profil")} className="mb-4 flex-row items-center gap-3">
-              {utilisateur?.photoUrl ? (
-                <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
-              ) : (
-                <View className="h-12 w-12 items-center justify-center rounded-full bg-colimo-rouge-clair">
-                  <Text className="font-titre text-colimo-rouge">
-                    {(utilisateur?.prenom ?? utilisateur?.nom ?? "?").charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-              <View className="flex-1">
-                <Text className="font-texte-medium text-colimo-neutre-fonce">
-                  {utilisateur?.prenom ?? utilisateur?.nom ?? "Mon profil"}
-                </Text>
-                <Text className="font-texte text-xs text-colimo-neutre-fonce/50">Voir mon profil</Text>
-              </View>
-            </Pressable>
+          <View className="mb-5">
+            <Text className="font-texte text-sm text-colimo-neutre-fonce/60">
+              Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""}
+            </Text>
 
-            <View className="mb-4 flex-row gap-3">
-              <Carte className="flex-1">
-                <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés (net)</Text>
-                <Text className="mt-1 font-titre text-base text-colimo-rouge">{formatFCFA(gainsNets)}</Text>
-                <Text className="mt-0.5 font-texte text-[10px] text-colimo-neutre-fonce/50">
-                  Brut {formatFCFA(gainsBruts)} · Commission {formatFCFA(gainsBruts - gainsNets)}
+            {/* Chiffre-clé du jour, traitement éditorial : le nombre porte
+                l'information, la légende reste discrète. */}
+            <View className="mt-2 flex-row items-end justify-between border-b-2 border-colimo-neutre-fonce pb-3">
+              <View>
+                <Text className="font-titre-bold text-3xl text-colimo-neutre-fonce" style={{ fontVariant: ["tabular-nums"] }}>
+                  {formatFCFA(gainsNets)}
                 </Text>
-              </Carte>
-              <Carte className="flex-1">
-                <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>
-                <View className="mt-1.5">
-                  <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
-                </View>
-              </Carte>
+                <Text className="mt-1 font-texte-medium text-[11px] uppercase tracking-wide text-colimo-neutre-fonce/50">
+                  Gains nets cumulés
+                </Text>
+              </View>
+              <Text className="font-texte text-xs text-colimo-neutre-fonce/50">
+                {courses.length} course{courses.length > 1 ? "s" : ""} dispo
+              </Text>
             </View>
 
-            <Carte className="flex-row items-center justify-between">
+            <View className="mt-4 flex-row items-center justify-between rounded-lg border-2 border-colimo-neutre-fonce bg-white px-4 py-3">
               <View className="flex-1 pr-3">
                 <Text className="font-texte-medium text-colimo-neutre-fonce">Disponible</Text>
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
-                  Zones : {zonesDisponibilite.length > 0 ? zonesDisponibilite.map((z) => ZONE_LABELS[z]).join(", ") : "Aucune zone sélectionnée"}
+                  {zonesDisponibilite.length > 0 ? zonesDisponibilite.map((z) => ZONE_LABELS[z]).join(", ") : "Aucune zone sélectionnée"}
                 </Text>
               </View>
               <Switch
                 value={coursier?.disponibilite ?? false}
                 onValueChange={toggleDisponibilite}
                 disabled={coursier?.statutVerification !== "valide"}
+                trackColor={{ true: "#C41E24" }}
               />
-            </Carte>
+            </View>
 
             {erreur && <Text className="mt-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 
             {coursier?.statutVerification !== "valide" ? (
-              <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
-                Votre inscription est en cours de validation par COLIMO. Vous pourrez accepter des
+              <Text className="mt-5 text-center font-texte text-colimo-neutre-fonce/60">
+                Ton inscription est en cours de validation par COLIMO. Tu pourras accepter des
                 courses une fois validé·e.
               </Text>
             ) : !coursier?.disponibilite ? (
-              <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
-                Passez disponible pour voir les courses de vos zones
+              <Text className="mt-5 text-center font-texte text-colimo-neutre-fonce/60">
+                Passe disponible pour voir les courses de tes zones
               </Text>
             ) : zonesDisponibilite.length === 0 ? (
-              <Pressable onPress={() => router.push("/(coursier)/profil")}>
-                <Text className="mt-6 text-center font-texte text-sm text-colimo-rouge">
-                  Ajoutez des zones couvertes dans votre profil pour voir des demandes
-                </Text>
-              </Pressable>
+              <Text
+                onPress={() => router.push("/(coursier)/profil")}
+                className="mt-5 text-center font-texte text-sm text-colimo-rouge"
+              >
+                Ajoute des zones couvertes dans ton profil pour voir des demandes
+              </Text>
             ) : null}
           </View>
         }
@@ -187,33 +166,24 @@ export default function CoursierDashboard() {
           ) : null
         }
         renderItem={({ item }) => (
-          <Carte>
-            <Text className="font-texte-medium text-colimo-neutre-fonce">
+          <View className="rounded-lg border-2 border-colimo-neutre-fonce bg-white p-4">
+            <View className="flex-row items-center justify-between">
+              <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
+                {ZONE_LABELS[item.zoneDepart]} → {ZONE_LABELS[item.zoneArrivee]}
+              </Text>
+              <Text
+                className="font-titre-bold text-xl text-colimo-neutre-fonce"
+                style={{ fontVariant: ["tabular-nums"] }}
+              >
+                {formatFCFA(item.prix)}
+              </Text>
+            </View>
+            <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/70" numberOfLines={1}>
               {item.adresseDepart} → {item.adresseArrivee}
             </Text>
-            <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/70">{item.typeColis}</Text>
-            <View className="mt-3 flex-row items-center justify-between">
-              <Text className="font-titre text-colimo-rouge">{formatFCFA(item.prix)}</Text>
-              <Bouton label="Accepter" onPress={() => accepter(item)} className="px-6 py-2.5" />
-            </View>
-          </Carte>
-        )}
-        ListFooterComponent={
-          <View className="mt-4">
-            <Bouton
-              label="Mes gains et notes"
-              variante="contour"
-              onPress={() => router.push("/(coursier)/historique")}
-              className="py-3"
-            />
-            <Pressable onPress={() => router.push("/faq")} className="mt-3 py-2">
-              <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">FAQ</Text>
-            </Pressable>
-            <Pressable onPress={handleDeconnexion} className="mt-1 py-2">
-              <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/60">Se déconnecter</Text>
-            </Pressable>
+            <Bouton label="Accepter cette course" onPress={() => accepter(item)} className="mt-3 py-3.5" />
           </View>
-        }
+        )}
       />
     </SafeAreaView>
   );

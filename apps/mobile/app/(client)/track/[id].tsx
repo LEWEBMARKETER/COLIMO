@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { MODE_PAIEMENT_LABELS, distanceKm, formatFCFA, type Coursier, type Course, type Utilisateur } from "@colimo/shared";
+import { MODE_PAIEMENT_LABELS, formatFCFA, type Coursier, type Course, type Utilisateur } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
+import CarteItineraire from "@/components/CarteItineraire";
+import BandeauStatut from "@/components/BandeauStatut";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import NoteEtoiles from "@/components/NoteEtoiles";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
+import ChiffreCle from "@/components/ui/ChiffreCle";
 import { getCourse, getCoursierByUtilisateurId, getUtilisateur, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/notifications";
@@ -82,55 +85,47 @@ export default function TrackScreen() {
     );
   }
 
-  const distance =
-    course.latitudeDepart !== undefined &&
-    course.longitudeDepart !== undefined &&
-    course.latitudeArrivee !== undefined &&
-    course.longitudeArrivee !== undefined
-      ? distanceKm(
-          { latitude: course.latitudeDepart, longitude: course.longitudeDepart },
-          { latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }
-        )
-      : null;
-
   const contactsFermes = course.statut === "confirmee";
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 32 }}>
-        <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">{course.numeroCommande}</Text>
-        <Text className="mt-1 font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
+      <BandeauStatut statut={course.statut} numeroCommande={course.numeroCommande} />
+
+      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}>
+        <Text className="font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
 
         <Carte sombre className="mt-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="font-texte text-xs text-white/60">Prix</Text>
-            <Text className="font-titre text-white">{formatFCFA(course.prix)}</Text>
-          </View>
-          <View className="mt-1 flex-row items-center justify-between">
-            <Text className="font-texte text-xs text-white/60">Paiement</Text>
-            <Text className="font-texte text-sm text-white">{MODE_PAIEMENT_LABELS[course.modePaiement]}</Text>
-          </View>
-          <View className="mt-1 flex-row items-center justify-between">
-            <Text className="font-texte text-xs text-white/60">Distance</Text>
-            <Text className="font-texte text-sm text-white">
-              {distance !== null ? `${distance.toFixed(1)} km` : "Non disponible"}
-            </Text>
+          <View className="flex-row items-end justify-between">
+            <ChiffreCle valeur={formatFCFA(course.prix)} label="Prix" sombre />
+            <Text className="font-texte text-xs text-white/60">{MODE_PAIEMENT_LABELS[course.modePaiement]}</Text>
           </View>
         </Carte>
 
-        {coursierUtilisateur && (
-          <Carte className="mt-3">
-            <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
-              Votre coursier
-            </Text>
-            <Text className="mt-1 font-texte-medium text-colimo-neutre-fonce">
-              {coursierUtilisateur.prenom ? `${coursierUtilisateur.prenom} ` : ""}
-              {coursierUtilisateur.nom}
-            </Text>
-            <View className="mt-1">
-              <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
+        {course.latitudeDepart !== undefined &&
+          course.longitudeDepart !== undefined &&
+          course.latitudeArrivee !== undefined &&
+          course.longitudeArrivee !== undefined && (
+            <View className="mt-3">
+              <CarteItineraire
+                depart={{ latitude: course.latitudeDepart, longitude: course.longitudeDepart }}
+                arrivee={{ latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }}
+              />
             </View>
-          </Carte>
+          )}
+
+        {coursierUtilisateur && (
+          <View className="mt-3 flex-row items-center justify-between rounded-2xl border border-colimo-neutre-clair bg-white p-4">
+            <View>
+              <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
+                Votre coursier
+              </Text>
+              <Text className="mt-0.5 font-texte-medium text-colimo-neutre-fonce">
+                {coursierUtilisateur.prenom ? `${coursierUtilisateur.prenom} ` : ""}
+                {coursierUtilisateur.nom}
+              </Text>
+            </View>
+            <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
+          </View>
         )}
 
         <View className="mt-4">
@@ -167,29 +162,6 @@ export default function TrackScreen() {
           <StatusTimeline course={course} />
         </View>
 
-        {course.coursierId && !contactsFermes && (
-          <Bouton
-            label="Discuter avec le coursier"
-            variante="contour"
-            onPress={() => router.push(`/(client)/chat/${course.id}`)}
-            className="mt-6 py-3"
-          />
-        )}
-
-        {course.statut === "livree" && (
-          <View className="mt-4">
-            <Bouton
-              label="Confirmer la réception du colis"
-              onPress={confirmerReception}
-              chargement={confirmationEnCours}
-              className="py-3"
-            />
-            {erreurConfirmation && (
-              <Text className="mt-2 text-center font-texte text-xs text-colimo-rouge">{erreurConfirmation}</Text>
-            )}
-          </View>
-        )}
-
         {(course.statut === "livree" || course.statut === "confirmee") && course.coursierId && session && (
           <NotationForm
             courseId={course.id}
@@ -205,15 +177,36 @@ export default function TrackScreen() {
           </Text>
         )}
 
-        {STATUTS_SIGNALABLES.has(course.statut) && (
-          <Bouton
-            label="Signaler un problème"
-            variante="contour"
-            onPress={() => router.push(`/(client)/litige/${course.id}`)}
-            className="mt-4 py-3"
-          />
+        {erreurConfirmation && (
+          <Text className="mt-2 text-center font-texte text-xs text-colimo-rouge">{erreurConfirmation}</Text>
         )}
       </ScrollView>
+
+      {(course.statut === "livree" ||
+        (course.coursierId && !contactsFermes) ||
+        STATUTS_SIGNALABLES.has(course.statut)) && (
+        <View className="border-t border-colimo-neutre-clair bg-colimo-fond px-6 pb-2 pt-3">
+          {(STATUTS_SIGNALABLES.has(course.statut) || (course.coursierId && !contactsFermes)) && (
+            <Text className="mb-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50">
+              {STATUTS_SIGNALABLES.has(course.statut) && (
+                <Text onPress={() => router.push(`/(client)/litige/${course.id}`)}>Signaler un problème</Text>
+              )}
+              {STATUTS_SIGNALABLES.has(course.statut) && course.coursierId && !contactsFermes && "  ·  "}
+              {course.coursierId && !contactsFermes && (
+                <Text onPress={() => router.push(`/(client)/chat/${course.id}`)}>Discuter avec le coursier</Text>
+              )}
+            </Text>
+          )}
+          {course.statut === "livree" && (
+            <Bouton
+              label="Confirmer la réception du colis"
+              onPress={confirmerReception}
+              chargement={confirmationEnCours}
+              className="py-4"
+            />
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

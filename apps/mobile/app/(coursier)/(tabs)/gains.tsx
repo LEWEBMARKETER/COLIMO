@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { COURSE_STATUS_LABELS, ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
+import { ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
 import Carte from "@/components/ui/Carte";
+import ChiffreCle from "@/components/ui/ChiffreCle";
+import StatutChip from "@/components/ui/StatutChip";
 import NoteEtoiles from "@/components/NoteEtoiles";
 import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
-export default function HistoriqueCoursierScreen() {
+export default function GainsCoursierScreen() {
   const { session, coursier } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [chargement, setChargement] = useState(true);
@@ -35,26 +37,20 @@ export default function HistoriqueCoursierScreen() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <View className="flex-1 px-6 py-6">
-        <View className="mb-4 flex-row gap-3">
-          <Carte className="flex-1">
-            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Gains cumulés (net)</Text>
-            <Text className="mt-1 font-titre text-lg text-colimo-rouge">{formatFCFA(gainsNets)}</Text>
-            <Text className="mt-0.5 font-texte text-[10px] text-colimo-neutre-fonce/50">
-              Brut {formatFCFA(gainsBruts)} · Commission {formatFCFA(gainsBruts - gainsNets)}
-            </Text>
-          </Carte>
-          <Carte className="flex-1">
-            <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Note moyenne</Text>
-            <View className="mt-1.5">
-              <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
-            </View>
-          </Carte>
-        </View>
+        <Carte sombre>
+          <View className="flex-row items-end justify-between">
+            <ChiffreCle valeur={formatFCFA(gainsNets)} label="Gains nets cumulés" sombre />
+            <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
+          </View>
+          <Text className="mt-3 font-texte text-[11px] text-white/50">
+            Brut {formatFCFA(gainsBruts)} · Commission {formatFCFA(gainsBruts - gainsNets)}
+          </Text>
+        </Carte>
 
         <FlatList
           data={courses}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ gap: 12 }}
+          contentContainerStyle={{ gap: 12, paddingTop: 16, paddingBottom: 24 }}
           ListEmptyComponent={
             <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
               Aucune course pour l&apos;instant
@@ -62,7 +58,7 @@ export default function HistoriqueCoursierScreen() {
           }
           renderItem={({ item }) => (
             <Pressable onPress={() => router.push(`/(coursier)/course/${item.id}`)}>
-              <Carte>
+              <View className="rounded-2xl bg-white p-4 shadow-sm">
                 <View className="flex-row items-center justify-between">
                   <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">
                     {item.numeroCommande}
@@ -74,18 +70,16 @@ export default function HistoriqueCoursierScreen() {
                 <Text className="mt-1 font-texte-medium text-colimo-neutre-fonce">
                   {ZONE_LABELS[item.zoneDepart]} → {ZONE_LABELS[item.zoneArrivee]}
                 </Text>
-                <View className="mt-2 flex-row items-center justify-between">
+                <View className="mt-2.5 flex-row items-center justify-between">
                   <Text className="font-titre text-colimo-rouge">{formatFCFA(item.prix)}</Text>
-                  <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
-                    {COURSE_STATUS_LABELS[item.statut]}
-                  </Text>
+                  <StatutChip statut={item.statut} intensite="douce" />
                 </View>
                 {item.statut === "confirmee" && (
-                  <Text className="mt-1 font-texte text-[11px] text-colimo-neutre-fonce/50">
+                  <Text className="mt-1.5 font-texte text-[11px] text-colimo-neutre-fonce/50">
                     Net perçu : {formatFCFA(item.prix - item.commission)} (commission {formatFCFA(item.commission)})
                   </Text>
                 )}
-              </Carte>
+              </View>
             </Pressable>
           )}
         />
