@@ -30,7 +30,7 @@ const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map
 const MODES_PAIEMENT = Object.keys(MODE_PAIEMENT_LABELS) as ModePaiement[];
 
 export default function PublishScreen() {
-  const { session } = useAuth();
+  const { session, utilisateur } = useAuth();
   const [depart, setDepart] = useState<Zone | null>(null);
   const [arrivee, setArrivee] = useState<Zone | null>(null);
   const [adresseDepart, setAdresseDepart] = useState("");
@@ -106,6 +106,7 @@ export default function PublishScreen() {
         prix: Math.max(pricing.total - reduction, 0),
         codePromoId: codePromoApplique?.id,
         reductionPromo: reduction,
+        telephoneDestinataire: utilisateur?.telephone,
       });
       router.push(`/(client)/track/${course.id}`);
     } catch {

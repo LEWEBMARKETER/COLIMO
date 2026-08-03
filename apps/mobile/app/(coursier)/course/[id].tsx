@@ -125,6 +125,14 @@ export default function CourseDetailScreen() {
           <StatusTimeline statutActuel={course.statut} />
         </View>
 
+        {course.telephoneDestinataire && (
+          <Bouton
+            label="Appeler le client"
+            onPress={() => Linking.openURL(`tel:${course.telephoneDestinataire}`)}
+            className="mt-4 py-3"
+          />
+        )}
+
         <Bouton
           label="Discuter avec le client"
           variante="contour"
