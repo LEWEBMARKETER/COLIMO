@@ -10,6 +10,7 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+import { notifierEvenement } from "@/lib/notifications";
 
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
 
@@ -21,12 +22,17 @@ export default function TrackScreen() {
   const [erreurConfirmation, setErreurConfirmation] = useState<string | null>(null);
 
   async function confirmerReception() {
-    if (!course) return;
+    if (!course || !session) return;
     setConfirmationEnCours(true);
     setErreurConfirmation(null);
     try {
       const misAJour = await patchCourse(course.id, { statut: "confirmee" });
       setCourse(misAJour);
+      await notifierEvenement("livraison_terminee", {
+        declenchePar: session.user.id,
+        destinataire: misAJour.telephoneDestinataire,
+        variables: { nom_client: misAJour.nomDestinataire ?? "client" },
+      });
     } catch {
       setErreurConfirmation("Impossible de confirmer la réception. Réessayez.");
     } finally {

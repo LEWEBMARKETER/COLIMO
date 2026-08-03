@@ -5,6 +5,8 @@ export * from "./format";
 export * from "./faq";
 export * from "./legal";
 export * from "./maps";
+export * from "./notifications";
+export * from "./otp";
 export * from "./supabase/client";
 export * from "./supabase/mappers";
 export * from "./supabase/queries";

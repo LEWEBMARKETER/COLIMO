@@ -7,6 +7,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import PreuveLitigePicker, { type FichierPreuve } from "@/components/PreuveLitigePicker";
 import { creerLitige, patchCourse, uploaderPreuveLitige } from "@/lib/api";
+import { notifierEvenement } from "@/lib/notifications";
 
 const MOTIFS: { valeur: LitigeMotif; label: string }[] = (
   Object.keys(LITIGE_MOTIF_LABELS) as LitigeMotif[]
@@ -39,7 +40,15 @@ export default function SignalerLitigeForm({ courseId, auteurId }: SignalerLitig
         commentaire: commentaire.trim() || undefined,
         preuveUrls,
       });
-      await patchCourse(courseId, { statut: "litige" });
+      const course = await patchCourse(courseId, { statut: "litige" });
+      await notifierEvenement("litige_ouvert", {
+        declenchePar: auteurId,
+        destinataire: course.telephoneDestinataire,
+        variables: {
+          nom_client: course.nomDestinataire ?? "client",
+          numero_commande: course.numeroCommande,
+        },
+      });
       router.back();
     } catch {
       setErreur("Impossible d'envoyer le signalement. Réessayez.");

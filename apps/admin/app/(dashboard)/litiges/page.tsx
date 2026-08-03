@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
 import { getCourses, getLitiges, getUtilisateurs, patchCourse } from "@/lib/api";
+import { notifierEvenement } from "@/lib/notifications";
 import {
   calculerFraisRetour,
   COURSE_STATUS_LABELS,
@@ -55,15 +56,30 @@ export default function LitigesPage() {
     };
     if (!window.confirm(confirmations[action])) return;
 
+    const resolutions: Record<typeof action, string> = {
+      confirmer: "livraison confirmée",
+      annuler: "course annulée sans frais",
+      retour: "colis retourné",
+    };
+
     setEnCours(course.id);
     try {
+      let misAJour: Course;
       if (action === "confirmer") {
-        await patchCourse(course.id, { statut: "confirmee" });
+        misAJour = await patchCourse(course.id, { statut: "confirmee" });
       } else if (action === "annuler") {
-        await patchCourse(course.id, { statut: "annulee", fraisRetour: 0 });
+        misAJour = await patchCourse(course.id, { statut: "annulee", fraisRetour: 0 });
       } else {
-        await patchCourse(course.id, { statut: "retournee", fraisRetour: calculerFraisRetour(course.prix) });
+        misAJour = await patchCourse(course.id, { statut: "retournee", fraisRetour: calculerFraisRetour(course.prix) });
       }
+      await notifierEvenement("litige_resolu", {
+        destinataire: misAJour.telephoneDestinataire,
+        variables: {
+          nom_client: misAJour.nomDestinataire ?? "client",
+          numero_commande: misAJour.numeroCommande,
+          resolution: resolutions[action],
+        },
+      });
       setLitiges((prev) => prev.filter((c) => c.id !== course.id));
     } finally {
       setEnCours(null);

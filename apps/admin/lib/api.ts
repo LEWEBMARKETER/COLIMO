@@ -3,11 +3,14 @@ import {
   getCodesPromo as getCodesPromoQuery,
   getCommercantsBruts as getCommercantsBrutsQuery,
   getLitiges as getLitigesQuery,
+  getModelesNotification as getModelesNotificationQuery,
+  getNotifications as getNotificationsQuery,
   getUtilisateurs as getUtilisateursQuery,
   getCoursiers as getCoursiersQuery,
   patchCodePromo as patchCodePromoQuery,
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
+  patchModeleNotification as patchModeleNotificationQuery,
   updateUtilisateur as updateUtilisateurQuery,
   upsertCommercant as upsertCommercantQuery,
   getCourses as getCoursesQuery,
@@ -17,6 +20,10 @@ import {
   type Course,
   type CourseStatus,
   type Litige,
+  type ModeleNotification,
+  type NotificationEnvoyee,
+  type StatutNotification,
+  type TypeNotification,
   type TypeReductionPromo,
   type VerificationStatus,
   type Utilisateur,
@@ -94,4 +101,21 @@ export function patchCodePromo(id: string, body: { actif?: boolean }): Promise<C
 
 export function getLitiges(): Promise<Litige[]> {
   return getLitigesQuery(createClient());
+}
+
+export function getNotifications(params?: { type?: TypeNotification; statut?: StatutNotification }): Promise<
+  NotificationEnvoyee[]
+> {
+  return getNotificationsQuery(createClient(), params);
+}
+
+export function getModelesNotification(): Promise<ModeleNotification[]> {
+  return getModelesNotificationQuery(createClient());
+}
+
+export function patchModeleNotification(
+  id: string,
+  body: { nom?: string; sujet?: string | null; contenu?: string; actif?: boolean }
+): Promise<ModeleNotification> {
+  return patchModeleNotificationQuery(createClient(), id, body);
 }

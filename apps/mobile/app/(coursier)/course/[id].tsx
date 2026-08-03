@@ -9,6 +9,7 @@ import {
   formatFCFA,
   type Course,
   type CourseStatus,
+  type EvenementNotification,
 } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
 import StatusTimeline from "@/components/StatusTimeline";
@@ -17,6 +18,7 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+import { notifierEvenement } from "@/lib/notifications";
 
 const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
   acceptee: "retrait",
@@ -28,7 +30,7 @@ const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { session } = useAuth();
+  const { session, utilisateur } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [maj, setMaj] = useState(false);
 
@@ -37,14 +39,33 @@ export default function CourseDetailScreen() {
     getCourse(id as string).then(setCourse);
   }, [id]);
 
+  const EVENEMENT_PAR_STATUT: Partial<Record<CourseStatus, EvenementNotification>> = {
+    retrait: "colis_recupere",
+    en_cours: "livraison_en_cours",
+  };
+
   async function marquerProchainStatut() {
-    if (!course) return;
+    if (!course || !session) return;
     const prochain = PROCHAIN_STATUT[course.statut];
     if (!prochain) return;
     setMaj(true);
     try {
       const misAJour = await patchCourse(course.id, { statut: prochain });
       setCourse(misAJour);
+      const evenement = EVENEMENT_PAR_STATUT[prochain];
+      if (evenement) {
+        await notifierEvenement(evenement, {
+          declenchePar: session.user.id,
+          destinataire: misAJour.telephoneDestinataire,
+          variables: {
+            nom_client: misAJour.nomDestinataire ?? "client",
+            numero_commande: misAJour.numeroCommande,
+            nom_coursier: utilisateur?.prenom ?? utilisateur?.nom ?? "votre coursier",
+            telephone: utilisateur?.telephone ?? "",
+            temps: "quelques minutes",
+          },
+        });
+      }
     } finally {
       setMaj(false);
     }

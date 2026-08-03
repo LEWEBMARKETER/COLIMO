@@ -13,6 +13,10 @@ const COULEURS: Record<string, string> = {
   suspendu: "bg-red-100 text-red-800",
   hors_ligne: "bg-gray-200 text-gray-700",
   retrait: "bg-amber-100 text-amber-800",
+  envoye: "bg-emerald-100 text-emerald-800",
+  livre: "bg-emerald-100 text-emerald-800",
+  lu: "bg-indigo-100 text-indigo-800",
+  echec: "bg-red-100 text-red-800",
 };
 
 export default function StatutBadge({ statut, label }: { statut: string; label: string }) {
