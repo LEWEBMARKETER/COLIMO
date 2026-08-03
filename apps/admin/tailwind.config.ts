@@ -12,6 +12,8 @@ const config: Config = {
         "colimo-neutre-fonce": colors.neutreFonce,
         "colimo-neutre-clair": colors.neutreClair,
         "colimo-fond": colors.fond,
+        "colimo-noir": colors.noir,
+        "colimo-noir-clair": colors.noirClair,
       },
       fontFamily: {
         titre: [fonts.titre, "sans-serif"],

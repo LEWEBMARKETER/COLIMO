@@ -5,7 +5,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import {
   COURSE_STATUS_LABELS,
   MODE_PAIEMENT_LABELS,
-  distanceKm,
   formatFCFA,
   type Course,
   type CourseStatus,
@@ -13,10 +12,12 @@ import {
 } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
 import CarteItineraire from "@/components/CarteItineraire";
+import BandeauStatut from "@/components/BandeauStatut";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
+import ChiffreCle from "@/components/ui/ChiffreCle";
 import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/notifications";
@@ -81,39 +82,19 @@ export default function CourseDetailScreen() {
   }
 
   const prochain = PROCHAIN_STATUT[course.statut];
-  const distance =
-    course.latitudeDepart !== undefined &&
-    course.longitudeDepart !== undefined &&
-    course.latitudeArrivee !== undefined &&
-    course.longitudeArrivee !== undefined
-      ? distanceKm(
-          { latitude: course.latitudeDepart, longitude: course.longitudeDepart },
-          { latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }
-        )
-      : null;
-
   const contactsFermes = course.statut === "confirmee";
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 32 }}>
-        <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">{course.numeroCommande}</Text>
-        <Text className="mt-1 font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
+      <BandeauStatut statut={course.statut} numeroCommande={course.numeroCommande} />
+
+      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}>
+        <Text className="font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
 
         <Carte sombre className="mt-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="font-texte text-xs text-white/60">Prix de la course</Text>
-            <Text className="font-titre text-white">{formatFCFA(course.prix)}</Text>
-          </View>
-          <View className="mt-1 flex-row items-center justify-between">
-            <Text className="font-texte text-xs text-white/60">Paiement</Text>
-            <Text className="font-texte text-sm text-white">{MODE_PAIEMENT_LABELS[course.modePaiement]}</Text>
-          </View>
-          <View className="mt-1 flex-row items-center justify-between">
-            <Text className="font-texte text-xs text-white/60">Distance</Text>
-            <Text className="font-texte text-sm text-white">
-              {distance !== null ? `${distance.toFixed(1)} km` : "Non disponible"}
-            </Text>
+          <View className="flex-row items-end justify-between">
+            <ChiffreCle valeur={formatFCFA(course.prix)} label="Prix de la course" sombre />
+            <Text className="font-texte text-xs text-white/60">{MODE_PAIEMENT_LABELS[course.modePaiement]}</Text>
           </View>
         </Carte>
 
@@ -155,7 +136,7 @@ export default function CourseDetailScreen() {
         </View>
 
         {course.instructions && (
-          <View className="mb-3 rounded-2xl bg-colimo-rouge-clair p-4">
+          <View className="mb-3 rounded-lg border-2 border-colimo-rouge bg-colimo-rouge-clair p-4">
             <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-rouge">Instructions</Text>
             <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce">{course.instructions}</Text>
           </View>
@@ -164,24 +145,6 @@ export default function CourseDetailScreen() {
         <View className="mt-2">
           <StatusTimeline course={course} />
         </View>
-
-        {prochain && (
-          <Bouton
-            label={`Marquer « ${COURSE_STATUS_LABELS[prochain]} »`}
-            onPress={marquerProchainStatut}
-            chargement={maj}
-            className="mt-2"
-          />
-        )}
-
-        {!contactsFermes && (
-          <Bouton
-            label="Discuter avec le client"
-            variante="contour"
-            onPress={() => router.push(`/(coursier)/chat/${course.id}`)}
-            className="mt-3 py-3"
-          />
-        )}
 
         {(course.statut === "livree" || course.statut === "confirmee") && session && (
           <NotationForm
@@ -197,16 +160,31 @@ export default function CourseDetailScreen() {
             Ce problème a été signalé à notre équipe, qui va vous contacter pour le résoudre.
           </Text>
         )}
-
-        {STATUTS_SIGNALABLES.has(course.statut) && (
-          <Bouton
-            label="Signaler un problème"
-            variante="contour"
-            onPress={() => router.push(`/(coursier)/litige/${course.id}`)}
-            className="mt-4 py-3"
-          />
-        )}
       </ScrollView>
+
+      {(prochain || !contactsFermes || STATUTS_SIGNALABLES.has(course.statut)) && (
+        <View className="border-t-2 border-colimo-neutre-fonce bg-colimo-fond px-6 pb-2 pt-3">
+          {(!contactsFermes || STATUTS_SIGNALABLES.has(course.statut)) && (
+            <Text className="mb-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50">
+              {STATUTS_SIGNALABLES.has(course.statut) && (
+                <Text onPress={() => router.push(`/(coursier)/litige/${course.id}`)}>Signaler un problème</Text>
+              )}
+              {STATUTS_SIGNALABLES.has(course.statut) && !contactsFermes && "  ·  "}
+              {!contactsFermes && (
+                <Text onPress={() => router.push(`/(coursier)/chat/${course.id}`)}>Discuter avec le client</Text>
+              )}
+            </Text>
+          )}
+          {prochain && (
+            <Bouton
+              label={`Marquer « ${COURSE_STATUS_LABELS[prochain]} »`}
+              onPress={marquerProchainStatut}
+              chargement={maj}
+              className="py-4"
+            />
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

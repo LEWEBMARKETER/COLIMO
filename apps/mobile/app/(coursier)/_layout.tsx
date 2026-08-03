@@ -10,11 +10,10 @@ export default function CoursierLayout() {
         headerTitleStyle: { fontFamily: "System", fontWeight: "600" },
       }}
     >
-      <Stack.Screen name="dashboard" options={{ title: "Courses disponibles" }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="course/[id]" options={{ title: "Détail de la course" }} />
-      <Stack.Screen name="historique" options={{ title: "Mes gains" }} />
-      <Stack.Screen name="profil" options={{ title: "Mon profil" }} />
       <Stack.Screen name="chat/[courseId]" options={{ title: "Discussion" }} />
+      <Stack.Screen name="litige/[courseId]" options={{ title: "Signaler un problème" }} />
     </Stack>
   );
 }

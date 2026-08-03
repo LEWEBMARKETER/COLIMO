@@ -5,16 +5,34 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 
-const LIENS = [
-  { href: "/", label: "Dashboard" },
-  { href: "/clients", label: "Clients" },
-  { href: "/commercants", label: "Commerçants" },
-  { href: "/coursiers", label: "Coursiers" },
-  { href: "/courses", label: "Courses" },
-  { href: "/promotions", label: "Promotions" },
-  { href: "/litiges", label: "Litiges" },
-  { href: "/notifications", label: "Notifications" },
-  { href: "/statistiques", label: "Statistiques" },
+const GROUPES = [
+  {
+    label: "Activité",
+    liens: [
+      { href: "/", label: "Dashboard" },
+      { href: "/courses", label: "Courses" },
+      { href: "/litiges", label: "Litiges" },
+    ],
+  },
+  {
+    label: "Comptes",
+    liens: [
+      { href: "/clients", label: "Clients" },
+      { href: "/commercants", label: "Commerçants" },
+      { href: "/coursiers", label: "Coursiers" },
+    ],
+  },
+  {
+    label: "Croissance",
+    liens: [
+      { href: "/promotions", label: "Promotions" },
+      { href: "/notifications", label: "Notifications" },
+    ],
+  },
+  {
+    label: "Pilotage",
+    liens: [{ href: "/statistiques", label: "Statistiques" }],
+  },
 ];
 
 export default function Sidebar() {
@@ -34,23 +52,32 @@ export default function Sidebar() {
         <Image src="/icons/icon-192.png" alt="" width={32} height={32} className="rounded-md" />
         <span className="font-titre text-xl font-bold text-colimo-rouge">COLIMO</span>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 px-3">
-        {LIENS.map((lien) => {
-          const actif = pathname === lien.href;
-          return (
-            <Link
-              key={lien.href}
-              href={lien.href}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                actif
-                  ? "bg-colimo-rouge-clair text-colimo-rouge"
-                  : "text-colimo-neutre-fonce/80 hover:bg-colimo-neutre-clair"
-              }`}
-            >
-              {lien.label}
-            </Link>
-          );
-        })}
+      <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3">
+        {GROUPES.map((groupe) => (
+          <div key={groupe.label}>
+            <p className="px-3 pb-1.5 font-texte text-[11px] font-medium uppercase tracking-wide text-colimo-neutre-fonce/40">
+              {groupe.label}
+            </p>
+            <div className="flex flex-col gap-1">
+              {groupe.liens.map((lien) => {
+                const actif = pathname === lien.href;
+                return (
+                  <Link
+                    key={lien.href}
+                    href={lien.href}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                      actif
+                        ? "bg-colimo-rouge-clair text-colimo-rouge"
+                        : "text-colimo-neutre-fonce/80 hover:bg-colimo-neutre-clair"
+                    }`}
+                  >
+                    {lien.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
       <button
         onClick={seDeconnecter}

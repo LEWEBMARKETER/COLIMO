@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { formatFCFA, type Course, type CoursierAvecUtilisateur } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
+import ChiffreCle from "@/components/ui/ChiffreCle";
 import { getCoursiers, getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -52,22 +53,22 @@ export default function CommerceDashboard() {
       </Text>
       <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/70">Vue d&apos;ensemble du jour</Text>
 
-      <View className="mt-4 flex-row flex-wrap gap-3">
-        <Carte className="min-w-[47%] flex-1">
+      <Carte sombre className="mt-4">
+        <ChiffreCle valeur={formatFCFA(depensesJour)} label="Dépenses du jour" sombre />
+      </Carte>
+
+      <View className="mt-3 flex-row flex-wrap gap-3">
+        <Carte className="min-w-[30%] flex-1">
           <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Livraisons du jour</Text>
           <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">{coursesJour.length}</Text>
         </Carte>
-        <Carte className="min-w-[47%] flex-1">
+        <Carte className="min-w-[30%] flex-1">
           <Text className="font-texte text-xs text-colimo-neutre-fonce/60">En cours</Text>
           <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">{enCours}</Text>
         </Carte>
-        <Carte className="min-w-[47%] flex-1">
+        <Carte className="min-w-[30%] flex-1">
           <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Terminées</Text>
           <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">{terminees}</Text>
-        </Carte>
-        <Carte className="min-w-[47%] flex-1">
-          <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Dépenses du jour</Text>
-          <Text className="mt-1 font-titre text-lg text-colimo-rouge">{formatFCFA(depensesJour)}</Text>
         </Carte>
       </View>
 
@@ -89,18 +90,6 @@ export default function CommerceDashboard() {
 
       <View className="mt-6">
         <Bouton label="Nouvelle livraison" onPress={() => router.push("/(client)/nouvelle-livraison")} />
-        <Bouton
-          label="Historique"
-          variante="contour"
-          onPress={() => router.push("/(client)/historique")}
-          className="mt-3"
-        />
-        <Bouton
-          label="Mes statistiques"
-          variante="contour"
-          onPress={() => router.push("/(client)/mes-statistiques")}
-          className="mt-3"
-        />
       </View>
     </View>
   );

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ScrollView, Text } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Zone } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
 import PhotoPicker from "@/components/PhotoPicker";
+import ParametresCompte from "@/components/ParametresCompte";
 import Bouton from "@/components/ui/Bouton";
 import ChampTexte from "@/components/ui/ChampTexte";
 import { updateUtilisateur, uploaderAvatar } from "@/lib/api";
@@ -47,42 +48,42 @@ export default function ProfilClientScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-      <ScrollView className="flex-1 px-6 py-6">
-        <PhotoPicker
-          label={estCommerce ? "Logo du commerce" : "Photo de profil"}
-          uri={photo?.uri ?? utilisateur?.photoUrl ?? null}
-          onChange={(uri, mimeType) => setPhoto({ uri, mimeType })}
-        />
+      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 32 }}>
+        <Text className="font-titre text-2xl text-colimo-neutre-fonce">Mon profil</Text>
 
-        <ChampTexte
-          label={estCommerce ? "Nom du commerce" : "Nom complet"}
-          value={nom}
-          onChangeText={setNom}
-          placeholder={estCommerce ? "Nom de votre commerce" : "Votre nom"}
-        />
+        <View className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
+          <PhotoPicker
+            label={estCommerce ? "Logo du commerce" : "Photo de profil"}
+            uri={photo?.uri ?? utilisateur?.photoUrl ?? null}
+            onChange={(uri, mimeType) => setPhoto({ uri, mimeType })}
+          />
 
-        <ChampTexte
-          label="Téléphone"
-          value={telephone}
-          onChangeText={setTelephone}
-          keyboardType="phone-pad"
-          placeholder="+241 XX XXX XXX"
-        />
+          <ChampTexte
+            label={estCommerce ? "Nom du commerce" : "Nom complet"}
+            value={nom}
+            onChangeText={setNom}
+            placeholder={estCommerce ? "Nom de votre commerce" : "Votre nom"}
+          />
 
-        <ZoneSelector label="Zone" value={zone} onChange={setZone} />
+          <ChampTexte
+            label="Téléphone"
+            value={telephone}
+            onChangeText={setTelephone}
+            keyboardType="phone-pad"
+            placeholder="+241 XX XXX XXX"
+          />
 
-        <Text className="mb-6 font-texte text-xs text-colimo-neutre-fonce/50">Email : {session?.user.email}</Text>
+          <ZoneSelector label="Zone" value={zone} onChange={setZone} />
 
-        {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
-        {succes && <Text className="mb-4 font-texte text-sm text-green-700">Informations enregistrées ✓</Text>}
+          <Text className="mb-2 font-texte text-xs text-colimo-neutre-fonce/50">Email : {session?.user.email}</Text>
 
-        <Bouton
-          label="Enregistrer"
-          onPress={enregistrer}
-          disabled={!peutEnregistrer}
-          chargement={enregistrement}
-          className="mb-8"
-        />
+          {erreur && <Text className="mb-2 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
+          {succes && <Text className="mb-2 font-texte text-sm text-green-700">Informations enregistrées ✓</Text>}
+
+          <Bouton label="Enregistrer" onPress={enregistrer} disabled={!peutEnregistrer} chargement={enregistrement} />
+        </View>
+
+        <ParametresCompte />
       </ScrollView>
     </SafeAreaView>
   );
