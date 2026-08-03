@@ -30,6 +30,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import Stepper from "@/components/ui/Stepper";
 import { creerCourse, getCodePromoParCode } from "@/lib/api";
+import { notifierEvenement } from "@/lib/notifications";
 import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
@@ -193,6 +194,14 @@ export default function PublishScreen() {
         tailleColis: tailleColis ?? undefined,
         quiPaie,
         programmeePour,
+      });
+      await notifierEvenement("livraison_creee", {
+        declenchePar: session.user.id,
+        destinataire: course.telephoneDestinataire,
+        variables: {
+          nom_client: course.nomDestinataire ?? "client",
+          numero_commande: course.numeroCommande,
+        },
       });
       router.push(`/(client)/track/${course.id}`);
     } catch {

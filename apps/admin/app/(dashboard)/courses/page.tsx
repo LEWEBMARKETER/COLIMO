@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StatutBadge from "@/components/StatutBadge";
 import { getCourses, getUtilisateurs, getCoursiers, patchCourse, type CoursierAvecUtilisateur } from "@/lib/api";
+import { notifierEvenement } from "@/lib/notifications";
 import {
   CATEGORIE_COLIS_LABELS,
   COURSE_STATUS_LABELS,
@@ -65,6 +66,10 @@ function CoursesContenu() {
     if (!window.confirm(`Annuler la course ${course.numeroCommande} ?`)) return;
     const misAJour = await patchCourse(course.id, { statut: "annulee" });
     setCourses((prev) => prev.map((c) => (c.id === course.id ? misAJour : c)));
+    await notifierEvenement("livraison_annulee", {
+      destinataire: misAJour.telephoneDestinataire,
+      variables: { nom_client: misAJour.nomDestinataire ?? "client", numero_commande: misAJour.numeroCommande },
+    });
   }
 
   async function marquerRetournee(course: Course) {

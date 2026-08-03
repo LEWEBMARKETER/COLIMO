@@ -13,6 +13,7 @@ const LIENS = [
   { href: "/courses", label: "Courses" },
   { href: "/promotions", label: "Promotions" },
   { href: "/litiges", label: "Litiges" },
+  { href: "/notifications", label: "Notifications" },
   { href: "/statistiques", label: "Statistiques" },
 ];
 

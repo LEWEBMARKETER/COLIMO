@@ -20,6 +20,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import { creerCourse, getMonCommerce } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+import { notifierEvenement } from "@/lib/notifications";
 
 const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
   valeur,
@@ -123,6 +124,14 @@ export default function NouvelleLivraisonScreen() {
         poidsEstime: Number(poidsEstime) || undefined,
         instructions: instructions.trim() || undefined,
         programmeePour,
+      });
+      await notifierEvenement("livraison_creee", {
+        declenchePar: session.user.id,
+        destinataire: course.telephoneDestinataire,
+        variables: {
+          nom_client: course.nomDestinataire ?? "client",
+          numero_commande: course.numeroCommande,
+        },
       });
       router.push(`/(client)/track/${course.id}`);
     } catch {

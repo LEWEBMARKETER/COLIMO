@@ -7,6 +7,7 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+import { notifierEvenement } from "@/lib/notifications";
 
 export default function CoursierDashboard() {
   const { session, utilisateur, coursier, refreshProfile, signOut } = useAuth();
@@ -67,6 +68,16 @@ export default function CoursierDashboard() {
     setErreur(null);
     try {
       await patchCourse(course.id, { statut: "acceptee", coursierId: session.user.id });
+      await notifierEvenement("coursier_attribue", {
+        declenchePar: session.user.id,
+        destinataire: course.telephoneDestinataire,
+        variables: {
+          nom_client: course.nomDestinataire ?? "client",
+          numero_commande: course.numeroCommande,
+          nom_coursier: utilisateur?.prenom ?? utilisateur?.nom ?? "votre coursier",
+          telephone: utilisateur?.telephone ?? "",
+        },
+      });
       router.push(`/(coursier)/course/${course.id}`);
     } catch {
       setErreur("Impossible d'accepter cette course. Elle a peut-être déjà été prise.");

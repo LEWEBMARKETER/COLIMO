@@ -23,6 +23,13 @@ import type {
   VolumeLivraisons,
   Zone,
 } from "../types";
+import type {
+  ModeleNotification,
+  NotificationEnvoyee,
+  StatutNotification,
+  TypeNotification,
+} from "../notifications/types";
+import type { CodeOtp, ObjectifOtp } from "../otp/types";
 
 export interface UtilisateurRow {
   id: string;
@@ -282,6 +289,91 @@ export function codePromoFromRow(row: CodePromoRow): CodePromo {
     dateFin: row.date_fin,
     usageMax: row.usage_max,
     usageActuel: row.usage_actuel,
+    createdAt: row.created_at,
+  };
+}
+
+export interface ModeleNotificationRow {
+  id: string;
+  code: string;
+  type: TypeNotification;
+  nom: string;
+  sujet: string | null;
+  contenu: string;
+  variables: string[];
+  actif: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function modeleNotificationFromRow(row: ModeleNotificationRow): ModeleNotification {
+  return {
+    id: row.id,
+    code: row.code,
+    type: row.type,
+    nom: row.nom,
+    sujet: row.sujet,
+    contenu: row.contenu,
+    variables: row.variables ?? [],
+    actif: row.actif,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export interface NotificationRow {
+  id: string;
+  utilisateur_id: string | null;
+  declenche_par: string;
+  type: TypeNotification;
+  destinataire: string;
+  modele_code: string | null;
+  contenu: string;
+  statut: StatutNotification;
+  erreur: string | null;
+  created_at: string;
+  envoye_at: string | null;
+  livre_at: string | null;
+  lu_at: string | null;
+}
+
+export function notificationFromRow(row: NotificationRow): NotificationEnvoyee {
+  return {
+    id: row.id,
+    utilisateurId: row.utilisateur_id,
+    declenchePar: row.declenche_par,
+    type: row.type,
+    destinataire: row.destinataire,
+    modeleCode: row.modele_code,
+    contenu: row.contenu,
+    statut: row.statut,
+    erreur: row.erreur,
+    createdAt: row.created_at,
+    envoyeAt: row.envoye_at,
+    livreAt: row.livre_at,
+    luAt: row.lu_at,
+  };
+}
+
+export interface CodeOtpRow {
+  id: string;
+  utilisateur_id: string | null;
+  destinataire: string;
+  code: string;
+  objectif: ObjectifOtp;
+  expire_at: string;
+  utilise: boolean;
+  created_at: string;
+}
+
+export function codeOtpFromRow(row: CodeOtpRow): CodeOtp {
+  return {
+    id: row.id,
+    utilisateurId: row.utilisateur_id,
+    destinataire: row.destinataire,
+    objectif: row.objectif,
+    expireAt: row.expire_at,
+    utilise: row.utilise,
     createdAt: row.created_at,
   };
 }
