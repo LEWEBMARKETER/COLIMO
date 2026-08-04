@@ -138,8 +138,11 @@ export default function NouvelleLivraisonScreen() {
         await initierPaiementManuel({ courseId: course.id, utilisateurId: session.user.id, montantAttendu: course.prix });
       }
       router.push(`/(client)/track/${course.id}`);
-    } catch {
-      setErreur("Impossible de publier la livraison. Réessayez.");
+    } catch (erreur) {
+      const message = erreur instanceof Error ? erreur.message : null;
+      setErreur(
+        message ? `Impossible de publier la livraison : ${message}` : "Impossible de publier la livraison. Réessayez."
+      );
     } finally {
       setEnvoiEnCours(false);
     }
