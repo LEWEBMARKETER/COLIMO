@@ -24,12 +24,9 @@ import type {
   VolumeLivraisons,
   Zone,
 } from "../types";
-import type {
-  ModeleNotification,
-  NotificationEnvoyee,
-  StatutNotification,
-  TypeNotification,
-} from "../notifications/types";
+import type { CanalCommunication, StatutCommunication } from "../communication/types";
+import type { ModeleCommunication } from "../communication/templates/types";
+import type { CommunicationEnvoyee } from "../communication/history/types";
 import type { CodeOtp, ObjectifOtp } from "../otp/types";
 import type { Paiement, StatutPaiementManuel } from "../paiements/types";
 
@@ -295,10 +292,10 @@ export function codePromoFromRow(row: CodePromoRow): CodePromo {
   };
 }
 
-export interface ModeleNotificationRow {
+export interface ModeleCommunicationRow {
   id: string;
   code: string;
-  type: TypeNotification;
+  type: CanalCommunication;
   nom: string;
   sujet: string | null;
   contenu: string;
@@ -308,11 +305,11 @@ export interface ModeleNotificationRow {
   updated_at: string;
 }
 
-export function modeleNotificationFromRow(row: ModeleNotificationRow): ModeleNotification {
+export function modeleCommunicationFromRow(row: ModeleCommunicationRow): ModeleCommunication {
   return {
     id: row.id,
     code: row.code,
-    type: row.type,
+    canal: row.type,
     nom: row.nom,
     sujet: row.sujet,
     contenu: row.contenu,
@@ -323,15 +320,15 @@ export function modeleNotificationFromRow(row: ModeleNotificationRow): ModeleNot
   };
 }
 
-export interface NotificationRow {
+export interface CommunicationRow {
   id: string;
   utilisateur_id: string | null;
   declenche_par: string;
-  type: TypeNotification;
+  type: CanalCommunication;
   destinataire: string;
   modele_code: string | null;
   contenu: string;
-  statut: StatutNotification;
+  statut: StatutCommunication;
   erreur: string | null;
   created_at: string;
   envoye_at: string | null;
@@ -339,12 +336,12 @@ export interface NotificationRow {
   lu_at: string | null;
 }
 
-export function notificationFromRow(row: NotificationRow): NotificationEnvoyee {
+export function communicationFromRow(row: CommunicationRow): CommunicationEnvoyee {
   return {
     id: row.id,
     utilisateurId: row.utilisateur_id,
     declenchePar: row.declenche_par,
-    type: row.type,
+    canal: row.type,
     destinataire: row.destinataire,
     modeleCode: row.modele_code,
     contenu: row.contenu,

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import StatCard from "@/components/StatCard";
 import StatutBadge from "@/components/StatutBadge";
 import { getCourses, getPaiements, getUtilisateurs, rejeterPaiement, validerPaiement } from "@/lib/api";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 import {
   RESEAU_PAIEMENT_LABELS,
   STATUT_PAIEMENT_LABELS,

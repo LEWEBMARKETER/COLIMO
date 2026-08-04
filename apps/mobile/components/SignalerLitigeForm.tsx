@@ -7,7 +7,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import PreuveLitigePicker, { type FichierPreuve } from "@/components/PreuveLitigePicker";
 import { creerLitige, patchCourse, uploaderPreuveLitige } from "@/lib/api";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 
 const MOTIFS: { valeur: LitigeMotif; label: string }[] = (
   Object.keys(LITIGE_MOTIF_LABELS) as LitigeMotif[]

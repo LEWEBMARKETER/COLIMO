@@ -1,12 +1,13 @@
-import { EVENEMENT_MODELE_CODE, envoyerNotification, type EvenementNotification } from "@colimo/shared";
+import { EVENEMENT_CANAL, EVENEMENT_MODELE_CODE, envoyerCommunication, type EvenementCommunication } from "@colimo/shared";
 import { createClient } from "./supabaseClient";
 
-// Équivalent admin de apps/mobile/lib/notifications.ts — même contrat : ne
-// jamais bloquer l'action admin (résolution de litige, annulation) si la
-// notification échoue. Résout elle-même l'admin courant (declenche_par),
-// les pages admin ne suivant pas cette info aujourd'hui.
+// Équivalent admin de apps/mobile/lib/communication.ts — même contrat : ne
+// jamais bloquer l'action admin (résolution de litige, annulation, validation
+// de paiement/coursier) si la communication échoue. Résout elle-même
+// l'admin courant (declenche_par), les pages admin ne suivant pas cette
+// info aujourd'hui.
 export async function notifierEvenement(
-  evenement: EvenementNotification,
+  evenement: EvenementCommunication,
   params: { destinataire: string | null | undefined; variables: Record<string, string> }
 ): Promise<void> {
   if (!params.destinataire) return;
@@ -16,9 +17,9 @@ export async function notifierEvenement(
       data: { user },
     } = await client.auth.getUser();
     if (!user) return;
-    await envoyerNotification(client, {
+    await envoyerCommunication(client, {
       declenchePar: user.id,
-      type: "whatsapp",
+      canal: EVENEMENT_CANAL[evenement],
       destinataire: params.destinataire,
       modeleCode: EVENEMENT_MODELE_CODE[evenement],
       variables: params.variables,

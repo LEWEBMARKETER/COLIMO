@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
 import { getCourses, getLitiges, getUtilisateurs, patchCourse } from "@/lib/api";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 import {
   calculerFraisRetour,
   COURSE_STATUS_LABELS,

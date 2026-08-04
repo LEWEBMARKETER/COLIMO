@@ -18,6 +18,7 @@ import GroupePastilles from "@/components/ui/GroupePastilles";
 import { TEINTES_STATUT } from "@/components/ui/StatutChip";
 import { declarerPaiement, getPaiementParCourse, initierPaiementManuel, uploaderCapturePaiement } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+import { notifierEvenement } from "@/lib/communication";
 
 const RESEAUX: { valeur: PaymentOperator; label: string }[] = [
   { valeur: "airtel_money", label: RESEAU_PAIEMENT_LABELS.airtel_money },
@@ -39,7 +40,7 @@ interface PaiementAirtelMoneyProps {
 }
 
 export default function PaiementAirtelMoney({ course }: PaiementAirtelMoneyProps) {
-  const { session } = useAuth();
+  const { session, utilisateur } = useAuth();
   const [paiement, setPaiement] = useState<Paiement | null>(null);
   const [chargement, setChargement] = useState(true);
   const [declarationOuverte, setDeclarationOuverte] = useState(false);
@@ -112,6 +113,14 @@ export default function PaiementAirtelMoney({ course }: PaiementAirtelMoneyProps
       });
       setPaiement(misAJour);
       setDeclarationOuverte(false);
+      await notifierEvenement("paiement_recu", {
+        declenchePar: session.user.id,
+        destinataire: utilisateur?.telephone,
+        variables: {
+          nom_client: utilisateur?.prenom ?? utilisateur?.nom ?? "client",
+          numero_commande: course.numeroCommande,
+        },
+      });
     } catch {
       setErreur("Impossible d'enregistrer votre déclaration de paiement. Réessayez.");
     } finally {

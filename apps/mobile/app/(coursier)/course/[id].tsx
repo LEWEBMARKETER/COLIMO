@@ -8,7 +8,7 @@ import {
   formatFCFA,
   type Course,
   type CourseStatus,
-  type EvenementNotification,
+  type EvenementCommunication,
 } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
 import CarteItineraire from "@/components/CarteItineraire";
@@ -20,7 +20,7 @@ import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
 import { getCourse, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 
 const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
   acceptee: "retrait",
@@ -41,7 +41,7 @@ export default function CourseDetailScreen() {
     getCourse(id as string).then(setCourse);
   }, [id]);
 
-  const EVENEMENT_PAR_STATUT: Partial<Record<CourseStatus, EvenementNotification>> = {
+  const EVENEMENT_PAR_STATUT: Partial<Record<CourseStatus, EvenementCommunication>> = {
     retrait: "colis_recupere",
     en_cours: "livraison_en_cours",
   };

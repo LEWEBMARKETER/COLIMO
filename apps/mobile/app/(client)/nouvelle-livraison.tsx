@@ -20,7 +20,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import { creerCourse, getMonCommerce, initierPaiementManuel } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 
 const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
   valeur,

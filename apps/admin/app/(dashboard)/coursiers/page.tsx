@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
 import NoteEtoiles from "@/components/NoteEtoiles";
 import { getCoursiers, patchCoursier, updateUtilisateur, type CoursierAvecUtilisateur } from "@/lib/api";
+import { notifierEvenement } from "@/lib/communication";
 import { PIECE_IDENTITE_LABELS, ZONE_LABELS, type VerificationStatus } from "@colimo/shared";
 
 const LABELS_VERIFICATION: Record<VerificationStatus, string> = {
@@ -25,6 +26,13 @@ export default function CoursiersPage() {
   async function changerStatut(id: string, statut: VerificationStatus) {
     setCoursiers((prev) => prev.map((c) => (c.id === id ? { ...c, statutVerification: statut } : c)));
     await patchCoursier(id, { statutVerification: statut });
+    if (statut === "valide") {
+      const coursier = coursiers.find((c) => c.id === id);
+      await notifierEvenement("coursier_compte_valide", {
+        destinataire: coursier?.utilisateur.telephone,
+        variables: { prenom: coursier?.utilisateur.prenom ?? coursier?.utilisateur.nom ?? "coursier" },
+      });
+    }
   }
 
   async function toggleSuspension(coursier: CoursierAvecUtilisateur) {

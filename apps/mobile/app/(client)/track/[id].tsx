@@ -14,7 +14,7 @@ import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
 import { getCourse, getCoursierByUtilisateurId, getUtilisateur, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
 

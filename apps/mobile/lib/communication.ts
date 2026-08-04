@@ -1,21 +1,22 @@
-import { EVENEMENT_MODELE_CODE, envoyerNotification, type EvenementNotification } from "@colimo/shared";
+import { EVENEMENT_CANAL, EVENEMENT_MODELE_CODE, envoyerCommunication, type EvenementCommunication } from "@colimo/shared";
 import { supabase } from "./supabaseClient";
 
-// Point de passage unique pour déclencher une notification depuis l'app
+// Point de passage unique pour déclencher une communication depuis l'app
 // mobile suite à un événement métier (course créée, coursier attribué,
 // litige ouvert...). N'appelle jamais un fournisseur directement — tout
-// passe par packages/shared/src/notifications. Une notification qui échoue
-// (fournisseur en échec, table injoignable) ne doit jamais bloquer
-// l'opération métier qui l'a déclenchée : les erreurs sont donc avalées ici.
+// passe par packages/shared/src/communication (le Communication Center).
+// Une communication qui échoue (fournisseur en échec, table injoignable)
+// ne doit jamais bloquer l'opération métier qui l'a déclenchée : les
+// erreurs sont donc avalées ici.
 export async function notifierEvenement(
-  evenement: EvenementNotification,
+  evenement: EvenementCommunication,
   params: { declenchePar: string; destinataire: string | null | undefined; variables: Record<string, string> }
 ): Promise<void> {
   if (!params.destinataire) return;
   try {
-    await envoyerNotification(supabase, {
+    await envoyerCommunication(supabase, {
       declenchePar: params.declenchePar,
-      type: "whatsapp",
+      canal: EVENEMENT_CANAL[evenement],
       destinataire: params.destinataire,
       modeleCode: EVENEMENT_MODELE_CODE[evenement],
       variables: params.variables,
