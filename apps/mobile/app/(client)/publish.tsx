@@ -207,8 +207,9 @@ export default function PublishScreen() {
         await initierPaiementManuel({ courseId: course.id, utilisateurId: session.user.id, montantAttendu: course.prix });
       }
       router.push(`/(client)/track/${course.id}`);
-    } catch {
-      setErreur("Impossible de publier la course. Réessayez.");
+    } catch (erreur) {
+      const message = erreur instanceof Error ? erreur.message : null;
+      setErreur(message ? `Impossible de publier la course : ${message}` : "Impossible de publier la course. Réessayez.");
     } finally {
       setEnvoiEnCours(false);
     }
