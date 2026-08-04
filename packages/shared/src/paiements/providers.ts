@@ -5,10 +5,9 @@
 // implémenter FournisseurPaiement et appeler configurerFournisseurPaiement
 // une fois au démarrage de l'app — aucun autre fichier n'a besoin de changer.
 
-// À remplacer par le vrai numéro Airtel Money COLIMO avant le lancement.
 export const COMPTE_AIRTEL_MONEY_COLIMO = {
-  numero: "074 XX XX XX",
-  titulaire: "COLIMO",
+  numero: "074 01 57 99",
+  titulaire: "Orley MOUSSAVOU",
 };
 
 export interface InstructionsPaiement {

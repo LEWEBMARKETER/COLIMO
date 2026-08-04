@@ -87,8 +87,8 @@ code supplémentaire côté coursier.
 ## Numéro Airtel Money COLIMO
 
 `COMPTE_AIRTEL_MONEY_COLIMO` (`packages/shared/src/paiements/providers.ts`)
-contient un numéro et un titulaire **placeholder** (`074 XX XX XX` /
-`COLIMO`) — à remplacer par les vraies informations avant le lancement.
+contient le numéro et le titulaire réellement affichés aux clients — à
+mettre à jour dans ce fichier si le numéro change.
 
 ## Statuts
 
