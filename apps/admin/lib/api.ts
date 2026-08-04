@@ -5,14 +5,17 @@ import {
   getLitiges as getLitigesQuery,
   getModelesNotification as getModelesNotificationQuery,
   getNotifications as getNotificationsQuery,
+  getPaiements as getPaiementsQuery,
   getUtilisateurs as getUtilisateursQuery,
   getCoursiers as getCoursiersQuery,
   patchCodePromo as patchCodePromoQuery,
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
   patchModeleNotification as patchModeleNotificationQuery,
+  rejeterPaiement as rejeterPaiementQuery,
   updateUtilisateur as updateUtilisateurQuery,
   upsertCommercant as upsertCommercantQuery,
+  validerPaiement as validerPaiementQuery,
   getCourses as getCoursesQuery,
   type CodePromo,
   type Commercant,
@@ -22,7 +25,9 @@ import {
   type Litige,
   type ModeleNotification,
   type NotificationEnvoyee,
+  type Paiement,
   type StatutNotification,
+  type StatutPaiementManuel,
   type TypeNotification,
   type TypeReductionPromo,
   type VerificationStatus,
@@ -118,4 +123,26 @@ export function patchModeleNotification(
   body: { nom?: string; sujet?: string | null; contenu?: string; actif?: boolean }
 ): Promise<ModeleNotification> {
   return patchModeleNotificationQuery(createClient(), id, body);
+}
+
+export function getPaiements(params?: { statut?: StatutPaiementManuel }): Promise<Paiement[]> {
+  return getPaiementsQuery(createClient(), params);
+}
+
+export async function validerPaiement(paiementId: string): Promise<Paiement> {
+  const client = createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  return validerPaiementQuery(client, paiementId, user.id);
+}
+
+export async function rejeterPaiement(paiementId: string, motif?: string): Promise<Paiement> {
+  const client = createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  return rejeterPaiementQuery(client, paiementId, user.id, motif);
 }

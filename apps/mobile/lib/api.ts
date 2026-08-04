@@ -12,7 +12,10 @@ import {
   getLitiges as getLitigesQuery,
   getMessages as getMessagesQuery,
   getNotations as getNotationsQuery,
+  getPaiementParCourse as getPaiementParCourseQuery,
   getUtilisateur as getUtilisateurQuery,
+  declarerPaiement as declarerPaiementQuery,
+  initierPaiementManuel as initierPaiementManuelQuery,
   insertCoursier,
   insertUtilisateur,
   patchCoursier as patchCoursierQuery,
@@ -32,6 +35,8 @@ import {
   type Message,
   type ModePaiement,
   type Notation,
+  type Paiement,
+  type PaymentOperator,
   type PieceIdentiteType,
   type QuiPaie,
   type TailleColis,
@@ -227,6 +232,46 @@ export async function uploaderPreuveLitige(
   const extension = mimeType.split("/")[1] ?? "jpg";
   const nomFichier = `${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
   return uploadFichier(supabase, "documents", `${utilisateurId}/litiges/${courseId}/${nomFichier}`, donnees, mimeType);
+}
+
+export async function uploaderCapturePaiement(
+  utilisateurId: string,
+  courseId: string,
+  uri: string,
+  mimeType: string
+): Promise<string> {
+  const donnees = await uriVersArrayBuffer(uri);
+  const extension = mimeType.split("/")[1] ?? "jpg";
+  const nomFichier = `${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
+  return uploadFichier(supabase, "documents", `${utilisateurId}/paiements/${courseId}/${nomFichier}`, donnees, mimeType);
+}
+
+// --- Paiement manuel Airtel Money ----------------------------------------
+
+export function initierPaiementManuel(body: {
+  courseId: string;
+  utilisateurId: string;
+  montantAttendu: number;
+}): Promise<Paiement> {
+  return initierPaiementManuelQuery(supabase, body);
+}
+
+export function getPaiementParCourse(courseId: string): Promise<Paiement | null> {
+  return getPaiementParCourseQuery(supabase, courseId);
+}
+
+export function declarerPaiement(
+  paiementId: string,
+  body: {
+    reseau: PaymentOperator;
+    numeroPayeur: string;
+    montantPaye: number;
+    referenceTransaction?: string;
+    datePaiementDeclaree?: string;
+    captureUrl?: string;
+  }
+): Promise<Paiement> {
+  return declarerPaiementQuery(supabase, paiementId, body);
 }
 
 // --- Authentification et inscription ------------------------------------

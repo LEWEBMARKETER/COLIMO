@@ -17,6 +17,11 @@ const COULEURS: Record<string, string> = {
   livre: "bg-emerald-100 text-emerald-800",
   lu: "bg-indigo-100 text-indigo-800",
   echec: "bg-red-100 text-red-800",
+  en_attente_paiement: "bg-red-100 text-red-800",
+  paiement_declare: "bg-amber-100 text-amber-800",
+  en_attente_validation: "bg-amber-100 text-amber-800",
+  paiement_confirme: "bg-emerald-100 text-emerald-800",
+  paiement_rejete: "bg-red-100 text-red-800",
 };
 
 export default function StatutBadge({ statut, label }: { statut: string; label: string }) {

@@ -18,7 +18,7 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
-import { creerCourse, getMonCommerce } from "@/lib/api";
+import { creerCourse, getMonCommerce, initierPaiementManuel } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/notifications";
 
@@ -35,11 +35,12 @@ const TYPES_LIVRAISON: { valeur: TypeLivraison; label: string }[] = [
   { valeur: "programmee", label: "Programmée" },
 ];
 
-type ModePaiementCommerce = "deja_paye" | "especes";
+type ModePaiementCommerce = "deja_paye" | "especes" | "mobile_money";
 
 const MODES_PAIEMENT_COMMERCE: { valeur: ModePaiementCommerce; label: string }[] = [
   { valeur: "deja_paye", label: "Déjà payée" },
   { valeur: "especes", label: "Paiement à la livraison (contre-remboursement)" },
+  { valeur: "mobile_money", label: "Payer les frais de livraison par Airtel Money" },
 ];
 
 function TitreSection({ children }: { children: string }) {
@@ -133,6 +134,9 @@ export default function NouvelleLivraisonScreen() {
           numero_commande: course.numeroCommande,
         },
       });
+      if (modePaiement === "mobile_money") {
+        await initierPaiementManuel({ courseId: course.id, utilisateurId: session.user.id, montantAttendu: course.prix });
+      }
       router.push(`/(client)/track/${course.id}`);
     } catch {
       setErreur("Impossible de publier la livraison. Réessayez.");

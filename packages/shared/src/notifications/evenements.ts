@@ -17,7 +17,9 @@ export type EvenementNotification =
   | "livraison_terminee"
   | "livraison_annulee"
   | "litige_ouvert"
-  | "litige_resolu";
+  | "litige_resolu"
+  | "paiement_confirme"
+  | "paiement_rejete";
 
 export const EVENEMENT_MODELE_CODE: Record<EvenementNotification, string> = {
   livraison_creee: "whatsapp_livraison_creee",
@@ -29,4 +31,6 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementNotification, string> = {
   livraison_annulee: "whatsapp_livraison_annulee",
   litige_ouvert: "whatsapp_litige_ouvert",
   litige_resolu: "whatsapp_litige_resolu",
+  paiement_confirme: "whatsapp_paiement_confirme",
+  paiement_rejete: "whatsapp_paiement_rejete",
 };
