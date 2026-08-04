@@ -11,6 +11,7 @@ const GROUPES = [
     liens: [
       { href: "/", label: "Dashboard" },
       { href: "/courses", label: "Courses" },
+      { href: "/paiements", label: "Paiements" },
       { href: "/litiges", label: "Litiges" },
     ],
   },

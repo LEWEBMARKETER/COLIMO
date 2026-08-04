@@ -11,6 +11,7 @@ import type {
   Message,
   ModePaiement,
   Notation,
+  PaymentOperator,
   PieceIdentiteType,
   QuiPaie,
   TailleColis,
@@ -30,6 +31,7 @@ import type {
   TypeNotification,
 } from "../notifications/types";
 import type { CodeOtp, ObjectifOtp } from "../otp/types";
+import type { Paiement, StatutPaiementManuel } from "../paiements/types";
 
 export interface UtilisateurRow {
   id: string;
@@ -375,5 +377,49 @@ export function codeOtpFromRow(row: CodeOtpRow): CodeOtp {
     expireAt: row.expire_at,
     utilise: row.utilise,
     createdAt: row.created_at,
+  };
+}
+
+export interface PaiementRow {
+  id: string;
+  course_id: string;
+  utilisateur_id: string;
+  reference: string;
+  montant_attendu: number;
+  montant_paye: number | null;
+  reseau: PaymentOperator | null;
+  numero_payeur: string | null;
+  reference_transaction: string | null;
+  date_paiement_declaree: string | null;
+  capture_url: string | null;
+  statut: StatutPaiementManuel;
+  valide_par: string | null;
+  valide_at: string | null;
+  motif_rejet: string | null;
+  declare_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function paiementFromRow(row: PaiementRow): Paiement {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    utilisateurId: row.utilisateur_id,
+    reference: row.reference,
+    montantAttendu: row.montant_attendu,
+    montantPaye: row.montant_paye,
+    reseau: row.reseau,
+    numeroPayeur: row.numero_payeur,
+    referenceTransaction: row.reference_transaction,
+    datePaiementDeclaree: row.date_paiement_declaree,
+    captureUrl: row.capture_url,
+    statut: row.statut,
+    valideParId: row.valide_par,
+    valideAt: row.valide_at,
+    motifRejet: row.motif_rejet,
+    declareAt: row.declare_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }

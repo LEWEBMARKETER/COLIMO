@@ -29,7 +29,7 @@ import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import Stepper from "@/components/ui/Stepper";
-import { creerCourse, getCodePromoParCode } from "@/lib/api";
+import { creerCourse, getCodePromoParCode, initierPaiementManuel } from "@/lib/api";
 import { notifierEvenement } from "@/lib/notifications";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -203,6 +203,9 @@ export default function PublishScreen() {
           numero_commande: course.numeroCommande,
         },
       });
+      if (modePaiement === "mobile_money") {
+        await initierPaiementManuel({ courseId: course.id, utilisateurId: session.user.id, montantAttendu: course.prix });
+      }
       router.push(`/(client)/track/${course.id}`);
     } catch {
       setErreur("Impossible de publier la course. Réessayez.");

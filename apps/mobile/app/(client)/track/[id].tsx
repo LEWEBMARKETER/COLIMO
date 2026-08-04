@@ -85,6 +85,27 @@ export default function TrackScreen() {
     );
   }
 
+  if (course.statut === "en_attente_paiement") {
+    return (
+      <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
+        <BandeauStatut statut={course.statut} numeroCommande={course.numeroCommande} />
+        <View className="flex-1 items-center justify-center px-8">
+          <Text className="text-center font-titre text-lg text-colimo-neutre-fonce">
+            Un dernier pas : réglez les frais de livraison
+          </Text>
+          <Text className="mt-2 text-center font-texte text-sm text-colimo-neutre-fonce/60">
+            Votre course ne sera envoyée aux coursiers qu&apos;une fois le paiement confirmé.
+          </Text>
+          <Bouton
+            label="Payer maintenant"
+            onPress={() => router.push(`/(client)/paiement/${course.id}`)}
+            className="mt-6 px-8"
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const contactsFermes = course.statut === "confirmee";
 
   return (

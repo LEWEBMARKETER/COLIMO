@@ -16,6 +16,7 @@ export type VehiculeType = "moto" | "velo" | "voiture" | "pied";
 export type VerificationStatus = "en_attente" | "valide" | "rejete";
 
 export type CourseStatus =
+  | "en_attente_paiement"
   | "en_attente"
   | "acceptee"
   | "retrait"
@@ -27,6 +28,7 @@ export type CourseStatus =
   | "retournee";
 
 export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
+  en_attente_paiement: "En attente de paiement",
   en_attente: "En attente",
   acceptee: "Acceptée",
   retrait: "En cours de retrait",

@@ -10,6 +10,7 @@ interface Teinte {
 // Même vocabulaire de couleur que StatutBadge côté admin (apps/admin/components/StatutBadge.tsx) :
 // un statut se lit de la même façon des deux côtés de la plateforme.
 export const TEINTES_STATUT: Record<CourseStatus, Teinte> = {
+  en_attente_paiement: { forte: "#9E1419", douceFond: "#FBE7E7", douceTexte: "#9E1419" },
   en_attente: { forte: "#B45309", douceFond: "#FEF3C7", douceTexte: "#92400E" },
   acceptee: { forte: "#1D4ED8", douceFond: "#DBEAFE", douceTexte: "#1E40AF" },
   retrait: { forte: "#B45309", douceFond: "#FEF3C7", douceTexte: "#92400E" },
