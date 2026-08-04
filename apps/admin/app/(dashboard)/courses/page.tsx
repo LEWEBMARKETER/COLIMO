@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import StatutBadge from "@/components/StatutBadge";
 import CarteCourses from "@/components/CarteCourses";
 import { getCourses, getUtilisateurs, getCoursiers, patchCourse, type CoursierAvecUtilisateur } from "@/lib/api";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 import {
   CATEGORIE_COLIS_LABELS,
   COURSE_STATUS_LABELS,

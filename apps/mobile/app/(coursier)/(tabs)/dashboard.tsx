@@ -6,7 +6,7 @@ import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared"
 import Bouton from "@/components/ui/Bouton";
 import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 
 export default function CoursierDashboard() {
   const { session, utilisateur, coursier, refreshProfile } = useAuth();

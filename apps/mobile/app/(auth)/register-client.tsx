@@ -8,6 +8,7 @@ import Bouton from "@/components/ui/Bouton";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import { inscrireClient } from "@/lib/api";
+import { notifierEvenement } from "@/lib/communication";
 import {
   ACTIVITE_COMMERCE_LABELS,
   VOLUME_LIVRAISONS_LABELS,
@@ -52,7 +53,7 @@ export default function RegisterClientScreen() {
     setErreur(null);
     setEnvoiEnCours(true);
     try {
-      await inscrireClient({
+      const utilisateur = await inscrireClient({
         email,
         password,
         nom,
@@ -65,6 +66,11 @@ export default function RegisterClientScreen() {
         activite: typeClient === "commerce" ? activite ?? undefined : undefined,
         volumeQuotidien: typeClient === "commerce" ? volumeQuotidien ?? undefined : undefined,
         photoCommerce: typeClient === "commerce" ? photoCommerce ?? undefined : undefined,
+      });
+      await notifierEvenement("compte_bienvenue", {
+        declenchePar: utilisateur.id,
+        destinataire: email,
+        variables: { prenom: nom },
       });
       router.replace("/");
     } catch {

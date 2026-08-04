@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { codeOtpFromRow, type CodeOtpRow } from "../supabase/mappers";
-import { envoyerNotification } from "../notifications/service";
+import { envoyerCommunication } from "../communication/service";
 import type { CodeOtp, ObjectifOtp } from "./types";
 
 const DUREE_VALIDITE_MINUTES_DEFAUT = 5;
@@ -40,10 +40,10 @@ export async function genererOtp(
     .single();
   if (error) throw error;
 
-  await envoyerNotification(client, {
+  await envoyerCommunication(client, {
     declenchePar: input.declenchePar,
     utilisateurId: input.utilisateurId,
-    type: "sms",
+    canal: "sms",
     destinataire: input.destinataire,
     modeleCode: "sms_otp",
     variables: { otp: code, minutes: String(dureeMinutes) },

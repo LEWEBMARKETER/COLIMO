@@ -9,6 +9,7 @@ import Bouton from "@/components/ui/Bouton";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import { inscrireCoursier } from "@/lib/api";
+import { notifierEvenement } from "@/lib/communication";
 
 const VEHICULES: { valeur: VehiculeType; label: string }[] = [
   { valeur: "moto", label: "Moto" },
@@ -53,7 +54,7 @@ export default function RegisterCoursierScreen() {
     setEnvoiEnCours(true);
     setErreur(null);
     try {
-      await inscrireCoursier({
+      const { utilisateur } = await inscrireCoursier({
         email,
         password,
         nom,
@@ -64,6 +65,11 @@ export default function RegisterCoursierScreen() {
         typePieceIdentite,
         pieceIdentite,
         photo: photo ?? undefined,
+      });
+      await notifierEvenement("compte_bienvenue", {
+        declenchePar: utilisateur.id,
+        destinataire: email,
+        variables: { prenom },
       });
       router.replace("/(coursier)/dashboard");
     } catch {

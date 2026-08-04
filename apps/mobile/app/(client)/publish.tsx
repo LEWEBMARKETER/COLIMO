@@ -30,7 +30,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import Stepper from "@/components/ui/Stepper";
 import { creerCourse, getCodePromoParCode, initierPaiementManuel } from "@/lib/api";
-import { notifierEvenement } from "@/lib/notifications";
+import { notifierEvenement } from "@/lib/communication";
 import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({

@@ -3,32 +3,32 @@ import {
   getCodesPromo as getCodesPromoQuery,
   getCommercantsBruts as getCommercantsBrutsQuery,
   getLitiges as getLitigesQuery,
-  getModelesNotification as getModelesNotificationQuery,
-  getNotifications as getNotificationsQuery,
+  getModelesCommunication as getModelesCommunicationQuery,
+  getCommunications as getCommunicationsQuery,
   getPaiements as getPaiementsQuery,
   getUtilisateurs as getUtilisateursQuery,
   getCoursiers as getCoursiersQuery,
   patchCodePromo as patchCodePromoQuery,
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
-  patchModeleNotification as patchModeleNotificationQuery,
+  patchModeleCommunication as patchModeleCommunicationQuery,
   rejeterPaiement as rejeterPaiementQuery,
   updateUtilisateur as updateUtilisateurQuery,
   upsertCommercant as upsertCommercantQuery,
   validerPaiement as validerPaiementQuery,
   getCourses as getCoursesQuery,
+  type CanalCommunication,
   type CodePromo,
   type Commercant,
+  type CommunicationEnvoyee,
   type Coursier,
   type Course,
   type CourseStatus,
   type Litige,
-  type ModeleNotification,
-  type NotificationEnvoyee,
+  type ModeleCommunication,
   type Paiement,
-  type StatutNotification,
+  type StatutCommunication,
   type StatutPaiementManuel,
-  type TypeNotification,
   type TypeReductionPromo,
   type VerificationStatus,
   type Utilisateur,
@@ -108,21 +108,26 @@ export function getLitiges(): Promise<Litige[]> {
   return getLitigesQuery(createClient());
 }
 
-export function getNotifications(params?: { type?: TypeNotification; statut?: StatutNotification }): Promise<
-  NotificationEnvoyee[]
-> {
-  return getNotificationsQuery(createClient(), params);
+export function getCommunications(params?: {
+  canal?: CanalCommunication;
+  statut?: StatutCommunication;
+  utilisateurId?: string;
+  dateDebut?: string;
+  dateFin?: string;
+  recherche?: string;
+}): Promise<CommunicationEnvoyee[]> {
+  return getCommunicationsQuery(createClient(), params);
 }
 
-export function getModelesNotification(): Promise<ModeleNotification[]> {
-  return getModelesNotificationQuery(createClient());
+export function getModelesCommunication(): Promise<ModeleCommunication[]> {
+  return getModelesCommunicationQuery(createClient());
 }
 
-export function patchModeleNotification(
+export function patchModeleCommunication(
   id: string,
   body: { nom?: string; sujet?: string | null; contenu?: string; actif?: boolean }
-): Promise<ModeleNotification> {
-  return patchModeleNotificationQuery(createClient(), id, body);
+): Promise<ModeleCommunication> {
+  return patchModeleCommunicationQuery(createClient(), id, body);
 }
 
 export function getPaiements(params?: { statut?: StatutPaiementManuel }): Promise<Paiement[]> {
