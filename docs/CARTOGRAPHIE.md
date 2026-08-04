@@ -6,14 +6,15 @@ Google Maps Platform. Uniquement des services OpenStreetMap (gratuits).
 ## Architecture
 
 ```
-Mobile / PWA (apps/mobile)          Admin (apps/admin)
-      │                                    │
-      ▼                                    ▼
-CarteOSM (react-native-webview       CarteCourses (react-leaflet,
-+ Leaflet.js chargé en CDN           tuiles OSM, dynamic import
-dans le HTML injecté)                ssr:false)
-      │                                    │
-      └───────────────┬────────────────────┘
+Mobile iOS/Android (apps/mobile)     Mobile web/PWA (apps/mobile)      Admin (apps/admin)
+      │                                    │                                │
+      ▼                                    ▼                                ▼
+CarteOSM.tsx (react-native-webview   CarteOSM.web.tsx (react-leaflet   CarteCourses (react-leaflet,
++ Leaflet.js chargé en CDN           direct, résolu automatiquement    tuiles OSM, dynamic import
+dans le HTML injecté)                par Metro sur le web — RNW n'a    ssr:false)
+                                      pas d'implémentation web)
+      │                                    │                                │
+      └───────────────┬────────────────────┴────────────────────────────────┘
                        ▼
          tuiles OSM : tile.openstreetmap.org
                        │
@@ -37,9 +38,15 @@ qu'à convertir une adresse tapée en point de départ sur la carte.
   `geocoderInverse`, avec cache mémoire + file d'attente (1 req/s max)
 - `packages/shared/src/maps/osrm.ts` — `obtenirItineraire`, avec repli
   automatique sur la ligne droite en cas d'échec
-- `apps/mobile/components/CarteOSM.tsx` — composant carte de base (WebView +
-  Leaflet), fonctionne à l'identique sur iOS, Android et le web (react-native-webview
-  a un mode web natif)
+- `apps/mobile/components/CarteOSM.tsx` — composant carte de base pour iOS et
+  Android (WebView + Leaflet.js en CDN dans le HTML injecté)
+- `apps/mobile/components/CarteOSM.web.tsx` — même composant (mêmes props),
+  ré-implémenté avec `react-leaflet` pour le web. **Nécessaire** :
+  `react-native-webview` n'a aucune implémentation web (son propre code
+  source affiche "React Native WebView does not support this platform" sur
+  ce type de build) — Metro (bundler web d'Expo) résout automatiquement ce
+  fichier `.web.tsx` à la place de `CarteOSM.tsx` sur le web, sans rien à
+  faire dans les écrans qui utilisent `CarteOSM`
 - `apps/mobile/components/SelecteurPointCarte.tsx` — recherche d'adresse +
   GPS + pin déplaçable, utilisé à la publication d'une course
   (`(client)/publish.tsx`, `(client)/nouvelle-livraison.tsx`)
