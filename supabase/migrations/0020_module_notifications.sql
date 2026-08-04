@@ -36,6 +36,7 @@ create table if not exists modeles_notification (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists modeles_notification_set_updated_at on modeles_notification;
 create trigger modeles_notification_set_updated_at
   before update on modeles_notification
   for each row execute function set_updated_at();
