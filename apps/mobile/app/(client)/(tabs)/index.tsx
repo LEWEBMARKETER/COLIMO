@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
 import StatutChip from "@/components/ui/StatutChip";
+import ClocheNotifications from "@/components/ClocheNotifications";
 import CommerceDashboard from "@/components/CommerceDashboard";
 import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
@@ -27,6 +28,11 @@ export default function ClientHome() {
     return (
       <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
         <ScrollView className="flex-1 px-6 py-8" contentContainerStyle={{ paddingBottom: 32 }}>
+          {session && (
+            <View className="mb-2 flex-row justify-end">
+              <ClocheNotifications utilisateurId={session.user.id} route="/(client)/notifications" />
+            </View>
+          )}
           <CommerceDashboard />
         </ScrollView>
       </SafeAreaView>
@@ -36,22 +42,25 @@ export default function ClientHome() {
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <ScrollView className="flex-1 px-6 py-8" contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-row items-center gap-3">
-          {utilisateur?.photoUrl ? (
-            <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
-          ) : (
-            <View className="h-12 w-12 items-center justify-center rounded-full bg-colimo-rouge-clair">
-              <Text className="font-titre text-colimo-rouge">{(utilisateur?.nom ?? "?").charAt(0).toUpperCase()}</Text>
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="flex-1 flex-row items-center gap-3">
+            {utilisateur?.photoUrl ? (
+              <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
+            ) : (
+              <View className="h-12 w-12 items-center justify-center rounded-full bg-colimo-rouge-clair">
+                <Text className="font-titre text-colimo-rouge">{(utilisateur?.nom ?? "?").charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+            <View>
+              <Text className="font-titre text-xl text-colimo-neutre-fonce">
+                Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""} 👋
+              </Text>
+              <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/70">
+                Où souhaitez-vous envoyer un colis aujourd&apos;hui ?
+              </Text>
             </View>
-          )}
-          <View>
-            <Text className="font-titre text-xl text-colimo-neutre-fonce">
-              Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""} 👋
-            </Text>
-            <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/70">
-              Où souhaitez-vous envoyer un colis aujourd&apos;hui ?
-            </Text>
           </View>
+          {session && <ClocheNotifications utilisateurId={session.user.id} route="/(client)/notifications" />}
         </View>
 
         {courseActive && (

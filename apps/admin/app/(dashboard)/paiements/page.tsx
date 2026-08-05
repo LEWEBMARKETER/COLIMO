@@ -66,6 +66,7 @@ export default function PaiementsPage() {
       const client = utilisateur(paiement.utilisateurId);
       await notifierEvenement("paiement_confirme", {
         destinataire: client?.telephone,
+        utilisateurId: paiement.utilisateurId,
         variables: { nom_client: client?.prenom ?? client?.nom ?? "client", reference: paiement.reference },
       });
     } finally {
@@ -83,6 +84,7 @@ export default function PaiementsPage() {
       const client = utilisateur(paiement.utilisateurId);
       await notifierEvenement("paiement_rejete", {
         destinataire: client?.telephone,
+        utilisateurId: paiement.utilisateurId,
         variables: { nom_client: client?.prenom ?? client?.nom ?? "client", reference: paiement.reference },
       });
     } finally {

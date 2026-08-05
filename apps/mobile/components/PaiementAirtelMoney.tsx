@@ -116,6 +116,7 @@ export default function PaiementAirtelMoney({ course }: PaiementAirtelMoneyProps
       await notifierEvenement("paiement_recu", {
         declenchePar: session.user.id,
         destinataire: utilisateur?.telephone,
+        utilisateurId: session.user.id,
         variables: {
           nom_client: utilisateur?.prenom ?? utilisateur?.nom ?? "client",
           numero_commande: course.numeroCommande,

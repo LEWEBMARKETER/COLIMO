@@ -69,6 +69,7 @@ export default function RegisterCoursierScreen() {
       await notifierEvenement("compte_bienvenue", {
         declenchePar: utilisateur.id,
         destinataire: email,
+        utilisateurId: utilisateur.id,
         variables: { prenom },
       });
       router.replace("/(coursier)/dashboard");

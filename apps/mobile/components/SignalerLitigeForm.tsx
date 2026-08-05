@@ -49,6 +49,15 @@ export default function SignalerLitigeForm({ courseId, auteurId }: SignalerLitig
           numero_commande: course.numeroCommande,
         },
       });
+      const autrePartie = auteurId === course.clientId ? course.coursierId : course.clientId;
+      if (autrePartie) {
+        await notifierEvenement("notification_litige_ouvert", {
+          declenchePar: auteurId,
+          destinataire: autrePartie,
+          utilisateurId: autrePartie,
+          variables: { numero_commande: course.numeroCommande },
+        });
+      }
       router.back();
     } catch {
       setErreur("Impossible d'envoyer le signalement. Réessayez.");

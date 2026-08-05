@@ -70,6 +70,7 @@ export default function RegisterClientScreen() {
       await notifierEvenement("compte_bienvenue", {
         declenchePar: utilisateur.id,
         destinataire: email,
+        utilisateurId: utilisateur.id,
         variables: { prenom: nom },
       });
       router.replace("/");

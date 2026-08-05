@@ -3,7 +3,7 @@ import { ActivityIndicator, Text, TextInput, View } from "react-native";
 import StarRating from "./StarRating";
 import Bouton from "./ui/Bouton";
 import Carte from "./ui/Carte";
-import { creerNotation, getNotations } from "@/lib/api";
+import { creerNotation, getNotations, recalculerBadgesEtNiveau } from "@/lib/api";
 
 interface NotationFormProps {
   courseId: string;
@@ -35,6 +35,12 @@ export default function NotationForm({ courseId, auteurId, destinataireId, titre
       await creerNotation({ courseId, auteurId, destinataireId, note, commentaire: commentaire.trim() || undefined });
       setDejaNote(true);
       onEnvoye?.();
+      try {
+        await recalculerBadgesEtNiveau(destinataireId);
+      } catch {
+        // No-op si destinataireId n'est pas un coursier, ou en cas d'erreur réseau —
+        // ne doit jamais bloquer l'envoi de la note.
+      }
     } catch {
       setErreur("Impossible d'envoyer votre avis. Réessayez.");
     } finally {

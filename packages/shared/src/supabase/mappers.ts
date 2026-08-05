@@ -14,6 +14,7 @@ import type {
   PaymentOperator,
   PieceIdentiteType,
   QuiPaie,
+  StatutCoursier,
   TailleColis,
   TypeClient,
   TypeReductionPromo,
@@ -29,6 +30,9 @@ import type { ModeleCommunication } from "../communication/templates/types";
 import type { CommunicationEnvoyee } from "../communication/history/types";
 import type { CodeOtp, ObjectifOtp } from "../otp/types";
 import type { Paiement, StatutPaiementManuel } from "../paiements/types";
+import type { BadgeCoursier, BadgeCoursierAttribue, ModeAttributionBadge, RegleBadge } from "../coursiers/badges/types";
+import type { NiveauCoursier } from "../coursiers/niveaux/types";
+import type { ActionHistoriqueCoursier, HistoriqueCoursier } from "../coursiers/historique/types";
 
 export interface UtilisateurRow {
   id: string;
@@ -54,6 +58,12 @@ export interface CoursierRow {
   disponibilite: boolean;
   note_moyenne: number;
   zones_couvertes: Zone[];
+  statut: StatutCoursier;
+  niveau_id: string | null;
+  nombre_livraisons: number;
+  nombre_courses_assignees: number;
+  nombre_courses_annulees: number;
+  duree_livraison_totale_secondes: number;
 }
 
 export interface CourseRow {
@@ -180,6 +190,12 @@ export function coursierFromRow(row: CoursierRow): Coursier {
     disponibilite: row.disponibilite,
     noteMoyenne: row.note_moyenne,
     zonesCouvertes: row.zones_couvertes ?? [],
+    statut: row.statut,
+    niveauId: row.niveau_id,
+    nombreLivraisons: row.nombre_livraisons,
+    nombreCoursesAssignees: row.nombre_courses_assignees,
+    nombreCoursesAnnulees: row.nombre_courses_annulees,
+    dureeLivraisonTotaleSecondes: row.duree_livraison_totale_secondes,
   };
 }
 
@@ -418,5 +434,115 @@ export function paiementFromRow(row: PaiementRow): Paiement {
     declareAt: row.declare_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+export interface CatalogueNiveauRow {
+  id: string;
+  code: string;
+  nom: string;
+  seuil_livraisons_min: number;
+  couleur: string;
+  icone: string | null;
+  ordre: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export function catalogueNiveauFromRow(row: CatalogueNiveauRow): NiveauCoursier {
+  return {
+    id: row.id,
+    code: row.code,
+    nom: row.nom,
+    seuilLivraisonsMin: row.seuil_livraisons_min,
+    couleur: row.couleur,
+    icone: row.icone,
+    ordre: row.ordre,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export interface CatalogueBadgeRow {
+  id: string;
+  code: string;
+  nom: string;
+  icone: string;
+  description: string;
+  couleur: string;
+  mode_attribution: ModeAttributionBadge;
+  regle: RegleBadge;
+  actif: boolean;
+  ordre_affichage: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export function catalogueBadgeFromRow(row: CatalogueBadgeRow): BadgeCoursier {
+  return {
+    id: row.id,
+    code: row.code,
+    nom: row.nom,
+    icone: row.icone,
+    description: row.description,
+    couleur: row.couleur,
+    modeAttribution: row.mode_attribution,
+    regle: row.regle ?? {},
+    actif: row.actif,
+    ordreAffichage: row.ordre_affichage,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export interface BadgeCoursierRow {
+  id: string;
+  coursier_id: string;
+  badge_id: string;
+  attribue_le: string;
+  expire_le: string | null;
+  attribue_par: string | null;
+  retire_le: string | null;
+  retire_par: string | null;
+  created_at: string;
+}
+
+export function badgeCoursierFromRow(row: BadgeCoursierRow): BadgeCoursierAttribue {
+  return {
+    id: row.id,
+    coursierId: row.coursier_id,
+    badgeId: row.badge_id,
+    attribueLe: row.attribue_le,
+    expireLe: row.expire_le,
+    attribuePar: row.attribue_par,
+    retireLe: row.retire_le,
+    retirePar: row.retire_par,
+    createdAt: row.created_at,
+  };
+}
+
+export interface HistoriqueCoursierRow {
+  id: string;
+  coursier_id: string;
+  action: ActionHistoriqueCoursier;
+  ancienne_valeur: string | null;
+  nouvelle_valeur: string | null;
+  motif: string | null;
+  commentaire: string | null;
+  administrateur_id: string | null;
+  created_at: string;
+}
+
+export function historiqueCoursierFromRow(row: HistoriqueCoursierRow): HistoriqueCoursier {
+  return {
+    id: row.id,
+    coursierId: row.coursier_id,
+    action: row.action,
+    ancienneValeur: row.ancienne_valeur,
+    nouvelleValeur: row.nouvelle_valeur,
+    motif: row.motif,
+    commentaire: row.commentaire,
+    administrateurId: row.administrateur_id,
+    createdAt: row.created_at,
   };
 }

@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
+import ClocheNotifications from "@/components/ClocheNotifications";
 import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
@@ -75,6 +76,15 @@ export default function CoursierDashboard() {
           telephone: utilisateur?.telephone ?? "",
         },
       });
+      await notifierEvenement("notification_coursier_attribue", {
+        declenchePar: session.user.id,
+        destinataire: course.clientId,
+        utilisateurId: course.clientId,
+        variables: {
+          nom_coursier: utilisateur?.prenom ?? utilisateur?.nom ?? "votre coursier",
+          numero_commande: course.numeroCommande,
+        },
+      });
       router.push(`/(coursier)/course/${course.id}`);
     } catch {
       setErreur("Impossible d'accepter cette course. Elle a peut-être déjà été prise.");
@@ -90,8 +100,10 @@ export default function CoursierDashboard() {
     );
   }
 
+  const compteBloque = coursier?.statut === "suspendu" || coursier?.statut === "desactive";
+
   const afficherListe =
-    coursier?.statutVerification === "valide" && coursier?.disponibilite && zonesDisponibilite.length > 0;
+    !compteBloque && coursier?.statutVerification === "valide" && coursier?.disponibilite && zonesDisponibilite.length > 0;
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
@@ -102,9 +114,12 @@ export default function CoursierDashboard() {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View className="mb-5">
-            <Text className="font-texte text-sm text-colimo-neutre-fonce/60">
-              Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""}
-            </Text>
+            <View className="flex-row items-center justify-between">
+              <Text className="font-texte text-sm text-colimo-neutre-fonce/60">
+                Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""}
+              </Text>
+              {session && <ClocheNotifications utilisateurId={session.user.id} route="/(coursier)/notifications" />}
+            </View>
 
             {/* Chiffre-clé du jour, traitement éditorial : le nombre porte
                 l'information, la légende reste discrète. */}
@@ -132,14 +147,20 @@ export default function CoursierDashboard() {
               <Switch
                 value={coursier?.disponibilite ?? false}
                 onValueChange={toggleDisponibilite}
-                disabled={coursier?.statutVerification !== "valide"}
+                disabled={coursier?.statutVerification !== "valide" || compteBloque}
                 trackColor={{ true: "#C41E24" }}
               />
             </View>
 
             {erreur && <Text className="mt-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 
-            {coursier?.statutVerification !== "valide" ? (
+            {compteBloque ? (
+              <Text className="mt-5 text-center font-texte text-colimo-rouge">
+                {coursier?.statut === "suspendu"
+                  ? "Ton compte est suspendu. Contacte le support COLIMO pour plus d'informations."
+                  : "Ton compte a été désactivé."}
+              </Text>
+            ) : coursier?.statutVerification !== "valide" ? (
               <Text className="mt-5 text-center font-texte text-colimo-neutre-fonce/60">
                 Ton inscription est en cours de validation par COLIMO. Tu pourras accepter des
                 courses une fois validé·e.

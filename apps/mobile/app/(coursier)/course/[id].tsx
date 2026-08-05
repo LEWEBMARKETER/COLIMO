@@ -46,6 +46,11 @@ export default function CourseDetailScreen() {
     en_cours: "livraison_en_cours",
   };
 
+  const NOTIFICATION_APP_PAR_STATUT: Partial<Record<CourseStatus, EvenementCommunication>> = {
+    retrait: "notification_colis_recupere",
+    en_cours: "notification_livraison_en_cours",
+  };
+
   async function marquerProchainStatut() {
     if (!course || !session) return;
     const prochain = PROCHAIN_STATUT[course.statut];
@@ -66,6 +71,15 @@ export default function CourseDetailScreen() {
             telephone: utilisateur?.telephone ?? "",
             temps: "quelques minutes",
           },
+        });
+      }
+      const evenementApp = NOTIFICATION_APP_PAR_STATUT[prochain];
+      if (evenementApp) {
+        await notifierEvenement(evenementApp, {
+          declenchePar: session.user.id,
+          destinataire: misAJour.clientId,
+          utilisateurId: misAJour.clientId,
+          variables: { numero_commande: misAJour.numeroCommande },
         });
       }
     } finally {

@@ -77,6 +77,18 @@ function CoursesContenu() {
       destinataire: misAJour.telephoneDestinataire,
       variables: { nom_client: misAJour.nomDestinataire ?? "client", numero_commande: misAJour.numeroCommande },
     });
+    await notifierEvenement("notification_livraison_annulee", {
+      destinataire: misAJour.clientId,
+      utilisateurId: misAJour.clientId,
+      variables: { numero_commande: misAJour.numeroCommande },
+    });
+    if (misAJour.coursierId) {
+      await notifierEvenement("notification_livraison_annulee", {
+        destinataire: misAJour.coursierId,
+        utilisateurId: misAJour.coursierId,
+        variables: { numero_commande: misAJour.numeroCommande },
+      });
+    }
   }
 
   async function marquerRetournee(course: Course) {
