@@ -33,3 +33,27 @@ export async function getCommunications(
   if (error) throw error;
   return (data as CommunicationRow[]).map(communicationFromRow);
 }
+
+/**
+ * Marque une communication comme lue — utilisée par l'inbox in-app
+ * (mobile) quand l'utilisateur ouvre une notification.
+ */
+export async function marquerCommunicationLue(client: SupabaseClient, id: string): Promise<CommunicationEnvoyee> {
+  const { data, error } = await client
+    .from("notifications")
+    .update({ statut: "lu", lu_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return communicationFromRow(data as CommunicationRow);
+}
+
+export async function marquerToutesCommunicationsLues(client: SupabaseClient, utilisateurId: string): Promise<void> {
+  const { error } = await client
+    .from("notifications")
+    .update({ statut: "lu", lu_at: new Date().toISOString() })
+    .eq("utilisateur_id", utilisateurId)
+    .neq("statut", "lu");
+  if (error) throw error;
+}

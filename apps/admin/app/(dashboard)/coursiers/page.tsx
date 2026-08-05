@@ -21,6 +21,7 @@ import {
   suspendreCoursier,
   validerDossierCoursier,
 } from "@/lib/api";
+import { notifierEvenement } from "@/lib/communication";
 import {
   ACTION_HISTORIQUE_COURSIER_LABELS,
   STATUT_COURSIER_LABELS,
@@ -134,7 +135,20 @@ export default function CoursiersPage() {
   );
 
   async function valider(coursierId: string) {
+    const coursier = coursiers.find((c) => c.id === coursierId);
     await validerDossierCoursier(coursierId);
+    if (coursier) {
+      const prenom = coursier.utilisateur.prenom ?? coursier.utilisateur.nom;
+      await notifierEvenement("coursier_compte_valide", {
+        destinataire: coursier.utilisateur.telephone,
+        variables: { prenom },
+      });
+      await notifierEvenement("notification_coursier_compte_valide", {
+        destinataire: coursier.utilisateurId,
+        utilisateurId: coursier.utilisateurId,
+        variables: { prenom },
+      });
+    }
     await chargerTout();
   }
 

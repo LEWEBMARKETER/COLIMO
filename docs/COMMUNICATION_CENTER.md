@@ -71,6 +71,9 @@ définies dans `supabase/migrations/0020_module_notifications.sql`) n'ont pas
   (tables, types, modèles initiaux)
 - `supabase/migrations/0022_communication_center.sql` — modèles ajoutés pour
   compléter le catalogue (authentification par email, statuts commerçant/coursier)
+- `supabase/migrations/0027_communication_notifications_in_app.sql` — RLS
+  pour que chaque utilisateur lise/marque comme lues ses propres
+  notifications, activation Realtime, 9 modèles push pour l'inbox in-app
 
 ## Envoyer une communication depuis une autre partie du projet
 
@@ -182,6 +185,51 @@ authentification, validation des commerçants et des coursiers — cf.
 `Campagne` (nom, canal, modèle, statut brouillon/planifiée/envoyée) — aucune
 logique d'envoi en masse n'existe encore. Préparé pour une V2 (diffusion
 groupée aux coursiers ou aux clients d'une zone, par exemple).
+
+## Notifications in-app (client + coursier)
+
+Jusqu'à la migration 0027, `utilisateur_id` n'était **jamais renseigné**
+dans `notifications` : les deux wrappers `notifierEvenement()` (mobile et
+admin) n'exposaient pas ce champ dans leur signature. Sans lui, impossible
+de demander "mes notifications" — et deux failles RLS (`notifications_select_admin`
+et `notifications_update_own_or_admin`, toutes deux limitées à
+`declenche_par`) empêchaient de toute façon un utilisateur de lire ses
+propres communications.
+
+La plupart des événements déjà câblés notifient le **destinataire du colis**
+(`course.telephoneDestinataire`), pas forcément un compte COLIMO. Pour que
+le client et le coursier voient quelque chose sur leur propre tableau de
+bord, 9 événements canal `push` ont été ajoutés (préfixe `notification_`,
+ex. `notification_coursier_attribue`) — déclenchés **en plus** de l'appel
+WhatsApp existant (jamais à sa place), ciblant cette fois le vrai
+participant COLIMO de la course (`course.clientId`/`course.coursierId`) :
+
+| Événement push | Cible |
+|---|---|
+| `notification_livraison_creee` | Le client qui publie la course |
+| `notification_coursier_attribue` | Le client, quand un coursier accepte |
+| `notification_colis_recupere` / `notification_livraison_en_cours` | Le client |
+| `notification_livraison_terminee` | Le client **et** le coursier |
+| `notification_livraison_annulee` | Le client **et** le coursier (si assigné) |
+| `notification_litige_ouvert` | L'autre partie que celle qui a signalé |
+| `notification_litige_resolu` | Le client **et** le coursier |
+| `notification_coursier_compte_valide` | Le coursier, à la validation admin |
+
+Les événements déjà ciblés sur un compte réel (`compte_bienvenue`,
+`paiement_recu`, `paiement_confirme`, `paiement_rejete`) n'ont pas besoin
+d'un événement push dédié — `utilisateurId` a simplement été ajouté à
+leurs appels existants, et ils apparaissent automatiquement dans l'inbox.
+
+**L'inbox in-app affiche tous les canaux confondus**, pas seulement
+`push` : `getCommunications(client, { utilisateurId })` (déjà existant)
+reste la seule requête nécessaire — pas de système parallèle. Consultable
+via la cloche de notifications sur le tableau de bord client et coursier
+(`apps/mobile/components/ClocheNotifications.tsx`, compteur non-lu tenu à
+jour par Realtime + polling de secours) et l'écran
+`apps/mobile/components/EcranNotifications.tsx` (routes `(client)/notifications.tsx`
+et `(coursier)/notifications.tsx`). Marquer comme lu passe par
+`marquerCommunicationLue`/`marquerToutesCommunicationsLues`
+(`communication/history/index.ts`).
 
 ## Ce qui est câblé aujourd'hui vs catalogué pour plus tard
 

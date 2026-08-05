@@ -5,6 +5,7 @@ import {
   envoyerMessage as envoyerMessageQuery,
   getCodePromoParCode as getCodePromoParCodeQuery,
   getCommercantsBruts as getCommercantsBrutsQuery,
+  getCommunications as getCommunicationsQuery,
   getCourse as getCourseQuery,
   getCoursierByUtilisateurId as getCoursierByUtilisateurIdQuery,
   getCoursiers as getCoursiersQuery,
@@ -18,6 +19,8 @@ import {
   initierPaiementManuel as initierPaiementManuelQuery,
   insertCoursier,
   insertUtilisateur,
+  marquerCommunicationLue as marquerCommunicationLueQuery,
+  marquerToutesCommunicationsLues as marquerToutesCommunicationsLuesQuery,
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
   recalculerBadgesEtNiveau as recalculerBadgesEtNiveauQuery,
@@ -28,6 +31,7 @@ import {
   type CategorieColis,
   type CodePromo,
   type Commercant,
+  type CommunicationEnvoyee,
   type Coursier,
   type Course,
   type CourseStatus,
@@ -54,6 +58,18 @@ export type { CoursierAvecUtilisateur } from "@colimo/shared";
 
 export function recalculerBadgesEtNiveau(utilisateurId: string): Promise<void> {
   return recalculerBadgesEtNiveauQuery(supabase, utilisateurId);
+}
+
+export function getMesCommunications(utilisateurId: string): Promise<CommunicationEnvoyee[]> {
+  return getCommunicationsQuery(supabase, { utilisateurId });
+}
+
+export function marquerCommunicationLue(id: string): Promise<CommunicationEnvoyee> {
+  return marquerCommunicationLueQuery(supabase, id);
+}
+
+export function marquerToutesCommunicationsLues(utilisateurId: string): Promise<void> {
+  return marquerToutesCommunicationsLuesQuery(supabase, utilisateurId);
 }
 
 export function getCoursiers() {

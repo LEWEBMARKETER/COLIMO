@@ -33,7 +33,20 @@ export type EvenementCommunication =
   | "coursier_nouvelle_course_disponible"
   // Litiges
   | "litige_ouvert"
-  | "litige_resolu";
+  | "litige_resolu"
+  // Notifications in-app (canal push) — variantes des événements ci-dessus,
+  // déclenchées EN PLUS (jamais à la place) de l'appel WhatsApp existant,
+  // ciblant cette fois le vrai compte COLIMO du participant à la course
+  // (client/coursier) plutôt que le destinataire externe du colis.
+  | "notification_livraison_creee"
+  | "notification_coursier_attribue"
+  | "notification_colis_recupere"
+  | "notification_livraison_en_cours"
+  | "notification_livraison_terminee"
+  | "notification_livraison_annulee"
+  | "notification_litige_ouvert"
+  | "notification_litige_resolu"
+  | "notification_coursier_compte_valide";
 
 export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   compte_bienvenue: "email_bienvenue",
@@ -60,6 +73,16 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
 
   litige_ouvert: "whatsapp_litige_ouvert",
   litige_resolu: "whatsapp_litige_resolu",
+
+  notification_livraison_creee: "notification_livraison_creee",
+  notification_coursier_attribue: "notification_coursier_attribue",
+  notification_colis_recupere: "notification_colis_recupere",
+  notification_livraison_en_cours: "notification_livraison_en_cours",
+  notification_livraison_terminee: "notification_livraison_terminee",
+  notification_livraison_annulee: "notification_livraison_annulee",
+  notification_litige_ouvert: "notification_litige_ouvert",
+  notification_litige_resolu: "notification_litige_resolu",
+  notification_coursier_compte_valide: "notification_coursier_compte_valide",
 };
 
 // Canal par défaut de chaque événement — utilisé par les wrappers
@@ -90,4 +113,14 @@ export const EVENEMENT_CANAL: Record<EvenementCommunication, "email" | "sms" | "
 
   litige_ouvert: "whatsapp",
   litige_resolu: "whatsapp",
+
+  notification_livraison_creee: "push",
+  notification_coursier_attribue: "push",
+  notification_colis_recupere: "push",
+  notification_livraison_en_cours: "push",
+  notification_livraison_terminee: "push",
+  notification_livraison_annulee: "push",
+  notification_litige_ouvert: "push",
+  notification_litige_resolu: "push",
+  notification_coursier_compte_valide: "push",
 };

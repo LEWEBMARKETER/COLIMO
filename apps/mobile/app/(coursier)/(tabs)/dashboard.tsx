@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
+import ClocheNotifications from "@/components/ClocheNotifications";
 import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
@@ -75,6 +76,15 @@ export default function CoursierDashboard() {
           telephone: utilisateur?.telephone ?? "",
         },
       });
+      await notifierEvenement("notification_coursier_attribue", {
+        declenchePar: session.user.id,
+        destinataire: course.clientId,
+        utilisateurId: course.clientId,
+        variables: {
+          nom_coursier: utilisateur?.prenom ?? utilisateur?.nom ?? "votre coursier",
+          numero_commande: course.numeroCommande,
+        },
+      });
       router.push(`/(coursier)/course/${course.id}`);
     } catch {
       setErreur("Impossible d'accepter cette course. Elle a peut-être déjà été prise.");
@@ -104,9 +114,12 @@ export default function CoursierDashboard() {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View className="mb-5">
-            <Text className="font-texte text-sm text-colimo-neutre-fonce/60">
-              Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""}
-            </Text>
+            <View className="flex-row items-center justify-between">
+              <Text className="font-texte text-sm text-colimo-neutre-fonce/60">
+                Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""}
+              </Text>
+              {session && <ClocheNotifications utilisateurId={session.user.id} route="/(coursier)/notifications" />}
+            </View>
 
             {/* Chiffre-clé du jour, traitement éditorial : le nombre porte
                 l'information, la légende reste discrète. */}

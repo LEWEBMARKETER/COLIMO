@@ -10,12 +10,18 @@ import { supabase } from "./supabaseClient";
 // erreurs sont donc avalées ici.
 export async function notifierEvenement(
   evenement: EvenementCommunication,
-  params: { declenchePar: string; destinataire: string | null | undefined; variables: Record<string, string> }
+  params: {
+    declenchePar: string;
+    destinataire: string | null | undefined;
+    utilisateurId?: string;
+    variables: Record<string, string>;
+  }
 ): Promise<void> {
   if (!params.destinataire) return;
   try {
     await envoyerCommunication(supabase, {
       declenchePar: params.declenchePar,
+      utilisateurId: params.utilisateurId,
       canal: EVENEMENT_CANAL[evenement],
       destinataire: params.destinataire,
       modeleCode: EVENEMENT_MODELE_CODE[evenement],

@@ -39,7 +39,19 @@ export default function TrackScreen() {
         destinataire: misAJour.telephoneDestinataire,
         variables: { nom_client: misAJour.nomDestinataire ?? "client" },
       });
+      await notifierEvenement("notification_livraison_terminee", {
+        declenchePar: session.user.id,
+        destinataire: session.user.id,
+        utilisateurId: session.user.id,
+        variables: { numero_commande: misAJour.numeroCommande },
+      });
       if (misAJour.coursierId) {
+        await notifierEvenement("notification_livraison_terminee", {
+          declenchePar: session.user.id,
+          destinataire: misAJour.coursierId,
+          utilisateurId: misAJour.coursierId,
+          variables: { numero_commande: misAJour.numeroCommande },
+        });
         try {
           await recalculerBadgesEtNiveau(misAJour.coursierId);
         } catch {

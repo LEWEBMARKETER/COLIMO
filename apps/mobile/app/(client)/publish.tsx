@@ -203,6 +203,12 @@ export default function PublishScreen() {
           numero_commande: course.numeroCommande,
         },
       });
+      await notifierEvenement("notification_livraison_creee", {
+        declenchePar: session.user.id,
+        destinataire: session.user.id,
+        utilisateurId: session.user.id,
+        variables: { numero_commande: course.numeroCommande },
+      });
       if (modePaiement === "mobile_money") {
         await initierPaiementManuel({ courseId: course.id, utilisateurId: session.user.id, montantAttendu: course.prix });
       }

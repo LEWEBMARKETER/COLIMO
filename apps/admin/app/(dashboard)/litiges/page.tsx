@@ -80,6 +80,18 @@ export default function LitigesPage() {
           resolution: resolutions[action],
         },
       });
+      await notifierEvenement("notification_litige_resolu", {
+        destinataire: misAJour.clientId,
+        utilisateurId: misAJour.clientId,
+        variables: { numero_commande: misAJour.numeroCommande, resolution: resolutions[action] },
+      });
+      if (misAJour.coursierId) {
+        await notifierEvenement("notification_litige_resolu", {
+          destinataire: misAJour.coursierId,
+          utilisateurId: misAJour.coursierId,
+          variables: { numero_commande: misAJour.numeroCommande, resolution: resolutions[action] },
+        });
+      }
       setLitiges((prev) => prev.filter((c) => c.id !== course.id));
     } finally {
       setEnCours(null);

@@ -8,7 +8,7 @@ import { createClient } from "./supabaseClient";
 // info aujourd'hui.
 export async function notifierEvenement(
   evenement: EvenementCommunication,
-  params: { destinataire: string | null | undefined; variables: Record<string, string> }
+  params: { destinataire: string | null | undefined; utilisateurId?: string; variables: Record<string, string> }
 ): Promise<void> {
   if (!params.destinataire) return;
   try {
@@ -19,6 +19,7 @@ export async function notifierEvenement(
     if (!user) return;
     await envoyerCommunication(client, {
       declenchePar: user.id,
+      utilisateurId: params.utilisateurId,
       canal: EVENEMENT_CANAL[evenement],
       destinataire: params.destinataire,
       modeleCode: EVENEMENT_MODELE_CODE[evenement],
