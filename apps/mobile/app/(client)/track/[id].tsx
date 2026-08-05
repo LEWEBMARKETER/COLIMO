@@ -12,7 +12,7 @@ import NoteEtoiles from "@/components/NoteEtoiles";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
-import { getCourse, getCoursierByUtilisateurId, getUtilisateur, patchCourse } from "@/lib/api";
+import { getCourse, getCoursierByUtilisateurId, getUtilisateur, patchCourse, recalculerBadgesEtNiveau } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
 
@@ -39,6 +39,13 @@ export default function TrackScreen() {
         destinataire: misAJour.telephoneDestinataire,
         variables: { nom_client: misAJour.nomDestinataire ?? "client" },
       });
+      if (misAJour.coursierId) {
+        try {
+          await recalculerBadgesEtNiveau(misAJour.coursierId);
+        } catch {
+          // Le recalcul des badges/niveau ne doit jamais bloquer la confirmation de livraison.
+        }
+      }
     } catch {
       setErreurConfirmation("Impossible de confirmer la réception. Réessayez.");
     } finally {

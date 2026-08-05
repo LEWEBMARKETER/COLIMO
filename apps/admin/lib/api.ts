@@ -1,33 +1,62 @@
 import {
+  ajouterCommentaireInterne as ajouterCommentaireInterneQuery,
+  attribuerBadge as attribuerBadgeQuery,
+  changerStatutCoursier as changerStatutCoursierQuery,
+  creerBadgeCatalogue as creerBadgeCatalogueQuery,
   creerCodePromo as creerCodePromoQuery,
+  definirNiveauCoursier as definirNiveauCoursierQuery,
+  demanderDocumentsComplementaires as demanderDocumentsComplementairesQuery,
+  desactiverCoursier as desactiverCoursierQuery,
+  getBadgesCoursier as getBadgesCoursierQuery,
+  getCatalogueBadges as getCatalogueBadgesQuery,
+  getCatalogueNiveaux as getCatalogueNiveauxQuery,
   getCodesPromo as getCodesPromoQuery,
   getCommercantsBruts as getCommercantsBrutsQuery,
+  getCoursierAvecUtilisateur as getCoursierAvecUtilisateurQuery,
+  getCoursiersAvecStatutEffectif as getCoursiersAvecStatutEffectifQuery,
+  getHistoriqueCoursiers as getHistoriqueCoursiersQuery,
   getLitiges as getLitigesQuery,
   getModelesCommunication as getModelesCommunicationQuery,
   getCommunications as getCommunicationsQuery,
   getPaiements as getPaiementsQuery,
   getUtilisateurs as getUtilisateursQuery,
   getCoursiers as getCoursiersQuery,
+  patchCatalogueBadge as patchCatalogueBadgeQuery,
+  patchCatalogueNiveau as patchCatalogueNiveauQuery,
   patchCodePromo as patchCodePromoQuery,
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
   patchModeleCommunication as patchModeleCommunicationQuery,
+  reactiverCoursier as reactiverCoursierQuery,
+  recalculerBadgesEtNiveau as recalculerBadgesEtNiveauQuery,
+  rejeterDossierCoursier as rejeterDossierCoursierQuery,
   rejeterPaiement as rejeterPaiementQuery,
+  retirerBadge as retirerBadgeQuery,
+  suspendreCoursier as suspendreCoursierQuery,
   updateUtilisateur as updateUtilisateurQuery,
   upsertCommercant as upsertCommercantQuery,
+  validerDossierCoursier as validerDossierCoursierQuery,
   validerPaiement as validerPaiementQuery,
   getCourses as getCoursesQuery,
+  type ActionHistoriqueCoursier,
+  type BadgeCoursier,
+  type BadgeCoursierAttribue,
   type CanalCommunication,
   type CodePromo,
   type Commercant,
   type CommunicationEnvoyee,
   type Coursier,
+  type CoursierAvecStatutEffectif,
   type Course,
   type CourseStatus,
+  type HistoriqueCoursier,
   type Litige,
   type ModeleCommunication,
+  type NiveauCoursier,
   type Paiement,
+  type RegleBadge,
   type StatutCommunication,
+  type StatutCoursier,
   type StatutPaiementManuel,
   type TypeReductionPromo,
   type VerificationStatus,
@@ -37,6 +66,15 @@ import {
 import { createClient } from "./supabaseClient";
 
 export type { CoursierAvecUtilisateur } from "@colimo/shared";
+
+async function idAdminCourant(): Promise<{ client: ReturnType<typeof createClient>; adminId: string }> {
+  const client = createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  return { client, adminId: user.id };
+}
 
 export function getUtilisateurs(): Promise<Utilisateur[]> {
   return getUtilisateursQuery(createClient());
@@ -48,7 +86,7 @@ export function getCoursiers() {
 
 export function patchCoursier(
   id: string,
-  body: { statutVerification?: VerificationStatus; disponibilite?: boolean }
+  body: { statutVerification?: VerificationStatus; statut?: StatutCoursier; disponibilite?: boolean }
 ): Promise<Coursier> {
   return patchCoursierQuery(createClient(), id, body);
 }
@@ -150,4 +188,139 @@ export async function rejeterPaiement(paiementId: string, motif?: string): Promi
   } = await client.auth.getUser();
   if (!user) throw new Error("Non authentifié");
   return rejeterPaiementQuery(client, paiementId, user.id, motif);
+}
+
+// --- Module Coursiers : statuts, badges, niveaux, historique ---
+
+export function getCoursiersAvecStatutEffectif(): Promise<CoursierAvecStatutEffectif[]> {
+  return getCoursiersAvecStatutEffectifQuery(createClient());
+}
+
+export function getCoursierAvecUtilisateur(id: string) {
+  return getCoursierAvecUtilisateurQuery(createClient(), id);
+}
+
+export async function changerStatutCoursier(
+  coursierId: string,
+  nouveauStatut: StatutCoursier,
+  params?: { ancienStatut?: StatutCoursier; motif?: string; commentaire?: string }
+): Promise<Coursier> {
+  const { client, adminId } = await idAdminCourant();
+  return changerStatutCoursierQuery(client, coursierId, nouveauStatut, { administrateurId: adminId, ...params });
+}
+
+export async function suspendreCoursier(
+  coursierId: string,
+  params: { motif: string; commentaire?: string }
+): Promise<Coursier> {
+  const { client, adminId } = await idAdminCourant();
+  return suspendreCoursierQuery(client, coursierId, { administrateurId: adminId, ...params });
+}
+
+export async function reactiverCoursier(coursierId: string, params?: { commentaire?: string }): Promise<Coursier> {
+  const { client, adminId } = await idAdminCourant();
+  return reactiverCoursierQuery(client, coursierId, { administrateurId: adminId, ...params });
+}
+
+export async function desactiverCoursier(
+  coursierId: string,
+  params?: { motif?: string; commentaire?: string }
+): Promise<Coursier> {
+  const { client, adminId } = await idAdminCourant();
+  return desactiverCoursierQuery(client, coursierId, { administrateurId: adminId, ...params });
+}
+
+export async function validerDossierCoursier(coursierId: string): Promise<Coursier> {
+  const { client, adminId } = await idAdminCourant();
+  return validerDossierCoursierQuery(client, coursierId, adminId);
+}
+
+export async function rejeterDossierCoursier(coursierId: string, motif?: string): Promise<Coursier> {
+  const { client, adminId } = await idAdminCourant();
+  return rejeterDossierCoursierQuery(client, coursierId, adminId, motif);
+}
+
+export async function demanderDocumentsComplementaires(coursierId: string, commentaire?: string): Promise<void> {
+  const { client, adminId } = await idAdminCourant();
+  return demanderDocumentsComplementairesQuery(client, coursierId, adminId, commentaire);
+}
+
+export function getCatalogueBadges(): Promise<BadgeCoursier[]> {
+  return getCatalogueBadgesQuery(createClient());
+}
+
+export function creerBadgeCatalogue(input: {
+  code: string;
+  nom: string;
+  icone: string;
+  description?: string;
+  couleur?: string;
+  modeAttribution?: "automatique" | "manuel";
+  regle?: RegleBadge;
+  ordreAffichage?: number;
+}): Promise<BadgeCoursier> {
+  return creerBadgeCatalogueQuery(createClient(), input);
+}
+
+export function patchCatalogueBadge(
+  id: string,
+  body: {
+    nom?: string;
+    icone?: string;
+    description?: string;
+    couleur?: string;
+    regle?: RegleBadge;
+    actif?: boolean;
+    ordreAffichage?: number;
+  }
+): Promise<BadgeCoursier> {
+  return patchCatalogueBadgeQuery(createClient(), id, body);
+}
+
+export function getBadgesCoursier(coursierId?: string): Promise<BadgeCoursierAttribue[]> {
+  return getBadgesCoursierQuery(createClient(), coursierId);
+}
+
+export async function attribuerBadge(coursierId: string, badgeId: string): Promise<BadgeCoursierAttribue> {
+  const { client, adminId } = await idAdminCourant();
+  return attribuerBadgeQuery(client, coursierId, badgeId, { attribuePar: adminId });
+}
+
+export async function retirerBadge(attributionId: string): Promise<BadgeCoursierAttribue> {
+  const { client, adminId } = await idAdminCourant();
+  return retirerBadgeQuery(client, attributionId, { retirePar: adminId });
+}
+
+export function getCatalogueNiveaux(): Promise<NiveauCoursier[]> {
+  return getCatalogueNiveauxQuery(createClient());
+}
+
+export function patchCatalogueNiveau(
+  id: string,
+  body: { nom?: string; seuilLivraisonsMin?: number; couleur?: string; icone?: string }
+): Promise<NiveauCoursier> {
+  return patchCatalogueNiveauQuery(createClient(), id, body);
+}
+
+export async function definirNiveauCoursier(coursierId: string, niveauId: string): Promise<void> {
+  const { client, adminId } = await idAdminCourant();
+  return definirNiveauCoursierQuery(client, coursierId, niveauId, adminId);
+}
+
+export function getHistoriqueCoursiers(params?: {
+  coursierId?: string;
+  action?: ActionHistoriqueCoursier;
+  dateDebut?: string;
+  dateFin?: string;
+}): Promise<HistoriqueCoursier[]> {
+  return getHistoriqueCoursiersQuery(createClient(), params);
+}
+
+export async function ajouterCommentaireInterne(coursierId: string, commentaire: string): Promise<HistoriqueCoursier> {
+  const { client, adminId } = await idAdminCourant();
+  return ajouterCommentaireInterneQuery(client, coursierId, commentaire, adminId);
+}
+
+export function recalculerBadgesEtNiveau(utilisateurId: string): Promise<void> {
+  return recalculerBadgesEtNiveauQuery(createClient(), utilisateurId);
 }

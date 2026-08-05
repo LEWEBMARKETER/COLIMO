@@ -7,6 +7,7 @@ import type {
   ModePaiement,
   PieceIdentiteType,
   QuiPaie,
+  StatutCoursier,
   TailleColis,
   TypeClient,
   TypeReductionPromo,
@@ -73,11 +74,27 @@ export async function getCoursiers(client: SupabaseClient): Promise<CoursierAvec
   }));
 }
 
+export async function getCoursierAvecUtilisateur(
+  client: SupabaseClient,
+  id: string
+): Promise<CoursierAvecUtilisateur | null> {
+  const { data, error } = await client
+    .from("coursiers")
+    .select("*, utilisateur:utilisateurs(*)")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const row = data as CoursierRow & { utilisateur: UtilisateurRow };
+  return { ...coursierFromRow(row), utilisateur: utilisateurFromRow(row.utilisateur) };
+}
+
 export async function patchCoursier(
   client: SupabaseClient,
   id: string,
   body: {
     statutVerification?: VerificationStatus;
+    statut?: StatutCoursier;
     disponibilite?: boolean;
     typePieceIdentite?: PieceIdentiteType;
     pieceIdentiteUrl?: string;
@@ -87,6 +104,7 @@ export async function patchCoursier(
 ): Promise<Coursier> {
   const update: Record<string, unknown> = {};
   if (body.statutVerification) update.statut_verification = body.statutVerification;
+  if (body.statut) update.statut = body.statut;
   if (typeof body.disponibilite === "boolean") update.disponibilite = body.disponibilite;
   if (body.typePieceIdentite) update.type_piece_identite = body.typePieceIdentite;
   if (body.pieceIdentiteUrl) update.piece_identite_url = body.pieceIdentiteUrl;

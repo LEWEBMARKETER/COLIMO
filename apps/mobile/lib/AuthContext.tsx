@@ -29,7 +29,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const profil = await getUtilisateur(supabase, userId);
     setUtilisateur(profil);
     if (profil?.type === "coursier") {
-      setCoursier(await getCoursierByUtilisateurId(supabase, userId));
+      const profilCoursier = await getCoursierByUtilisateurId(supabase, userId);
+      // Un compte désactivé ne doit permettre aucune connexion — on
+      // déconnecte immédiatement plutôt que de laisser l'app charger avec
+      // un profil coursier désactivé.
+      if (profilCoursier?.statut === "desactive") {
+        await supabase.auth.signOut();
+        setUtilisateur(null);
+        setCoursier(null);
+        return;
+      }
+      setCoursier(profilCoursier);
     } else {
       setCoursier(null);
     }

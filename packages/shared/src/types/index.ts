@@ -15,6 +15,26 @@ export type VehiculeType = "moto" | "velo" | "voiture" | "pied";
 
 export type VerificationStatus = "en_attente" | "valide" | "rejete";
 
+// Statut opérationnel canonique du coursier (module Coursiers). Stocké en
+// base sur 6 valeurs seulement — "occupe" n'existe pas en base, c'est un
+// état dérivé (le coursier a une course active), calculé côté application
+// par calculerStatutEffectif (packages/shared/src/coursiers/statuts).
+export type StatutCoursier = "en_attente_validation" | "verifie" | "en_ligne" | "hors_ligne" | "suspendu" | "desactive";
+
+// Statut "effectif" affiché à l'admin : ajoute "occupe" (dérivé) à
+// StatutCoursier — jamais persisté, cf. calculerStatutEffectif.
+export type StatutCoursierEffectif = StatutCoursier | "occupe";
+
+export const STATUT_COURSIER_LABELS: Record<StatutCoursierEffectif, string> = {
+  en_attente_validation: "En attente de validation",
+  verifie: "Vérifié",
+  en_ligne: "En ligne",
+  occupe: "Occupé",
+  hors_ligne: "Hors ligne",
+  suspendu: "Suspendu",
+  desactive: "Désactivé",
+};
+
 export type CourseStatus =
   | "en_attente_paiement"
   | "en_attente"
@@ -134,6 +154,12 @@ export interface Coursier {
   disponibilite: boolean;
   noteMoyenne: number;
   zonesCouvertes: Zone[];
+  statut: StatutCoursier;
+  niveauId: string | null;
+  nombreLivraisons: number;
+  nombreCoursesAssignees: number;
+  nombreCoursesAnnulees: number;
+  dureeLivraisonTotaleSecondes: number;
 }
 
 export type ActiviteCommerce =

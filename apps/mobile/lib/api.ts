@@ -20,6 +20,7 @@ import {
   insertUtilisateur,
   patchCoursier as patchCoursierQuery,
   patchCourse as patchCourseQuery,
+  recalculerBadgesEtNiveau as recalculerBadgesEtNiveauQuery,
   updateUtilisateur as updateUtilisateurQuery,
   upsertCommercant as upsertCommercantQuery,
   uploadFichier,
@@ -50,6 +51,10 @@ import {
 import { supabase } from "./supabaseClient";
 
 export type { CoursierAvecUtilisateur } from "@colimo/shared";
+
+export function recalculerBadgesEtNiveau(utilisateurId: string): Promise<void> {
+  return recalculerBadgesEtNiveauQuery(supabase, utilisateurId);
+}
 
 export function getCoursiers() {
   return getCoursiersQuery(supabase);
