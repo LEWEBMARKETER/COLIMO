@@ -36,12 +36,12 @@ alter table coursiers
   add column if not exists nombre_courses_annulees integer not null default 0,
   add column if not exists duree_livraison_totale_secondes bigint not null default 0;
 
-update coursiers c set statut = case
+update coursiers c set statut = (case
   when u.statut = 'suspendu' then 'suspendu'
   when c.statut_verification = 'valide' and c.disponibilite then 'en_ligne'
   when c.statut_verification = 'valide' then 'hors_ligne'
   else 'en_attente_validation'
-end
+end)::statut_coursier
 from utilisateurs u
 where u.id = c.utilisateur_id and c.statut = 'en_attente_validation';
 
@@ -57,7 +57,7 @@ begin
   if new.statut_verification is distinct from old.statut_verification
      and new.statut_verification = 'valide'
      and old.statut = 'en_attente_validation' then
-    new.statut := 'verifie';
+    new.statut := 'verifie'::statut_coursier;
   end if;
 
   if new.statut is distinct from old.statut then
@@ -68,7 +68,7 @@ begin
     end case;
   elsif new.disponibilite is distinct from old.disponibilite
         and old.statut in ('verifie', 'en_ligne', 'hors_ligne') then
-    new.statut := case when new.disponibilite then 'en_ligne' else 'hors_ligne' end;
+    new.statut := (case when new.disponibilite then 'en_ligne' else 'hors_ligne' end)::statut_coursier;
   end if;
 
   return new;
