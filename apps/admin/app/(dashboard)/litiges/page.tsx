@@ -7,6 +7,7 @@ import { notifierEvenement } from "@/lib/communication";
 import {
   calculerFraisRetour,
   COURSE_STATUS_LABELS,
+  estUrlHttpSure,
   formatFCFA,
   LITIGE_MOTIF_LABELS,
   ZONE_LABELS,
@@ -141,7 +142,7 @@ export default function LitigesPage() {
                 )}
                 {rapport.preuveUrls.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {rapport.preuveUrls.map((url, index) => (
+                    {rapport.preuveUrls.filter(estUrlHttpSure).map((url, index) => (
                       <a
                         key={url}
                         href={url}

@@ -8,6 +8,7 @@ import { notifierEvenement } from "@/lib/communication";
 import {
   RESEAU_PAIEMENT_LABELS,
   STATUT_PAIEMENT_LABELS,
+  estUrlHttpSure,
   formatFCFA,
   type Course,
   type Paiement,
@@ -173,7 +174,7 @@ export default function PaiementsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {paiement.captureUrl ? (
+                    {paiement.captureUrl && estUrlHttpSure(paiement.captureUrl) ? (
                       <a
                         href={paiement.captureUrl}
                         target="_blank"
