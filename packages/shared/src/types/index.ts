@@ -261,6 +261,10 @@ export interface Course {
   livreeAt: string | null;
   confirmeeAt: string | null;
   annuleeAt: string | null;
+  annuleePar: string | null;
+  motifAnnulation: string | null;
+  commentaireAnnulation: string | null;
+  statutAvantLitige: CourseStatus | null;
   createdAt: string;
 }
 
@@ -290,8 +294,31 @@ export interface Litige {
   motif: LitigeMotif;
   commentaire: string | null;
   preuveUrls: string[];
+  resolution: ResolutionLitige | null;
+  resolutionMotif: string | null;
+  resolutionCommentaire: string | null;
+  resolutionMontant: number | null;
+  resoluePar: string | null;
+  resolueAt: string | null;
   createdAt: string;
 }
+
+export type ResolutionLitige =
+  | "maintenue"
+  | "annulee"
+  | "retour"
+  | "remboursement_partiel"
+  | "remboursement_total"
+  | "rejetee";
+
+export const RESOLUTION_LITIGE_LABELS: Record<ResolutionLitige, string> = {
+  maintenue: "Course maintenue",
+  annulee: "Course annulée",
+  retour: "Retour du colis organisé",
+  remboursement_partiel: "Remboursement partiel accordé",
+  remboursement_total: "Remboursement total accordé",
+  rejetee: "Demande rejetée",
+};
 
 export interface Message {
   id: string;

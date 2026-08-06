@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { MODE_PAIEMENT_LABELS, formatFCFA, type Coursier, type Course, type Utilisateur } from "@colimo/shared";
+import { MODE_PAIEMENT_LABELS, formatFCFA, peutAnnulerCourse, type Coursier, type Course, type Utilisateur } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
 import CarteItineraire from "@/components/CarteItineraire";
 import BandeauStatut from "@/components/BandeauStatut";
@@ -120,6 +120,12 @@ export default function TrackScreen() {
             onPress={() => router.push(`/(client)/paiement/${course.id}`)}
             className="mt-6 px-8"
           />
+          <Bouton
+            label="Annuler la course"
+            variante="contour"
+            onPress={() => router.push(`/(client)/annuler/${course.id}`)}
+            className="mt-3 px-8"
+          />
         </View>
       </SafeAreaView>
     );
@@ -224,7 +230,8 @@ export default function TrackScreen() {
 
       {(course.statut === "livree" ||
         (course.coursierId && !contactsFermes) ||
-        STATUTS_SIGNALABLES.has(course.statut)) && (
+        STATUTS_SIGNALABLES.has(course.statut) ||
+        peutAnnulerCourse(course)) && (
         <View className="border-t border-colimo-neutre-clair bg-colimo-fond px-6 pb-2 pt-3">
           {(STATUTS_SIGNALABLES.has(course.statut) || (course.coursierId && !contactsFermes)) && (
             <Text className="mb-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50">
@@ -242,6 +249,14 @@ export default function TrackScreen() {
               label="Confirmer la réception du colis"
               onPress={confirmerReception}
               chargement={confirmationEnCours}
+              className="py-4"
+            />
+          )}
+          {peutAnnulerCourse(course) && (
+            <Bouton
+              label="Annuler la course"
+              variante="contour"
+              onPress={() => router.push(`/(client)/annuler/${course.id}`)}
               className="py-4"
             />
           )}

@@ -38,6 +38,9 @@ import {
   validerDossierCoursier as validerDossierCoursierQuery,
   validerPaiement as validerPaiementQuery,
   getCourses as getCoursesQuery,
+  annulerCourseAdmin as annulerCourseAdminQuery,
+  resoudreLitige as resoudreLitigeQuery,
+  getHistoriqueAnnulations as getHistoriqueAnnulationsQuery,
   type ActionHistoriqueCoursier,
   type BadgeCoursier,
   type BadgeCoursierAttribue,
@@ -49,12 +52,14 @@ import {
   type CoursierAvecStatutEffectif,
   type Course,
   type CourseStatus,
+  type HistoriqueAnnulation,
   type HistoriqueCoursier,
   type Litige,
   type ModeleCommunication,
   type NiveauCoursier,
   type Paiement,
   type RegleBadge,
+  type ResolutionLitige,
   type StatutCommunication,
   type StatutCoursier,
   type StatutPaiementManuel,
@@ -107,6 +112,28 @@ export function patchCourse(
 
 export function getCourses(params?: { zone?: Zone; statut?: CourseStatus }): Promise<Course[]> {
   return getCoursesQuery(createClient(), params);
+}
+
+export function annulerCourseAdmin(body: { courseId: string; motif: string; commentaire?: string }): Promise<Course> {
+  return annulerCourseAdminQuery(createClient(), body);
+}
+
+export function resoudreLitige(body: {
+  courseId: string;
+  resolution: ResolutionLitige;
+  motif?: string;
+  commentaire?: string;
+  montant?: number;
+}): Promise<Course> {
+  return resoudreLitigeQuery(createClient(), body);
+}
+
+export function getHistoriqueAnnulations(params?: {
+  courseId?: string;
+  dateDebut?: string;
+  dateFin?: string;
+}): Promise<HistoriqueAnnulation[]> {
+  return getHistoriqueAnnulationsQuery(createClient(), params);
 }
 
 export function getCommercantsBruts(): Promise<Commercant[]> {

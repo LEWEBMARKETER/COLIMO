@@ -7,6 +7,7 @@ export * from "./legal";
 export * from "./maps";
 export * from "./communication";
 export * from "./coursiers";
+export * from "./annulations";
 export * from "./otp";
 export * from "./paiements";
 export * from "./supabase/client";

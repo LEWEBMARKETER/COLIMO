@@ -14,6 +14,7 @@ import type {
   PaymentOperator,
   PieceIdentiteType,
   QuiPaie,
+  ResolutionLitige,
   StatutCoursier,
   TailleColis,
   TypeClient,
@@ -33,6 +34,7 @@ import type { Paiement, StatutPaiementManuel } from "../paiements/types";
 import type { BadgeCoursier, BadgeCoursierAttribue, ModeAttributionBadge, RegleBadge } from "../coursiers/badges/types";
 import type { NiveauCoursier } from "../coursiers/niveaux/types";
 import type { ActionHistoriqueCoursier, HistoriqueCoursier } from "../coursiers/historique/types";
+import type { HistoriqueAnnulation, RoleAnnulation } from "../annulations/types";
 
 export interface UtilisateurRow {
   id: string;
@@ -106,6 +108,10 @@ export interface CourseRow {
   livree_at: string | null;
   confirmee_at: string | null;
   annulee_at: string | null;
+  annulee_par: string | null;
+  motif_annulation: string | null;
+  commentaire_annulation: string | null;
+  statut_avant_litige: CourseStatus | null;
   created_at: string;
 }
 
@@ -143,6 +149,24 @@ export interface LitigeRow {
   motif: LitigeMotif;
   commentaire: string | null;
   preuve_urls: string[];
+  resolution: ResolutionLitige | null;
+  resolution_motif: string | null;
+  resolution_commentaire: string | null;
+  resolution_montant: number | null;
+  resolue_par: string | null;
+  resolue_at: string | null;
+  created_at: string;
+}
+
+export interface HistoriqueAnnulationRow {
+  id: string;
+  course_id: string;
+  utilisateur_id: string;
+  role: RoleAnnulation;
+  motif: string;
+  commentaire: string | null;
+  statut_precedent: CourseStatus;
+  nouveau_statut: CourseStatus;
   created_at: string;
 }
 
@@ -240,6 +264,10 @@ export function courseFromRow(row: CourseRow): Course {
     livreeAt: row.livree_at,
     confirmeeAt: row.confirmee_at,
     annuleeAt: row.annulee_at,
+    annuleePar: row.annulee_par,
+    motifAnnulation: row.motif_annulation,
+    commentaireAnnulation: row.commentaire_annulation,
+    statutAvantLitige: row.statut_avant_litige,
     createdAt: row.created_at,
   };
 }
@@ -252,6 +280,26 @@ export function litigeFromRow(row: LitigeRow): Litige {
     motif: row.motif,
     commentaire: row.commentaire,
     preuveUrls: row.preuve_urls ?? [],
+    resolution: row.resolution,
+    resolutionMotif: row.resolution_motif,
+    resolutionCommentaire: row.resolution_commentaire,
+    resolutionMontant: row.resolution_montant,
+    resoluePar: row.resolue_par,
+    resolueAt: row.resolue_at,
+    createdAt: row.created_at,
+  };
+}
+
+export function historiqueAnnulationFromRow(row: HistoriqueAnnulationRow): HistoriqueAnnulation {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    utilisateurId: row.utilisateur_id,
+    role: row.role,
+    motif: row.motif,
+    commentaire: row.commentaire,
+    statutPrecedent: row.statut_precedent,
+    nouveauStatut: row.nouveau_statut,
     createdAt: row.created_at,
   };
 }

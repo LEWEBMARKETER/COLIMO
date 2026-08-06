@@ -1,4 +1,5 @@
 import {
+  annulerCourseClient as annulerCourseClientQuery,
   creerCourse as creerCourseQuery,
   creerLitige as creerLitigeQuery,
   creerNotation as creerNotationQuery,
@@ -180,6 +181,10 @@ export function patchCourse(
   body: { statut?: CourseStatus; coursierId?: string | null }
 ): Promise<Course> {
   return patchCourseQuery(supabase, id, body);
+}
+
+export function annulerCourseClient(body: { courseId: string; motif: string; commentaire?: string }): Promise<Course> {
+  return annulerCourseClientQuery(supabase, body);
 }
 
 export function creerNotation(body: {

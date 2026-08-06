@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
-import { getCourses, getLitiges, getUtilisateurs, patchCourse } from "@/lib/api";
+import { getCourses, getLitiges, getUtilisateurs, resoudreLitige } from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 import {
   calculerFraisRetour,
@@ -10,11 +10,28 @@ import {
   estUrlHttpSure,
   formatFCFA,
   LITIGE_MOTIF_LABELS,
+  MOTIF_ANNULATION_ADMIN_LABELS,
+  RESOLUTION_LITIGE_LABELS,
   ZONE_LABELS,
   type Course,
   type Litige,
+  type MotifAnnulationAdmin,
+  type ResolutionLitige,
   type Utilisateur,
 } from "@colimo/shared";
+
+// Résolutions qui n'ont besoin d'aucune saisie complémentaire — un simple
+// window.confirm suffit, comme le reste des actions rapides de l'admin.
+const RESOLUTIONS_SIMPLES = new Set<ResolutionLitige>(["maintenue", "retour"]);
+
+const MOTIFS_ADMIN: { valeur: MotifAnnulationAdmin; label: string }[] = (
+  Object.keys(MOTIF_ANNULATION_ADMIN_LABELS) as MotifAnnulationAdmin[]
+).map((valeur) => ({ valeur, label: MOTIF_ANNULATION_ADMIN_LABELS[valeur] }));
+
+interface PanneauResolution {
+  courseId: string;
+  resolution: ResolutionLitige;
+}
 
 export default function LitigesPage() {
   const [litiges, setLitiges] = useState<Course[]>([]);
@@ -22,6 +39,11 @@ export default function LitigesPage() {
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [chargement, setChargement] = useState(true);
   const [enCours, setEnCours] = useState<string | null>(null);
+
+  const [panneau, setPanneau] = useState<PanneauResolution | null>(null);
+  const [motifPanneau, setMotifPanneau] = useState<MotifAnnulationAdmin | "">("");
+  const [commentairePanneau, setCommentairePanneau] = useState("");
+  const [montantPanneau, setMontantPanneau] = useState("");
 
   useEffect(() => {
     charger();
@@ -47,56 +69,87 @@ export default function LitigesPage() {
     return rapports.find((r) => r.courseId === courseId);
   }
 
-  async function resoudre(course: Course, action: "confirmer" | "annuler" | "retour") {
-    const confirmations: Record<typeof action, string> = {
-      confirmer: `Confirmer que la course ${course.numeroCommande} a bien été livrée ?`,
-      annuler: `Annuler la course ${course.numeroCommande} sans frais pour le client ?`,
-      retour: `Marquer le colis de ${course.numeroCommande} comme retourné ? Le client sera facturé ${formatFCFA(
-        calculerFraisRetour(course.prix)
-      )} (50% du prix de la course), conformément à la politique de retour.`,
-    };
-    if (!window.confirm(confirmations[action])) return;
+  function fermerPanneau() {
+    setPanneau(null);
+    setMotifPanneau("");
+    setCommentairePanneau("");
+    setMontantPanneau("");
+  }
 
-    const resolutions: Record<typeof action, string> = {
-      confirmer: "livraison confirmée",
-      annuler: "course annulée sans frais",
-      retour: "colis retourné",
-    };
-
+  async function appliquerResolution(
+    course: Course,
+    resolution: ResolutionLitige,
+    params?: { motif?: string; commentaire?: string; montant?: number }
+  ) {
     setEnCours(course.id);
     try {
-      let misAJour: Course;
-      if (action === "confirmer") {
-        misAJour = await patchCourse(course.id, { statut: "confirmee" });
-      } else if (action === "annuler") {
-        misAJour = await patchCourse(course.id, { statut: "annulee", fraisRetour: 0 });
-      } else {
-        misAJour = await patchCourse(course.id, { statut: "retournee", fraisRetour: calculerFraisRetour(course.prix) });
-      }
+      const misAJour = await resoudreLitige({
+        courseId: course.id,
+        resolution,
+        motif: params?.motif,
+        commentaire: params?.commentaire,
+        montant: params?.montant,
+      });
+      const resolutionLabel =
+        resolution === "remboursement_partiel" && params?.montant
+          ? `${RESOLUTION_LITIGE_LABELS[resolution]} (${formatFCFA(params.montant)})`
+          : RESOLUTION_LITIGE_LABELS[resolution];
       await notifierEvenement("litige_resolu", {
         destinataire: misAJour.telephoneDestinataire,
-        variables: {
-          nom_client: misAJour.nomDestinataire ?? "client",
-          numero_commande: misAJour.numeroCommande,
-          resolution: resolutions[action],
-        },
+        variables: { nom_client: misAJour.nomDestinataire ?? "client", numero_commande: misAJour.numeroCommande, resolution: resolutionLabel },
       });
       await notifierEvenement("notification_litige_resolu", {
         destinataire: misAJour.clientId,
         utilisateurId: misAJour.clientId,
-        variables: { numero_commande: misAJour.numeroCommande, resolution: resolutions[action] },
+        variables: { numero_commande: misAJour.numeroCommande, resolution: resolutionLabel },
       });
       if (misAJour.coursierId) {
         await notifierEvenement("notification_litige_resolu", {
           destinataire: misAJour.coursierId,
           utilisateurId: misAJour.coursierId,
-          variables: { numero_commande: misAJour.numeroCommande, resolution: resolutions[action] },
+          variables: { numero_commande: misAJour.numeroCommande, resolution: resolutionLabel },
         });
       }
       setLitiges((prev) => prev.filter((c) => c.id !== course.id));
+      fermerPanneau();
     } finally {
       setEnCours(null);
     }
+  }
+
+  function declencherResolution(course: Course, resolution: ResolutionLitige) {
+    if (RESOLUTIONS_SIMPLES.has(resolution)) {
+      const confirmations: Record<"maintenue" | "retour", string> = {
+        maintenue: `Maintenir la course ${course.numeroCommande} (la livraison reprend son cours) ?`,
+        retour: `Marquer le colis de ${course.numeroCommande} comme retourné ? Le client sera facturé ${formatFCFA(
+          calculerFraisRetour(course.prix)
+        )} (50% du prix), conformément à la politique de retour.`,
+      };
+      if (!window.confirm(confirmations[resolution as "maintenue" | "retour"])) return;
+      appliquerResolution(course, resolution);
+      return;
+    }
+    setPanneau({ courseId: course.id, resolution });
+  }
+
+  function confirmerPanneau(course: Course) {
+    if (!panneau) return;
+    if (panneau.resolution === "annulee" && !motifPanneau) return;
+    if (panneau.resolution === "remboursement_partiel" && (!montantPanneau || Number(montantPanneau) <= 0)) return;
+    if (panneau.resolution === "rejetee" && !commentairePanneau.trim()) return;
+
+    const motif =
+      panneau.resolution === "annulee"
+        ? motifPanneau === "autre"
+          ? commentairePanneau.trim() || "Autre"
+          : MOTIF_ANNULATION_ADMIN_LABELS[motifPanneau as MotifAnnulationAdmin]
+        : undefined;
+
+    appliquerResolution(course, panneau.resolution, {
+      motif,
+      commentaire: commentairePanneau.trim() || undefined,
+      montant: panneau.resolution === "remboursement_partiel" ? Number(montantPanneau) : undefined,
+    });
   }
 
   return (
@@ -107,6 +160,7 @@ export default function LitigesPage() {
       <div className="mt-6 space-y-3">
         {litiges.map((course) => {
           const rapport = rapportPourCourse(course.id);
+          const panneauCourse = panneau?.courseId === course.id ? panneau : null;
           return (
           <div key={course.id} className="rounded-2xl border border-colimo-neutre-clair bg-white p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -164,27 +218,114 @@ export default function LitigesPage() {
 
             <div className="mt-4 flex flex-wrap gap-2 border-t border-colimo-neutre-clair pt-4">
               <button
-                onClick={() => resoudre(course, "confirmer")}
+                onClick={() => declencherResolution(course, "maintenue")}
                 disabled={enCours === course.id}
                 className="rounded-md bg-colimo-rouge px-3 py-1.5 text-xs font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-60"
               >
-                Confirmer la livraison
+                Maintenir la course
               </button>
               <button
-                onClick={() => resoudre(course, "retour")}
+                onClick={() => declencherResolution(course, "retour")}
                 disabled={enCours === course.id}
                 className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
               >
-                Colis retourné (50% au client — {formatFCFA(calculerFraisRetour(course.prix))})
+                Retour du colis ({formatFCFA(calculerFraisRetour(course.prix))} au client)
               </button>
               <button
-                onClick={() => resoudre(course, "annuler")}
+                onClick={() => declencherResolution(course, "annulee")}
                 disabled={enCours === course.id}
                 className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
               >
-                Annuler sans frais
+                Annuler la course
+              </button>
+              <button
+                onClick={() => declencherResolution(course, "remboursement_partiel")}
+                disabled={enCours === course.id}
+                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
+              >
+                Remboursement partiel
+              </button>
+              <button
+                onClick={() => declencherResolution(course, "remboursement_total")}
+                disabled={enCours === course.id}
+                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
+              >
+                Remboursement total ({formatFCFA(course.prix)})
+              </button>
+              <button
+                onClick={() => declencherResolution(course, "rejetee")}
+                disabled={enCours === course.id}
+                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
+              >
+                Rejeter la demande
               </button>
             </div>
+
+            {panneauCourse && (
+              <div className="mt-4 rounded-xl border border-colimo-neutre-clair bg-colimo-fond p-4">
+                <p className="mb-3 text-sm font-medium text-colimo-neutre-fonce">
+                  {RESOLUTION_LITIGE_LABELS[panneauCourse.resolution]}
+                </p>
+
+                {panneauCourse.resolution === "annulee" && (
+                  <select
+                    value={motifPanneau}
+                    onChange={(e) => setMotifPanneau(e.target.value as MotifAnnulationAdmin)}
+                    className="mb-3 w-full rounded-md border border-colimo-neutre-clair px-2 py-1.5 text-xs"
+                  >
+                    <option value="">Motif de l'annulation…</option>
+                    {MOTIFS_ADMIN.map((m) => (
+                      <option key={m.valeur} value={m.valeur}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {panneauCourse.resolution === "remboursement_partiel" && (
+                  <input
+                    type="number"
+                    min={1}
+                    max={course.prix}
+                    value={montantPanneau}
+                    onChange={(e) => setMontantPanneau(e.target.value)}
+                    placeholder={`Montant à rembourser (FCFA, max ${formatFCFA(course.prix)})`}
+                    className="mb-3 w-full rounded-md border border-colimo-neutre-clair px-2 py-1.5 text-xs"
+                  />
+                )}
+
+                <textarea
+                  value={commentairePanneau}
+                  onChange={(e) => setCommentairePanneau(e.target.value)}
+                  placeholder={
+                    panneauCourse.resolution === "rejetee"
+                      ? "Raison du rejet (obligatoire)…"
+                      : panneauCourse.resolution === "annulee" && motifPanneau === "autre"
+                        ? "Précisez le motif (obligatoire)…"
+                        : "Commentaire (facultatif)…"
+                  }
+                  className="mb-3 w-full rounded-md border border-colimo-neutre-clair px-2 py-1.5 text-xs"
+                  rows={2}
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => confirmerPanneau(course)}
+                    disabled={enCours === course.id}
+                    className="rounded-md bg-colimo-rouge px-3 py-1.5 text-xs font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-60"
+                  >
+                    Confirmer
+                  </button>
+                  <button
+                    onClick={fermerPanneau}
+                    disabled={enCours === course.id}
+                    className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-white disabled:opacity-60"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           );
         })}

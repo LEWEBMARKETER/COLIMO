@@ -44,6 +44,7 @@ export type EvenementCommunication =
   | "notification_livraison_en_cours"
   | "notification_livraison_terminee"
   | "notification_livraison_annulee"
+  | "notification_livraison_annulee_coursier"
   | "notification_litige_ouvert"
   | "notification_litige_resolu"
   | "notification_coursier_compte_valide";
@@ -80,6 +81,7 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   notification_livraison_en_cours: "notification_livraison_en_cours",
   notification_livraison_terminee: "notification_livraison_terminee",
   notification_livraison_annulee: "notification_livraison_annulee",
+  notification_livraison_annulee_coursier: "notification_livraison_annulee_coursier",
   notification_litige_ouvert: "notification_litige_ouvert",
   notification_litige_resolu: "notification_litige_resolu",
   notification_coursier_compte_valide: "notification_coursier_compte_valide",
@@ -120,6 +122,7 @@ export const EVENEMENT_CANAL: Record<EvenementCommunication, "email" | "sms" | "
   notification_livraison_en_cours: "push",
   notification_livraison_terminee: "push",
   notification_livraison_annulee: "push",
+  notification_livraison_annulee_coursier: "push",
   notification_litige_ouvert: "push",
   notification_litige_resolu: "push",
   notification_coursier_compte_valide: "push",
