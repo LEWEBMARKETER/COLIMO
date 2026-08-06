@@ -51,8 +51,8 @@ export default function ClientHome() {
                 <Text className="font-titre text-colimo-rouge">{(utilisateur?.nom ?? "?").charAt(0).toUpperCase()}</Text>
               </View>
             )}
-            <View>
-              <Text className="font-titre text-xl text-colimo-neutre-fonce">
+            <View className="flex-1">
+              <Text className="font-titre text-xl text-colimo-neutre-fonce" numberOfLines={1}>
                 Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""} 👋
               </Text>
               <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/70">

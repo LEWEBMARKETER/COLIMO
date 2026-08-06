@@ -115,7 +115,7 @@ export default function CoursierDashboard() {
         ListHeaderComponent={
           <View className="mb-5">
             <View className="flex-row items-center justify-between">
-              <Text className="font-texte text-sm text-colimo-neutre-fonce/60">
+              <Text className="flex-1 font-texte text-sm text-colimo-neutre-fonce/60" numberOfLines={1}>
                 Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""}
               </Text>
               {session && <ClocheNotifications utilisateurId={session.user.id} route="/(coursier)/notifications" />}
