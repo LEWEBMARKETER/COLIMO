@@ -3,11 +3,11 @@ import { ActivityIndicator, FlatList, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
-import Bouton from "@/components/ui/Bouton";
+import CourseDisponibleCard from "@/components/CourseDisponibleCard";
 import ClocheNotifications from "@/components/ClocheNotifications";
-import { getCourses, patchCoursier, patchCourse } from "@/lib/api";
+import { getCourses, patchCoursier } from "@/lib/api";
+import { accepterCourse } from "@/lib/coursierActions";
 import { useAuth } from "@/lib/AuthContext";
-import { notifierEvenement } from "@/lib/communication";
 
 export default function CoursierDashboard() {
   const { session, utilisateur, coursier, refreshProfile } = useAuth();
@@ -65,26 +65,7 @@ export default function CoursierDashboard() {
     if (!session) return;
     setErreur(null);
     try {
-      await patchCourse(course.id, { statut: "acceptee", coursierId: session.user.id });
-      await notifierEvenement("coursier_attribue", {
-        declenchePar: session.user.id,
-        destinataire: course.telephoneDestinataire,
-        variables: {
-          nom_client: course.nomDestinataire ?? "client",
-          numero_commande: course.numeroCommande,
-          nom_coursier: utilisateur?.prenom ?? utilisateur?.nom ?? "votre coursier",
-          telephone: utilisateur?.telephone ?? "",
-        },
-      });
-      await notifierEvenement("notification_coursier_attribue", {
-        declenchePar: session.user.id,
-        destinataire: course.clientId,
-        utilisateurId: course.clientId,
-        variables: {
-          nom_coursier: utilisateur?.prenom ?? utilisateur?.nom ?? "votre coursier",
-          numero_commande: course.numeroCommande,
-        },
-      });
+      await accepterCourse(course, session, utilisateur);
       router.push(`/(coursier)/course/${course.id}`);
     } catch {
       setErreur("Impossible d'accepter cette course. Elle a peut-être déjà été prise.");
@@ -187,23 +168,11 @@ export default function CoursierDashboard() {
           ) : null
         }
         renderItem={({ item }) => (
-          <View className="rounded-lg border-2 border-colimo-neutre-fonce bg-white p-4">
-            <View className="flex-row items-center justify-between">
-              <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
-                {ZONE_LABELS[item.zoneDepart]} → {ZONE_LABELS[item.zoneArrivee]}
-              </Text>
-              <Text
-                className="font-titre-bold text-xl text-colimo-neutre-fonce"
-                style={{ fontVariant: ["tabular-nums"] }}
-              >
-                {formatFCFA(item.prix)}
-              </Text>
-            </View>
-            <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/70" numberOfLines={1}>
-              {item.adresseDepart} → {item.adresseArrivee}
-            </Text>
-            <Bouton label="Accepter cette course" onPress={() => accepter(item)} className="mt-3 py-3.5" />
-          </View>
+          <CourseDisponibleCard
+            course={item}
+            onVoirDetails={() => router.push(`/(coursier)/apercu/${item.id}`)}
+            onAccepter={() => accepter(item)}
+          />
         )}
       />
     </SafeAreaView>
