@@ -1,33 +1,32 @@
 import type { Zone } from "../types";
 
-export interface TarifBase {
-  min: number;
-  max: number;
-}
-
-// Grille tarifaire V1 — docs/COLIMO_CONTEXTE_PROJET.md §4
+// Grille tarifaire V2 — docs/COLIMO_CONTEXTE_PROJET.md §4 (nouvelle grille,
+// tarif fixe par trajet — remplace l'ancienne fourchette min/max).
 // Clé : "depart|arrivee". Les paires non listées ne sont pas encore desservies.
-const GRILLE_TARIFAIRE: Record<string, TarifBase> = {
-  "libreville|libreville": { min: 1500, max: 2500 },
-  "libreville|owendo": { min: 2500, max: 3000 },
-  "libreville|akanda": { min: 2500, max: 3000 },
-  "akanda|akanda": { min: 1500, max: 2000 },
-  "akanda|libreville": { min: 2500, max: 3000 },
-  "akanda|owendo": { min: 3000, max: 3500 },
-  "owendo|owendo": { min: 1500, max: 2000 },
-  "owendo|libreville": { min: 2500, max: 3000 },
-  "libreville|bikele_essassa": { min: 3000, max: 4000 },
-  "libreville|ntoum": { min: 5000, max: 5000 },
-  "akanda|bikele_essassa": { min: 4000, max: 4500 },
-  "owendo|bikele_essassa": { min: 4000, max: 4500 },
-  "akanda|ntoum": { min: 6000, max: 6000 },
-  "owendo|ntoum": { min: 6000, max: 6000 },
+const GRILLE_TARIFAIRE: Record<string, number> = {
+  "libreville|libreville": 2000,
+  "libreville|akanda": 3000,
+  "libreville|owendo": 3000,
+  "libreville|bikele_essassa": 4000,
+  "libreville|ntoum": 5000,
+
+  "akanda|libreville": 3000,
+  "akanda|owendo": 3500,
+  "akanda|akanda": 2000,
+  "akanda|bikele_essassa": 4500,
+  "akanda|ntoum": 6000,
+
+  "owendo|libreville": 3000,
+  "owendo|akanda": 3500,
+  "owendo|owendo": 2000,
+  "owendo|bikele_essassa": 4500,
+  "owendo|ntoum": 6000,
 };
 
 export const SUPPLEMENT_PRIORITAIRE = 1000;
 export const COMMISSION_PLATEFORME_TAUX = 0.15;
 
-export function getTarifBase(depart: Zone, arrivee: Zone): TarifBase | undefined {
+export function getTarifBase(depart: Zone, arrivee: Zone): number | undefined {
   return GRILLE_TARIFAIRE[`${depart}|${arrivee}`];
 }
 
@@ -53,8 +52,6 @@ export interface PricingOptions {
 }
 
 export interface PricingResult {
-  min: number;
-  max: number;
   prixSuggere: number;
   supplementPrioritaire: number;
   assurance: number;
@@ -66,18 +63,15 @@ export function calculatePrice(
   arrivee: Zone,
   options: PricingOptions = {}
 ): PricingResult {
-  const tarif = getTarifBase(depart, arrivee);
-  if (!tarif) {
+  const prixSuggere = getTarifBase(depart, arrivee);
+  if (prixSuggere === undefined) {
     throw new Error(`Route non desservie : ${depart} -> ${arrivee}`);
   }
 
-  const prixSuggere = Math.round((tarif.min + tarif.max) / 2 / 100) * 100;
   const supplementPrioritaire = options.livraisonPrioritaire ? SUPPLEMENT_PRIORITAIRE : 0;
   const assurance = calculerAssurance(options.valeurDeclaree);
 
   return {
-    min: tarif.min,
-    max: tarif.max,
     prixSuggere,
     supplementPrioritaire,
     assurance,
