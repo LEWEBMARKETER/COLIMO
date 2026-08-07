@@ -6,9 +6,12 @@ import {
   CATEGORIE_COLIS_EMOJIS,
   CATEGORIE_COLIS_LABELS,
   calculatePrice,
+  calculerPlanEffectif,
   formatFCFA,
   isRouteDesservie,
   type CategorieColis,
+  type CommerceDestinataire,
+  type CommercePointDepart,
   type Zone,
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
@@ -18,7 +21,7 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
-import { creerCourse, getMonCommerce, initierPaiementManuel } from "@/lib/api";
+import { creerCourse, getDestinatairesCommerce, getMonCommerce, getPointsDepartCommerce, initierPaiementManuel } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
 
@@ -71,12 +74,44 @@ export default function NouvelleLivraisonScreen() {
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
+  const [pointsDepart, setPointsDepart] = useState<CommercePointDepart[]>([]);
+  const [pointDepartId, setPointDepartId] = useState<string | null>(null);
+  const [destinataires, setDestinataires] = useState<CommerceDestinataire[]>([]);
+  const [destinataireCarnetId, setDestinataireCarnetId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!session) return;
     getMonCommerce(session.user.id).then((commercant) => {
-      if (commercant?.adresse) setAdresseCommerce(commercant.adresse);
+      if (!commercant) return;
+      if (commercant.adresse) setAdresseCommerce(commercant.adresse);
+
+      const planEffectif = calculerPlanEffectif(commercant);
+      if (planEffectif === "starter" || planEffectif === "business") {
+        getDestinatairesCommerce(commercant.id).then(setDestinataires);
+      }
+      if (planEffectif === "business") {
+        getPointsDepartCommerce(commercant.id).then(setPointsDepart);
+      }
     });
   }, [session]);
+
+  function choisirPointDepart(id: string) {
+    const point = pointsDepart.find((p) => p.id === id);
+    if (!point) return;
+    setPointDepartId(id);
+    setAdresseCommerce(point.adresse);
+    if (point.zone) setDepart(point.zone);
+  }
+
+  function choisirDestinataire(id: string) {
+    const destinataire = destinataires.find((d) => d.id === id);
+    if (!destinataire) return;
+    setDestinataireCarnetId(id);
+    setNomDestinataire(destinataire.nom);
+    setTelephoneDestinataire(destinataire.telephone);
+    if (destinataire.adresse) setAdresseArrivee(destinataire.adresse);
+    if (destinataire.instructions) setInstructions(destinataire.instructions);
+  }
 
   const categorieColis: CategorieColis = "articles";
 
@@ -125,6 +160,8 @@ export default function NouvelleLivraisonScreen() {
         poidsEstime: Number(poidsEstime) || undefined,
         instructions: instructions.trim() || undefined,
         programmeePour,
+        destinataireCarnetId: destinataireCarnetId ?? undefined,
+        pointDepartId: pointDepartId ?? undefined,
       });
       await notifierEvenement("livraison_creee", {
         declenchePar: session.user.id,
@@ -160,7 +197,27 @@ export default function NouvelleLivraisonScreen() {
         <Text className="font-titre text-lg text-colimo-neutre-fonce">Nouvelle livraison</Text>
         <Text className="mt-0.5 font-texte text-xs text-colimo-neutre-fonce/50">Départ : {adresseCommerce}</Text>
 
+        {pointsDepart.length > 0 && (
+          <GroupePastilles
+            label="Point de départ"
+            options={pointsDepart.map((p) => ({ valeur: p.id, label: p.label }))}
+            value={pointDepartId}
+            onChange={choisirPointDepart}
+            defilement
+            className="mt-4"
+          />
+        )}
+
         <TitreSection>Renseignement client</TitreSection>
+        {destinataires.length > 0 && (
+          <GroupePastilles
+            label="Destinataire enregistré (optionnel)"
+            options={destinataires.map((d) => ({ valeur: d.id, label: d.nom }))}
+            value={destinataireCarnetId}
+            onChange={choisirDestinataire}
+            defilement
+          />
+        )}
         <ChampTexte label="Nom" value={nomDestinataire} onChangeText={setNomDestinataire} placeholder="Nom du client" />
         <ChampTexte
           label="Téléphone"

@@ -28,23 +28,53 @@ import {
   updateUtilisateur as updateUtilisateurQuery,
   upsertCommercant as upsertCommercantQuery,
   uploadFichier,
+  demanderActivationAbonnement as demanderActivationAbonnementQuery,
+  getConfigurationPaiementAbonnement as getConfigurationPaiementAbonnementQuery,
+  creerInvitationCommerce as creerInvitationCommerceQuery,
+  rejoindreCommerce as rejoindreCommerceQuery,
+  getMembresCommerce as getMembresCommerceQuery,
+  getInvitationsCommerce as getInvitationsCommerceQuery,
+  getDestinatairesCommerce as getDestinatairesCommerceQuery,
+  creerDestinataireCommerce as creerDestinataireCommerceQuery,
+  patchDestinataireCommerce as patchDestinataireCommerceQuery,
+  supprimerDestinataireCommerce as supprimerDestinataireCommerceQuery,
+  getCoursesPourDestinataire as getCoursesPourDestinataireQuery,
+  getAdressesFavoritesCommerce as getAdressesFavoritesCommerceQuery,
+  creerAdresseFavoriteCommerce as creerAdresseFavoriteCommerceQuery,
+  supprimerAdresseFavoriteCommerce as supprimerAdresseFavoriteCommerceQuery,
+  getPointsDepartCommerce as getPointsDepartCommerceQuery,
+  creerPointDepartCommerce as creerPointDepartCommerceQuery,
+  supprimerPointDepartCommerce as supprimerPointDepartCommerceQuery,
+  getCoursiersFavorisCommerce as getCoursiersFavorisCommerceQuery,
+  ajouterCoursierFavori as ajouterCoursierFavoriQuery,
+  retirerCoursierFavori as retirerCoursierFavoriQuery,
   type ActiviteCommerce,
   type CategorieColis,
   type CodePromo,
   type Commercant,
+  type CommerceAdresseFavorite,
+  type CommerceCoursierFavori,
+  type CommerceDestinataire,
+  type CommerceMembre,
+  type CommercePointDepart,
   type CommunicationEnvoyee,
+  type ConfigurationPaiementAbonnement,
   type Coursier,
   type Course,
   type CourseStatus,
+  type DemandeAbonnement,
+  type InvitationCommerce,
   type Litige,
   type LitigeMotif,
   type Message,
   type ModePaiement,
   type Notation,
+  type PackPayant,
   type Paiement,
   type PaymentOperator,
   type PieceIdentiteType,
   type QuiPaie,
+  type RoleCommerceMembre,
   type TailleColis,
   type TypeClient,
   type Utilisateur,
@@ -149,6 +179,8 @@ export function creerCourse(body: {
   instructions?: string;
   poidsEstime?: number;
   programmeePour?: string;
+  destinataireCarnetId?: string;
+  pointDepartId?: string;
 }): Promise<Course> {
   return creerCourseQuery(supabase, body);
 }
@@ -170,6 +202,111 @@ export function upsertCommercant(input: {
 export async function getMonCommerce(utilisateurId: string): Promise<Commercant | null> {
   const commercants = await getCommercantsBrutsQuery(supabase);
   return commercants.find((c) => c.utilisateurId === utilisateurId) ?? null;
+}
+
+// --- Abonnements commerçants (COLIMO PRO) -------------------------------
+
+export function demanderActivationAbonnement(pack: PackPayant): Promise<DemandeAbonnement> {
+  return demanderActivationAbonnementQuery(supabase, pack);
+}
+
+export function getConfigurationPaiementAbonnement(): Promise<ConfigurationPaiementAbonnement> {
+  return getConfigurationPaiementAbonnementQuery(supabase);
+}
+
+export function creerInvitationCommerce(role?: RoleCommerceMembre): Promise<InvitationCommerce> {
+  return creerInvitationCommerceQuery(supabase, role);
+}
+
+export function rejoindreCommerce(code: string): Promise<CommerceMembre> {
+  return rejoindreCommerceQuery(supabase, code);
+}
+
+export function getMembresCommerce(commerceId: string): Promise<CommerceMembre[]> {
+  return getMembresCommerceQuery(supabase, commerceId);
+}
+
+export function getInvitationsCommerce(commerceId: string): Promise<InvitationCommerce[]> {
+  return getInvitationsCommerceQuery(supabase, commerceId);
+}
+
+export function getDestinatairesCommerce(commerceId: string): Promise<CommerceDestinataire[]> {
+  return getDestinatairesCommerceQuery(supabase, commerceId);
+}
+
+export function creerDestinataireCommerce(input: {
+  commerceId: string;
+  nom: string;
+  telephone: string;
+  adresse?: string;
+  instructions?: string;
+}): Promise<CommerceDestinataire> {
+  return creerDestinataireCommerceQuery(supabase, input);
+}
+
+export function patchDestinataireCommerce(
+  id: string,
+  body: { nom?: string; telephone?: string; adresse?: string; instructions?: string }
+): Promise<CommerceDestinataire> {
+  return patchDestinataireCommerceQuery(supabase, id, body);
+}
+
+export function supprimerDestinataireCommerce(id: string): Promise<void> {
+  return supprimerDestinataireCommerceQuery(supabase, id);
+}
+
+export function getCoursesPourDestinataire(destinataireCarnetId: string): Promise<Course[]> {
+  return getCoursesPourDestinataireQuery(supabase, destinataireCarnetId);
+}
+
+export function getAdressesFavoritesCommerce(commerceId: string): Promise<CommerceAdresseFavorite[]> {
+  return getAdressesFavoritesCommerceQuery(supabase, commerceId);
+}
+
+export function creerAdresseFavoriteCommerce(input: {
+  commerceId: string;
+  label: string;
+  adresse: string;
+  repere?: string;
+  zone?: Zone;
+}): Promise<CommerceAdresseFavorite> {
+  return creerAdresseFavoriteCommerceQuery(supabase, input);
+}
+
+export function supprimerAdresseFavoriteCommerce(id: string): Promise<void> {
+  return supprimerAdresseFavoriteCommerceQuery(supabase, id);
+}
+
+export function getPointsDepartCommerce(commerceId: string): Promise<CommercePointDepart[]> {
+  return getPointsDepartCommerceQuery(supabase, commerceId);
+}
+
+export function creerPointDepartCommerce(input: {
+  commerceId: string;
+  label: string;
+  adresse: string;
+  repere?: string;
+  zone?: Zone;
+  latitude?: number;
+  longitude?: number;
+}): Promise<CommercePointDepart> {
+  return creerPointDepartCommerceQuery(supabase, input);
+}
+
+export function supprimerPointDepartCommerce(id: string): Promise<void> {
+  return supprimerPointDepartCommerceQuery(supabase, id);
+}
+
+export function getCoursiersFavorisCommerce(commerceId: string): Promise<CommerceCoursierFavori[]> {
+  return getCoursiersFavorisCommerceQuery(supabase, commerceId);
+}
+
+export function ajouterCoursierFavori(commerceId: string, coursierId: string): Promise<CommerceCoursierFavori> {
+  return ajouterCoursierFavoriQuery(supabase, commerceId, coursierId);
+}
+
+export function retirerCoursierFavori(id: string): Promise<void> {
+  return retirerCoursierFavoriQuery(supabase, id);
 }
 
 export function getCodePromoParCode(code: string): Promise<CodePromo | null> {
@@ -350,6 +487,38 @@ export async function inscrireClient(input: {
       photoCommerceUrl,
     });
   }
+
+  return utilisateur;
+}
+
+/**
+ * Inscription d'un sous-compte de commerce (Pack Business, jusqu'à 3 —
+ * cf. supabase/migrations/0032_abonnements_equipe.sql). Même schéma que
+ * inscrireClient (signUp puis insertUtilisateur), en plus simple : pas de
+ * zone/photo/champs commerce, et surtout aucune ligne commercants propre —
+ * ce compte appartient au commerce de l'invitation, jamais à lui-même
+ * (typeClient reste vide, l'appartenance se résout via commerce_membres).
+ * rejoindreCommerce revalide le code et la limite de 3 côté serveur.
+ */
+export async function inscrireMembreCommerce(input: {
+  email: string;
+  password: string;
+  nom: string;
+  telephone: string;
+  codeInvitation: string;
+}): Promise<Utilisateur> {
+  const { data, error } = await supabase.auth.signUp({ email: input.email, password: input.password });
+  if (error) throw error;
+  if (!data.user) throw new Error("Inscription incomplète : aucun utilisateur créé.");
+
+  const utilisateur = await insertUtilisateur(supabase, {
+    id: data.user.id,
+    nom: input.nom,
+    telephone: input.telephone,
+    type: "client",
+  });
+
+  await rejoindreCommerceQuery(supabase, input.codeInvitation);
 
   return utilisateur;
 }

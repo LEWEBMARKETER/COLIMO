@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getCourses, getHistoriqueAnnulations, getUtilisateurs } from "@/lib/api";
+import { getCommercantsBruts, getCourses, getHistoriqueAnnulations, getUtilisateurs } from "@/lib/api";
 import {
+  calculerPlanEffectif,
   COURSE_STATUS_LABELS,
   ROLE_ANNULATION_LABELS,
+  type Commercant,
   type Course,
   type HistoriqueAnnulation,
   type RoleAnnulation,
@@ -17,20 +19,27 @@ export default function AnnulationsPage() {
   const [historique, setHistorique] = useState<HistoriqueAnnulation[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
+  const [commercants, setCommercants] = useState<Commercant[]>([]);
   const [chargement, setChargement] = useState(true);
 
   const [filtreRole, setFiltreRole] = useState<RoleAnnulation | "tous">("tous");
   const [filtreUtilisateur, setFiltreUtilisateur] = useState<string>("tous");
 
   useEffect(() => {
-    Promise.all([getHistoriqueAnnulations(), getCourses({ statut: "annulee" }), getUtilisateurs()])
-      .then(([h, c, u]) => {
+    Promise.all([getHistoriqueAnnulations(), getCourses({ statut: "annulee" }), getUtilisateurs(), getCommercantsBruts()])
+      .then(([h, c, u, commercantsBruts]) => {
         setHistorique(h);
         setCourses(c);
         setUtilisateurs(u);
+        setCommercants(commercantsBruts);
       })
       .finally(() => setChargement(false));
   }, []);
+
+  function estClientBusiness(utilisateurId: string): boolean {
+    const commerce = commercants.find((c) => c.utilisateurId === utilisateurId);
+    return commerce ? calculerPlanEffectif(commerce) === "business" : false;
+  }
 
   const numeroCommande = useMemo(
     () => (courseId: string) => courses.find((c) => c.id === courseId)?.numeroCommande ?? courseId,
@@ -102,7 +111,14 @@ export default function AnnulationsPage() {
             {historiqueFiltre.map((h) => (
               <tr key={h.id} className="border-b border-colimo-neutre-clair last:border-0">
                 <td className="px-4 py-3 font-mono text-xs text-colimo-neutre-fonce/70">{numeroCommande(h.courseId)}</td>
-                <td className="px-4 py-3">{nomUtilisateur(h.utilisateurId)}</td>
+                <td className="px-4 py-3">
+                  {nomUtilisateur(h.utilisateurId)}
+                  {h.role === "client_commerce" && estClientBusiness(h.utilisateurId) && (
+                    <span className="ml-1.5 rounded-full bg-colimo-rouge-clair px-2 py-0.5 text-xs font-medium text-colimo-rouge">
+                      Business
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3">{ROLE_ANNULATION_LABELS[h.role]}</td>
                 <td className="px-4 py-3">{h.motif}</td>
                 <td className="px-4 py-3 text-colimo-neutre-fonce/70">{h.commentaire ?? "—"}</td>

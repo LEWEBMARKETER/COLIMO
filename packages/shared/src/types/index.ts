@@ -192,6 +192,19 @@ export const VOLUME_LIVRAISONS_LABELS: Record<VolumeLivraisons, string> = {
   plus_de_vingt: "Plus de 20 par jour",
 };
 
+// Palier d'abonnement COLIMO PRO — "gratuit" est la valeur par défaut de
+// tout commerce, jamais un abonnement à proprement parler (aucun paiement,
+// aucune expiration). Voir packages/shared/src/abonnements/acces.ts pour
+// la dérivation du palier EFFECTIF (un abonnement expiré/suspendu retombe
+// automatiquement à "gratuit" sans jamais réécrire subscriptionPlan).
+export type SubscriptionPlan = "gratuit" | "starter" | "business";
+
+export const SUBSCRIPTION_PLAN_LABELS: Record<SubscriptionPlan, string> = {
+  gratuit: "Gratuit",
+  starter: "Starter",
+  business: "Business",
+};
+
 export interface Commercant {
   id: string;
   utilisateurId: string;
@@ -203,6 +216,10 @@ export interface Commercant {
   volumeQuotidien: VolumeLivraisons | null;
   whatsapp: string | null;
   photoCommerceUrl: string | null;
+  subscriptionPlan: SubscriptionPlan;
+  abonnementDebuteLe: string | null;
+  abonnementExpireLe: string | null;
+  abonnementSuspendu: boolean;
   createdAt: string;
 }
 
@@ -256,6 +273,8 @@ export interface Course {
   instructions: string | null;
   poidsEstime: number | null;
   programmeePour: string | null;
+  destinataireCarnetId: string | null;
+  pointDepartId: string | null;
   accepteeAt: string | null;
   recupereeAt: string | null;
   livreeAt: string | null;

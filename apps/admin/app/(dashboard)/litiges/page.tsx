@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
-import { getCourses, getLitiges, getUtilisateurs, resoudreLitige } from "@/lib/api";
+import { getCommercantsBruts, getCourses, getLitiges, getUtilisateurs, resoudreLitige } from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 import {
   calculerFraisRetour,
+  calculerPlanEffectif,
   COURSE_STATUS_LABELS,
   estUrlHttpSure,
   formatFCFA,
@@ -13,6 +14,7 @@ import {
   MOTIF_ANNULATION_ADMIN_LABELS,
   RESOLUTION_LITIGE_LABELS,
   ZONE_LABELS,
+  type Commercant,
   type Course,
   type Litige,
   type MotifAnnulationAdmin,
@@ -37,6 +39,7 @@ export default function LitigesPage() {
   const [litiges, setLitiges] = useState<Course[]>([]);
   const [rapports, setRapports] = useState<Litige[]>([]);
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
+  const [commercants, setCommercants] = useState<Commercant[]>([]);
   const [chargement, setChargement] = useState(true);
   const [enCours, setEnCours] = useState<string | null>(null);
 
@@ -51,17 +54,23 @@ export default function LitigesPage() {
 
   function charger() {
     setChargement(true);
-    return Promise.all([getCourses({ statut: "litige" }), getLitiges(), getUtilisateurs()])
-      .then(([courses, litigesDetails, users]) => {
+    return Promise.all([getCourses({ statut: "litige" }), getLitiges(), getUtilisateurs(), getCommercantsBruts()])
+      .then(([courses, litigesDetails, users, commercantsBruts]) => {
         setLitiges(courses);
         setRapports(litigesDetails);
         setUtilisateurs(users);
+        setCommercants(commercantsBruts);
       })
       .finally(() => setChargement(false));
   }
 
   function nomUtilisateur(id: string): string {
     return utilisateurs.find((u) => u.id === id)?.nom ?? "—";
+  }
+
+  function estClientBusiness(utilisateurId: string): boolean {
+    const commerce = commercants.find((c) => c.utilisateurId === utilisateurId);
+    return commerce ? calculerPlanEffectif(commerce) === "business" : false;
   }
 
   function rapportPourCourse(courseId: string): Litige | undefined {
@@ -169,8 +178,13 @@ export default function LitigesPage() {
                   {course.numeroCommande} · {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
                 </p>
                 <p className="mt-1 text-sm text-colimo-neutre-fonce/70">
-                  Client : {nomUtilisateur(course.clientId)} · Coursier :{" "}
-                  {course.coursierId ? nomUtilisateur(course.coursierId) : "—"}
+                  Client : {nomUtilisateur(course.clientId)}
+                  {estClientBusiness(course.clientId) && (
+                    <span className="ml-1.5 rounded-full bg-colimo-rouge-clair px-2 py-0.5 text-xs font-medium text-colimo-rouge">
+                      Business
+                    </span>
+                  )}{" "}
+                  · Coursier : {course.coursierId ? nomUtilisateur(course.coursierId) : "—"}
                 </p>
                 <p className="mt-1 text-sm text-colimo-neutre-fonce/70">{formatFCFA(course.prix)}</p>
                 {course.instructions && (
