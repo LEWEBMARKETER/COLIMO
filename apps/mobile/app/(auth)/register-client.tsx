@@ -74,8 +74,9 @@ export default function RegisterClientScreen() {
         variables: { prenom: nom },
       });
       router.replace("/");
-    } catch {
-      setErreur("Impossible de créer le compte. Vérifiez vos informations.");
+    } catch (erreur) {
+      const message = erreur instanceof Error ? erreur.message : null;
+      setErreur(message ? `Impossible de créer le compte : ${message}` : "Impossible de créer le compte. Vérifiez vos informations.");
     } finally {
       setEnvoiEnCours(false);
     }
