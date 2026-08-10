@@ -24,7 +24,18 @@ Nouveau projet Vercel (équipe `lewebmarketer-1318`), configuré ainsi :
   - Variables d'environnement :
     - `EXPO_PUBLIC_SUPABASE_URL` = `https://cynivhfxbvbugxeirfba.supabase.co`
     - `EXPO_PUBLIC_SUPABASE_ANON_KEY` = clé publique du projet Supabase
-  - Production Branch : `claude/colimo-project-analysis-tg9vqv` (à changer vers `main` une fois la branche fusionnée)
+  - Production Branch : `main` (confirmé — Vercel déploie automatiquement à
+    chaque fusion dans `main`, jamais depuis la branche de travail)
+
+`build:web` lance `expo export -p web` puis `scripts/inject-pwa-head.js`, qui
+complète `dist/index.html` (manifest PWA, icônes `192`/`512`, apple-touch-icon,
+`theme-color`) — nécessaire car cette version d'Expo (export web en mode
+`single`/SPA) ne génère ni manifest ni balises d'icônes elle-même. Sans ça,
+"Ajouter à l'écran d'accueil" utilise une icône générée par le navigateur
+(floue) au lieu du logo COLIMO. Les icônes sources sont dans
+`apps/mobile/assets/` (`icon.png`/`adaptive-icon.png`, pleine résolution,
+sans marge) ; leurs déclinaisons servies telles quelles sont dans
+`apps/mobile/public/` (copié tel quel dans `dist/` au build).
 
 Une fois déployée, l'app mobile web sert à la fois les comptes **client** et
 **coursier** (inscription + connexion par email/mot de passe, navigation
