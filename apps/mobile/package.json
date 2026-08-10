@@ -6,7 +6,7 @@
   "scripts": {
     "start": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start",
     "web": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --web",
-    "build:web": "mkdir -p node_modules/.cache/nativewind && npx tailwindcss --input ./global.css --output ./node_modules/.cache/nativewind/global.css.web.css --minify && EXPO_USE_METRO_WORKSPACE_ROOT=1 expo export -p web",
+    "build:web": "mkdir -p node_modules/.cache/nativewind && npx tailwindcss --input ./global.css --output ./node_modules/.cache/nativewind/global.css.web.css --minify && EXPO_USE_METRO_WORKSPACE_ROOT=1 expo export -p web && node ./scripts/inject-pwa-head.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
