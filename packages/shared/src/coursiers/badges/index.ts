@@ -5,7 +5,6 @@ import {
   type BadgeCoursierRow,
   type CatalogueBadgeRow,
 } from "../../supabase/mappers";
-import { ajouterEntreeHistorique } from "../historique";
 import type { BadgeCoursier, BadgeCoursierAttribue, ModeAttributionBadge, RegleBadge } from "./types";
 
 export * from "./types";
@@ -86,10 +85,14 @@ export async function getBadgesCoursier(client: SupabaseClient, coursierId?: str
 }
 
 /**
- * Idempotent : si le badge est déjà actif pour ce coursier, renvoie
- * l'attribution existante plutôt que d'échouer sur la contrainte unique
- * (badges_coursiers_actif_unique) — important car l'automatisation peut
- * appeler cette fonction à répétition pour un badge déjà acquis.
+ * Idempotent côté serveur (RPC attribuer_badge_coursier) : si le badge est
+ * déjà actif pour ce coursier, renvoie l'attribution existante plutôt que
+ * d'échouer sur la contrainte unique (badges_coursiers_actif_unique) —
+ * important car l'automatisation peut appeler cette fonction à répétition
+ * pour un badge déjà acquis. Passe par une RPC security definer (plutôt
+ * qu'un insert direct) car badges_coursiers est verrouillée en admin
+ * uniquement — l'automatisation, elle, peut être déclenchée depuis une
+ * session client ou coursier.
  */
 export async function attribuerBadge(
   client: SupabaseClient,
@@ -97,36 +100,16 @@ export async function attribuerBadge(
   badgeId: string,
   params?: { attribuePar?: string; expireLe?: string }
 ): Promise<BadgeCoursierAttribue> {
-  const { data: existant, error: erreurRecherche } = await client
-    .from("badges_coursiers")
-    .select("*")
-    .eq("coursier_id", coursierId)
-    .eq("badge_id", badgeId)
-    .is("retire_le", null)
-    .maybeSingle();
-  if (erreurRecherche) throw erreurRecherche;
-  if (existant) return badgeCoursierFromRow(existant as BadgeCoursierRow);
-
   const { data, error } = await client
-    .from("badges_coursiers")
-    .insert({
-      coursier_id: coursierId,
-      badge_id: badgeId,
-      attribue_par: params?.attribuePar ?? null,
-      expire_le: params?.expireLe ?? null,
+    .rpc("attribuer_badge_coursier", {
+      p_coursier_id: coursierId,
+      p_badge_id: badgeId,
+      p_attribue_par: params?.attribuePar ?? null,
+      p_expire_le: params?.expireLe ?? null,
     })
-    .select()
     .single();
   if (error) throw error;
-
-  const attribution = badgeCoursierFromRow(data as BadgeCoursierRow);
-  await ajouterEntreeHistorique(client, {
-    coursierId,
-    action: "attribution_badge",
-    nouvelleValeur: badgeId,
-    administrateurId: params?.attribuePar ?? null,
-  });
-  return attribution;
+  return badgeCoursierFromRow(data as BadgeCoursierRow);
 }
 
 export async function retirerBadge(
@@ -135,19 +118,11 @@ export async function retirerBadge(
   params?: { retirePar?: string }
 ): Promise<BadgeCoursierAttribue> {
   const { data, error } = await client
-    .from("badges_coursiers")
-    .update({ retire_le: new Date().toISOString(), retire_par: params?.retirePar ?? null })
-    .eq("id", attributionId)
-    .select()
+    .rpc("retirer_badge_coursier", {
+      p_attribution_id: attributionId,
+      p_retire_par: params?.retirePar ?? null,
+    })
     .single();
   if (error) throw error;
-
-  const attribution = badgeCoursierFromRow(data as BadgeCoursierRow);
-  await ajouterEntreeHistorique(client, {
-    coursierId: attribution.coursierId,
-    action: "retrait_badge",
-    ancienneValeur: attribution.badgeId,
-    administrateurId: params?.retirePar ?? null,
-  });
-  return attribution;
+  return badgeCoursierFromRow(data as BadgeCoursierRow);
 }

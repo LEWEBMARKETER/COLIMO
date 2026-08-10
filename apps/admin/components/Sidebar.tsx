@@ -13,6 +13,7 @@ const GROUPES = [
       { href: "/courses", label: "Courses" },
       { href: "/paiements", label: "Paiements" },
       { href: "/litiges", label: "Litiges" },
+      { href: "/annulations", label: "Annulations" },
     ],
   },
   {

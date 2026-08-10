@@ -42,22 +42,30 @@ confirmation et paiement par le client → notation mutuelle.
 | Transactions | id, course_id, montant, opérateur, référence, statut paiement | 1 Transaction → 1 Course |
 | Notations | id, course_id, auteur_id, destinataire_id, note, commentaire | 1 Notation → 1 Course |
 
-## 4. Grille tarifaire (base V1)
+## 4. Grille tarifaire (V2 — tarifs fixes)
 
 | Départ | Arrivée | Tarif |
 |---|---|---|
-| Libreville | Libreville | 1 500 – 2 500 FCFA |
-| Libreville | Owendo | 2 500 – 3 000 FCFA |
-| Libreville | Akanda | 2 500 – 3 000 FCFA |
-| Akanda | Akanda | 1 500 – 2 000 FCFA |
-| Akanda | Libreville | 2 500 – 3 000 FCFA |
-| Akanda | Owendo | 3 000 – 3 500 FCFA |
-| Owendo | Owendo | 1 500 – 2 000 FCFA |
-| Owendo | Libreville | 2 500 – 3 000 FCFA |
-| Libreville | Bikélé-Essassa | 3 000 – 4 000 FCFA |
+| Libreville | Libreville | 2 000 FCFA |
+| Libreville | Akanda | 3 000 FCFA |
+| Libreville | Owendo | 3 000 FCFA |
+| Libreville | Bikélé-Essassa | 4 000 FCFA |
 | Libreville | Ntoum | 5 000 FCFA |
-| Akanda / Owendo | Bikélé-Essassa | 4 000 – 4 500 FCFA |
-| Akanda / Owendo | Ntoum | 6 000 FCFA |
+| Akanda | Libreville | 3 000 FCFA |
+| Akanda | Owendo | 3 500 FCFA |
+| Akanda | Akanda | 2 000 FCFA |
+| Akanda | Bikélé-Essassa | 4 500 FCFA |
+| Akanda | Ntoum | 6 000 FCFA |
+| Owendo | Libreville | 3 000 FCFA |
+| Owendo | Akanda | 3 500 FCFA |
+| Owendo | Owendo | 2 000 FCFA |
+| Owendo | Bikélé-Essassa | 4 500 FCFA |
+| Owendo | Ntoum | 6 000 FCFA |
+
+Chaque trajet a désormais un tarif **fixe** (plus de fourchette min/max —
+`packages/shared/src/pricing/index.ts`, `GRILLE_TARIFAIRE`). Bikélé-Essassa
+et Ntoum sont deux communes à part entière, desservies uniquement en
+arrivée pour l'instant (pas de trajet au départ de ces zones).
 
 Options : livraison prioritaire (+1 000 FCFA), assurance colis (+300 à 1 000 FCFA
 selon valeur). Commission plateforme : 15 % par course.

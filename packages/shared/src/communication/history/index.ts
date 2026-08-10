@@ -27,7 +27,16 @@ export async function getCommunications(
   if (params?.utilisateurId) requete = requete.eq("utilisateur_id", params.utilisateurId);
   if (params?.dateDebut) requete = requete.gte("created_at", params.dateDebut);
   if (params?.dateFin) requete = requete.lte("created_at", params.dateFin);
-  if (params?.recherche) requete = requete.or(`destinataire.ilike.%${params.recherche}%,contenu.ilike.%${params.recherche}%`);
+  if (params?.recherche) {
+    // La grammaire de filtre PostgREST utilise "," et "()" comme caractères
+    // de contrôle : on les retire avant interpolation pour empêcher un
+    // utilisateur de manipuler la structure du filtre .or() (ex. injecter
+    // une clause supplémentaire via une recherche construite à la main).
+    const rechercheAssainie = params.recherche.replace(/[,()]/g, "");
+    if (rechercheAssainie) {
+      requete = requete.or(`destinataire.ilike.%${rechercheAssainie}%,contenu.ilike.%${rechercheAssainie}%`);
+    }
+  }
 
   const { data, error } = await requete;
   if (error) throw error;

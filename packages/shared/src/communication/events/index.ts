@@ -44,9 +44,15 @@ export type EvenementCommunication =
   | "notification_livraison_en_cours"
   | "notification_livraison_terminee"
   | "notification_livraison_annulee"
+  | "notification_livraison_annulee_coursier"
   | "notification_litige_ouvert"
   | "notification_litige_resolu"
-  | "notification_coursier_compte_valide";
+  | "notification_coursier_compte_valide"
+  // Abonnements commerçants (COLIMO PRO)
+  | "abonnement_demande_recue"
+  | "abonnement_active"
+  | "abonnement_expire"
+  | "abonnement_refuse";
 
 export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   compte_bienvenue: "email_bienvenue",
@@ -80,9 +86,15 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   notification_livraison_en_cours: "notification_livraison_en_cours",
   notification_livraison_terminee: "notification_livraison_terminee",
   notification_livraison_annulee: "notification_livraison_annulee",
+  notification_livraison_annulee_coursier: "notification_livraison_annulee_coursier",
   notification_litige_ouvert: "notification_litige_ouvert",
   notification_litige_resolu: "notification_litige_resolu",
   notification_coursier_compte_valide: "notification_coursier_compte_valide",
+
+  abonnement_demande_recue: "abonnement_demande_recue",
+  abonnement_active: "abonnement_active",
+  abonnement_expire: "abonnement_expire",
+  abonnement_refuse: "abonnement_refuse",
 };
 
 // Canal par défaut de chaque événement — utilisé par les wrappers
@@ -120,7 +132,13 @@ export const EVENEMENT_CANAL: Record<EvenementCommunication, "email" | "sms" | "
   notification_livraison_en_cours: "push",
   notification_livraison_terminee: "push",
   notification_livraison_annulee: "push",
+  notification_livraison_annulee_coursier: "push",
   notification_litige_ouvert: "push",
   notification_litige_resolu: "push",
   notification_coursier_compte_valide: "push",
+
+  abonnement_demande_recue: "push",
+  abonnement_active: "push",
+  abonnement_expire: "push",
+  abonnement_refuse: "push",
 };

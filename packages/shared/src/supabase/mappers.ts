@@ -14,7 +14,9 @@ import type {
   PaymentOperator,
   PieceIdentiteType,
   QuiPaie,
+  ResolutionLitige,
   StatutCoursier,
+  SubscriptionPlan,
   TailleColis,
   TypeClient,
   TypeReductionPromo,
@@ -33,6 +35,15 @@ import type { Paiement, StatutPaiementManuel } from "../paiements/types";
 import type { BadgeCoursier, BadgeCoursierAttribue, ModeAttributionBadge, RegleBadge } from "../coursiers/badges/types";
 import type { NiveauCoursier } from "../coursiers/niveaux/types";
 import type { ActionHistoriqueCoursier, HistoriqueCoursier } from "../coursiers/historique/types";
+import type { HistoriqueAnnulation, RoleAnnulation } from "../annulations/types";
+import type { PackPayant } from "../abonnements/types";
+import type { StatutDemandeAbonnement, DemandeAbonnement } from "../abonnements/demandes/types";
+import type { ActionHistoriqueAbonnement, HistoriqueAbonnement } from "../abonnements/historique/types";
+import type { RoleCommerceMembre, CommerceMembre, InvitationCommerce } from "../abonnements/equipe/types";
+import type { CommerceDestinataire } from "../abonnements/destinataires/types";
+import type { CommerceAdresseFavorite, CommercePointDepart } from "../abonnements/adresses/types";
+import type { CommerceCoursierFavori } from "../abonnements/coursiers-favoris/types";
+import type { ConfigurationPaiementAbonnement } from "../abonnements/paiement/types";
 
 export interface UtilisateurRow {
   id: string;
@@ -101,11 +112,17 @@ export interface CourseRow {
   instructions: string | null;
   poids_estime: number | null;
   programmee_pour: string | null;
+  destinataire_carnet_id: string | null;
+  point_depart_id: string | null;
   acceptee_at: string | null;
   recuperee_at: string | null;
   livree_at: string | null;
   confirmee_at: string | null;
   annulee_at: string | null;
+  annulee_par: string | null;
+  motif_annulation: string | null;
+  commentaire_annulation: string | null;
+  statut_avant_litige: CourseStatus | null;
   created_at: string;
 }
 
@@ -120,6 +137,10 @@ export interface CommercantRow {
   volume_quotidien: VolumeLivraisons | null;
   whatsapp: string | null;
   photo_commerce_url: string | null;
+  subscription_plan: SubscriptionPlan;
+  abonnement_debute_le: string | null;
+  abonnement_expire_le: string | null;
+  abonnement_suspendu: boolean;
   created_at: string;
 }
 
@@ -143,6 +164,24 @@ export interface LitigeRow {
   motif: LitigeMotif;
   commentaire: string | null;
   preuve_urls: string[];
+  resolution: ResolutionLitige | null;
+  resolution_motif: string | null;
+  resolution_commentaire: string | null;
+  resolution_montant: number | null;
+  resolue_par: string | null;
+  resolue_at: string | null;
+  created_at: string;
+}
+
+export interface HistoriqueAnnulationRow {
+  id: string;
+  course_id: string;
+  utilisateur_id: string;
+  role: RoleAnnulation;
+  motif: string;
+  commentaire: string | null;
+  statut_precedent: CourseStatus;
+  nouveau_statut: CourseStatus;
   created_at: string;
 }
 
@@ -235,11 +274,17 @@ export function courseFromRow(row: CourseRow): Course {
     instructions: row.instructions,
     poidsEstime: row.poids_estime,
     programmeePour: row.programmee_pour,
+    destinataireCarnetId: row.destinataire_carnet_id,
+    pointDepartId: row.point_depart_id,
     accepteeAt: row.acceptee_at,
     recupereeAt: row.recuperee_at,
     livreeAt: row.livree_at,
     confirmeeAt: row.confirmee_at,
     annuleeAt: row.annulee_at,
+    annuleePar: row.annulee_par,
+    motifAnnulation: row.motif_annulation,
+    commentaireAnnulation: row.commentaire_annulation,
+    statutAvantLitige: row.statut_avant_litige,
     createdAt: row.created_at,
   };
 }
@@ -252,6 +297,26 @@ export function litigeFromRow(row: LitigeRow): Litige {
     motif: row.motif,
     commentaire: row.commentaire,
     preuveUrls: row.preuve_urls ?? [],
+    resolution: row.resolution,
+    resolutionMotif: row.resolution_motif,
+    resolutionCommentaire: row.resolution_commentaire,
+    resolutionMontant: row.resolution_montant,
+    resoluePar: row.resolue_par,
+    resolueAt: row.resolue_at,
+    createdAt: row.created_at,
+  };
+}
+
+export function historiqueAnnulationFromRow(row: HistoriqueAnnulationRow): HistoriqueAnnulation {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    utilisateurId: row.utilisateur_id,
+    role: row.role,
+    motif: row.motif,
+    commentaire: row.commentaire,
+    statutPrecedent: row.statut_precedent,
+    nouveauStatut: row.nouveau_statut,
     createdAt: row.created_at,
   };
 }
@@ -289,6 +354,10 @@ export function commercantFromRow(row: CommercantRow): Commercant {
     volumeQuotidien: row.volume_quotidien,
     whatsapp: row.whatsapp,
     photoCommerceUrl: row.photo_commerce_url,
+    subscriptionPlan: row.subscription_plan,
+    abonnementDebuteLe: row.abonnement_debute_le,
+    abonnementExpireLe: row.abonnement_expire_le,
+    abonnementSuspendu: row.abonnement_suspendu,
     createdAt: row.created_at,
   };
 }
@@ -544,5 +613,213 @@ export function historiqueCoursierFromRow(row: HistoriqueCoursierRow): Historiqu
     commentaire: row.commentaire,
     administrateurId: row.administrateur_id,
     createdAt: row.created_at,
+  };
+}
+
+// --- Abonnements commerçants (COLIMO PRO) ---------------------------------
+
+export interface DemandeAbonnementRow {
+  id: string;
+  commerce_id: string;
+  utilisateur_id: string;
+  pack_demande: PackPayant;
+  statut: StatutDemandeAbonnement;
+  created_at: string;
+  updated_at: string;
+}
+
+export function demandeAbonnementFromRow(row: DemandeAbonnementRow): DemandeAbonnement {
+  return {
+    id: row.id,
+    commerceId: row.commerce_id,
+    utilisateurId: row.utilisateur_id,
+    packDemande: row.pack_demande,
+    statut: row.statut,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export interface HistoriqueAbonnementRow {
+  id: string;
+  commerce_id: string;
+  administrateur_id: string | null;
+  action: ActionHistoriqueAbonnement;
+  ancien_forfait: string | null;
+  nouveau_forfait: string | null;
+  date_expiration: string | null;
+  motif: string | null;
+  commentaire: string | null;
+  created_at: string;
+}
+
+export function historiqueAbonnementFromRow(row: HistoriqueAbonnementRow): HistoriqueAbonnement {
+  return {
+    id: row.id,
+    commerceId: row.commerce_id,
+    administrateurId: row.administrateur_id,
+    action: row.action,
+    ancienForfait: row.ancien_forfait,
+    nouveauForfait: row.nouveau_forfait,
+    dateExpiration: row.date_expiration,
+    motif: row.motif,
+    commentaire: row.commentaire,
+    createdAt: row.created_at,
+  };
+}
+
+export interface CommerceMembreRow {
+  id: string;
+  commerce_id: string;
+  utilisateur_id: string;
+  role: RoleCommerceMembre;
+  invite_par: string | null;
+  created_at: string;
+}
+
+export function commerceMembreFromRow(row: CommerceMembreRow): CommerceMembre {
+  return {
+    id: row.id,
+    commerceId: row.commerce_id,
+    utilisateurId: row.utilisateur_id,
+    role: row.role,
+    invitePar: row.invite_par,
+    createdAt: row.created_at,
+  };
+}
+
+export interface InvitationCommerceRow {
+  id: string;
+  commerce_id: string;
+  code: string;
+  role: RoleCommerceMembre;
+  cree_par: string;
+  utilise_par: string | null;
+  expire_le: string;
+  created_at: string;
+}
+
+export function invitationCommerceFromRow(row: InvitationCommerceRow): InvitationCommerce {
+  return {
+    id: row.id,
+    commerceId: row.commerce_id,
+    code: row.code,
+    role: row.role,
+    creePar: row.cree_par,
+    utiliseParId: row.utilise_par,
+    expireLe: row.expire_le,
+    createdAt: row.created_at,
+  };
+}
+
+export interface CommerceDestinataireRow {
+  id: string;
+  commerce_id: string;
+  nom: string;
+  telephone: string;
+  adresse: string | null;
+  instructions: string | null;
+  created_at: string;
+}
+
+export function commerceDestinataireFromRow(row: CommerceDestinataireRow): CommerceDestinataire {
+  return {
+    id: row.id,
+    commerceId: row.commerce_id,
+    nom: row.nom,
+    telephone: row.telephone,
+    adresse: row.adresse,
+    instructions: row.instructions,
+    createdAt: row.created_at,
+  };
+}
+
+export interface CommerceAdresseFavoriteRow {
+  id: string;
+  commerce_id: string;
+  label: string;
+  adresse: string;
+  repere: string | null;
+  zone: Zone | null;
+  created_at: string;
+}
+
+export function commerceAdresseFavoriteFromRow(row: CommerceAdresseFavoriteRow): CommerceAdresseFavorite {
+  return {
+    id: row.id,
+    commerceId: row.commerce_id,
+    label: row.label,
+    adresse: row.adresse,
+    repere: row.repere,
+    zone: row.zone,
+    createdAt: row.created_at,
+  };
+}
+
+export interface CommercePointDepartRow {
+  id: string;
+  commerce_id: string;
+  label: string;
+  adresse: string;
+  repere: string | null;
+  zone: Zone | null;
+  latitude: number | null;
+  longitude: number | null;
+  actif: boolean;
+  created_at: string;
+}
+
+export function commercePointDepartFromRow(row: CommercePointDepartRow): CommercePointDepart {
+  return {
+    id: row.id,
+    commerceId: row.commerce_id,
+    label: row.label,
+    adresse: row.adresse,
+    repere: row.repere,
+    zone: row.zone,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    actif: row.actif,
+    createdAt: row.created_at,
+  };
+}
+
+export interface CommerceCoursierFavoriRow {
+  id: string;
+  commerce_id: string;
+  coursier_id: string;
+  created_at: string;
+}
+
+export function commerceCoursierFavoriFromRow(row: CommerceCoursierFavoriRow): CommerceCoursierFavori {
+  return {
+    id: row.id,
+    commerceId: row.commerce_id,
+    coursierId: row.coursier_id,
+    createdAt: row.created_at,
+  };
+}
+
+export interface ConfigurationPaiementAbonnementRow {
+  numero_paiement: string;
+  nom_beneficiaire: string;
+  moyen_paiement: string;
+  instructions: string;
+  whatsapp: string;
+  email_contact: string;
+  updated_at: string;
+}
+
+export function configurationPaiementAbonnementFromRow(
+  row: ConfigurationPaiementAbonnementRow
+): ConfigurationPaiementAbonnement {
+  return {
+    numeroPaiement: row.numero_paiement,
+    nomBeneficiaire: row.nom_beneficiaire,
+    moyenPaiement: row.moyen_paiement,
+    instructions: row.instructions,
+    whatsapp: row.whatsapp,
+    emailContact: row.email_contact,
+    updatedAt: row.updated_at,
   };
 }

@@ -38,6 +38,19 @@ import {
   validerDossierCoursier as validerDossierCoursierQuery,
   validerPaiement as validerPaiementQuery,
   getCourses as getCoursesQuery,
+  annulerCourseAdmin as annulerCourseAdminQuery,
+  resoudreLitige as resoudreLitigeQuery,
+  getHistoriqueAnnulations as getHistoriqueAnnulationsQuery,
+  activerAbonnementCommerce as activerAbonnementCommerceQuery,
+  desactiverAbonnementCommerce as desactiverAbonnementCommerceQuery,
+  suspendreAbonnementCommerce as suspendreAbonnementCommerceQuery,
+  reactiverAbonnementCommerce as reactiverAbonnementCommerceQuery,
+  getDemandesAbonnement as getDemandesAbonnementQuery,
+  refuserDemandeAbonnement as refuserDemandeAbonnementQuery,
+  getHistoriqueAbonnements as getHistoriqueAbonnementsQuery,
+  getConfigurationPaiementAbonnement as getConfigurationPaiementAbonnementQuery,
+  patchConfigurationPaiementAbonnement as patchConfigurationPaiementAbonnementQuery,
+  type ActionHistoriqueAbonnement,
   type ActionHistoriqueCoursier,
   type BadgeCoursier,
   type BadgeCoursierAttribue,
@@ -45,18 +58,25 @@ import {
   type CodePromo,
   type Commercant,
   type CommunicationEnvoyee,
+  type ConfigurationPaiementAbonnement,
   type Coursier,
   type CoursierAvecStatutEffectif,
   type Course,
   type CourseStatus,
+  type DemandeAbonnement,
+  type HistoriqueAbonnement,
+  type HistoriqueAnnulation,
   type HistoriqueCoursier,
   type Litige,
   type ModeleCommunication,
   type NiveauCoursier,
+  type PackPayant,
   type Paiement,
   type RegleBadge,
+  type ResolutionLitige,
   type StatutCommunication,
   type StatutCoursier,
+  type StatutDemandeAbonnement,
   type StatutPaiementManuel,
   type TypeReductionPromo,
   type VerificationStatus,
@@ -109,6 +129,28 @@ export function getCourses(params?: { zone?: Zone; statut?: CourseStatus }): Pro
   return getCoursesQuery(createClient(), params);
 }
 
+export function annulerCourseAdmin(body: { courseId: string; motif: string; commentaire?: string }): Promise<Course> {
+  return annulerCourseAdminQuery(createClient(), body);
+}
+
+export function resoudreLitige(body: {
+  courseId: string;
+  resolution: ResolutionLitige;
+  motif?: string;
+  commentaire?: string;
+  montant?: number;
+}): Promise<Course> {
+  return resoudreLitigeQuery(createClient(), body);
+}
+
+export function getHistoriqueAnnulations(params?: {
+  courseId?: string;
+  dateDebut?: string;
+  dateFin?: string;
+}): Promise<HistoriqueAnnulation[]> {
+  return getHistoriqueAnnulationsQuery(createClient(), params);
+}
+
 export function getCommercantsBruts(): Promise<Commercant[]> {
   return getCommercantsBrutsQuery(createClient());
 }
@@ -121,6 +163,65 @@ export function upsertCommercant(input: {
   commissionTaux?: number;
 }): Promise<Commercant> {
   return upsertCommercantQuery(createClient(), input);
+}
+
+// --- Abonnements commerçants (COLIMO PRO) -------------------------------
+
+export function activerAbonnementCommerce(input: {
+  commerceId: string;
+  pack: PackPayant;
+  dateDebut?: string;
+  dureeJours?: number;
+  motif?: string;
+}): Promise<Commercant> {
+  return activerAbonnementCommerceQuery(createClient(), input);
+}
+
+export function desactiverAbonnementCommerce(commerceId: string, motif?: string): Promise<Commercant> {
+  return desactiverAbonnementCommerceQuery(createClient(), commerceId, motif);
+}
+
+export function suspendreAbonnementCommerce(commerceId: string, motif?: string): Promise<Commercant> {
+  return suspendreAbonnementCommerceQuery(createClient(), commerceId, motif);
+}
+
+export function reactiverAbonnementCommerce(commerceId: string, motif?: string): Promise<Commercant> {
+  return reactiverAbonnementCommerceQuery(createClient(), commerceId, motif);
+}
+
+export function getDemandesAbonnement(params?: {
+  commerceId?: string;
+  statut?: StatutDemandeAbonnement;
+}): Promise<DemandeAbonnement[]> {
+  return getDemandesAbonnementQuery(createClient(), params);
+}
+
+export function refuserDemandeAbonnement(demandeId: string, motif?: string): Promise<DemandeAbonnement> {
+  return refuserDemandeAbonnementQuery(createClient(), demandeId, motif);
+}
+
+export function getHistoriqueAbonnements(params?: {
+  commerceId?: string;
+  action?: ActionHistoriqueAbonnement;
+  dateDebut?: string;
+  dateFin?: string;
+}): Promise<HistoriqueAbonnement[]> {
+  return getHistoriqueAbonnementsQuery(createClient(), params);
+}
+
+export function getConfigurationPaiementAbonnement(): Promise<ConfigurationPaiementAbonnement> {
+  return getConfigurationPaiementAbonnementQuery(createClient());
+}
+
+export function patchConfigurationPaiementAbonnement(body: {
+  numeroPaiement?: string;
+  nomBeneficiaire?: string;
+  moyenPaiement?: string;
+  instructions?: string;
+  whatsapp?: string;
+  emailContact?: string;
+}): Promise<ConfigurationPaiementAbonnement> {
+  return patchConfigurationPaiementAbonnementQuery(createClient(), body);
 }
 
 export function getCodesPromo(): Promise<CodePromo[]> {

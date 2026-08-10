@@ -4,24 +4,29 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StatutBadge from "@/components/StatutBadge";
 import CarteCourses from "@/components/CarteCourses";
-import { getCourses, getUtilisateurs, getCoursiers, patchCourse, type CoursierAvecUtilisateur } from "@/lib/api";
+import { annulerCourseAdmin, getCourses, getUtilisateurs, getCoursiers, patchCourse, type CoursierAvecUtilisateur } from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 import {
   CATEGORIE_COLIS_LABELS,
   COURSE_STATUS_LABELS,
   MODE_PAIEMENT_LABELS,
+  MOTIF_ANNULATION_ADMIN_LABELS,
   ZONE_LABELS,
   calculerFraisRetour,
   formatFCFA,
   type Course,
+  type MotifAnnulationAdmin,
   type Utilisateur,
   type Zone,
 } from "@colimo/shared";
 
 const ZONES = Object.keys(ZONE_LABELS) as Zone[];
-const STATUTS_ANNULABLES = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
 const STATUTS_RETOURNABLES = new Set(["retrait", "en_cours", "livree"]);
 const STATUTS_ACTIFS = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
+
+const MOTIFS_ADMIN: { valeur: MotifAnnulationAdmin; label: string }[] = (
+  Object.keys(MOTIF_ANNULATION_ADMIN_LABELS) as MotifAnnulationAdmin[]
+).map((valeur) => ({ valeur, label: MOTIF_ANNULATION_ADMIN_LABELS[valeur] }));
 
 export default function CoursesPage() {
   return (
@@ -41,6 +46,10 @@ function CoursesContenu() {
   const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
   const [filtreZone, setFiltreZone] = useState<string>("toutes");
   const [chargement, setChargement] = useState(true);
+  const [panneauAnnulation, setPanneauAnnulation] = useState<string | null>(null);
+  const [motifAnnulation, setMotifAnnulation] = useState<MotifAnnulationAdmin | "">("");
+  const [commentaireAnnulation, setCommentaireAnnulation] = useState("");
+  const [annulationEnCours, setAnnulationEnCours] = useState(false);
 
   useEffect(() => {
     getUtilisateurs().then(setUtilisateurs);
@@ -69,25 +78,52 @@ function CoursesContenu() {
     [coursesAffichees]
   );
 
-  async function annuler(course: Course) {
-    if (!window.confirm(`Annuler la course ${course.numeroCommande} ?`)) return;
-    const misAJour = await patchCourse(course.id, { statut: "annulee" });
-    setCourses((prev) => prev.map((c) => (c.id === course.id ? misAJour : c)));
-    await notifierEvenement("livraison_annulee", {
-      destinataire: misAJour.telephoneDestinataire,
-      variables: { nom_client: misAJour.nomDestinataire ?? "client", numero_commande: misAJour.numeroCommande },
-    });
-    await notifierEvenement("notification_livraison_annulee", {
-      destinataire: misAJour.clientId,
-      utilisateurId: misAJour.clientId,
-      variables: { numero_commande: misAJour.numeroCommande },
-    });
-    if (misAJour.coursierId) {
+  function ouvrirPanneauAnnulation(course: Course) {
+    setPanneauAnnulation(course.id);
+    setMotifAnnulation("");
+    setCommentaireAnnulation("");
+  }
+
+  function fermerPanneauAnnulation() {
+    setPanneauAnnulation(null);
+    setMotifAnnulation("");
+    setCommentaireAnnulation("");
+  }
+
+  async function confirmerAnnulation(course: Course) {
+    if (!motifAnnulation) return;
+    if (motifAnnulation === "autre" && !commentaireAnnulation.trim()) return;
+
+    const motif =
+      motifAnnulation === "autre" ? commentaireAnnulation.trim() : MOTIF_ANNULATION_ADMIN_LABELS[motifAnnulation];
+
+    setAnnulationEnCours(true);
+    try {
+      const misAJour = await annulerCourseAdmin({
+        courseId: course.id,
+        motif,
+        commentaire: commentaireAnnulation.trim() || undefined,
+      });
+      setCourses((prev) => prev.map((c) => (c.id === course.id ? misAJour : c)));
+      await notifierEvenement("livraison_annulee", {
+        destinataire: misAJour.telephoneDestinataire,
+        variables: { nom_client: misAJour.nomDestinataire ?? "client", numero_commande: misAJour.numeroCommande },
+      });
       await notifierEvenement("notification_livraison_annulee", {
-        destinataire: misAJour.coursierId,
-        utilisateurId: misAJour.coursierId,
+        destinataire: misAJour.clientId,
+        utilisateurId: misAJour.clientId,
         variables: { numero_commande: misAJour.numeroCommande },
       });
+      if (misAJour.coursierId) {
+        await notifierEvenement("notification_livraison_annulee_coursier", {
+          destinataire: misAJour.coursierId,
+          utilisateurId: misAJour.coursierId,
+          variables: { numero_commande: misAJour.numeroCommande },
+        });
+      }
+      fermerPanneauAnnulation();
+    } finally {
+      setAnnulationEnCours(false);
     }
   }
 
@@ -220,12 +256,12 @@ function CoursesContenu() {
                         </option>
                       ))}
                     </select>
-                    {STATUTS_ANNULABLES.has(course.statut) && (
+                    {course.statut !== "annulee" && (
                       <button
-                        onClick={() => annuler(course)}
+                        onClick={() => ouvrirPanneauAnnulation(course)}
                         className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                       >
-                        Annuler
+                        Annuler la course
                       </button>
                     )}
                     {STATUTS_RETOURNABLES.has(course.statut) && (
@@ -235,6 +271,49 @@ function CoursesContenu() {
                       >
                         Colis retourné
                       </button>
+                    )}
+                    {panneauAnnulation === course.id && (
+                      <div className="mt-1 w-56 rounded-md border border-colimo-neutre-clair bg-colimo-fond p-2">
+                        <select
+                          value={motifAnnulation}
+                          onChange={(e) => setMotifAnnulation(e.target.value as MotifAnnulationAdmin)}
+                          className="mb-2 w-full rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs"
+                        >
+                          <option value="">Motif de l'annulation…</option>
+                          {MOTIFS_ADMIN.map((m) => (
+                            <option key={m.valeur} value={m.valeur}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                        <textarea
+                          value={commentaireAnnulation}
+                          onChange={(e) => setCommentaireAnnulation(e.target.value)}
+                          placeholder={
+                            motifAnnulation === "autre" ? "Précisez le motif (obligatoire)…" : "Commentaire (facultatif)…"
+                          }
+                          className="mb-2 w-full rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs"
+                          rows={2}
+                        />
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => confirmerAnnulation(course)}
+                            disabled={
+                              annulationEnCours || !motifAnnulation || (motifAnnulation === "autre" && !commentaireAnnulation.trim())
+                            }
+                            className="rounded-md bg-colimo-rouge px-2 py-1 text-xs font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-60"
+                          >
+                            Confirmer
+                          </button>
+                          <button
+                            onClick={fermerPanneauAnnulation}
+                            disabled={annulationEnCours}
+                            className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-white disabled:opacity-60"
+                          >
+                            Fermer
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </td>

@@ -245,6 +245,8 @@ export async function creerCourse(
     instructions?: string;
     poidsEstime?: number;
     programmeePour?: string;
+    destinataireCarnetId?: string;
+    pointDepartId?: string;
   }
 ): Promise<Course> {
   const { data, error } = await client
@@ -278,6 +280,8 @@ export async function creerCourse(
       instructions: input.instructions ?? null,
       poids_estime: input.poidsEstime ?? null,
       programmee_pour: input.programmeePour ?? null,
+      destinataire_carnet_id: input.destinataireCarnetId ?? null,
+      point_depart_id: input.pointDepartId ?? null,
     })
     .select()
     .single();
