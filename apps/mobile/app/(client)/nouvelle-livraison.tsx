@@ -10,6 +10,7 @@ import {
   formatFCFA,
   isRouteDesservie,
   type CategorieColis,
+  type Commercant,
   type CommerceDestinataire,
   type CommercePointDepart,
   type Zone,
@@ -78,11 +79,13 @@ export default function NouvelleLivraisonScreen() {
   const [pointDepartId, setPointDepartId] = useState<string | null>(null);
   const [destinataires, setDestinataires] = useState<CommerceDestinataire[]>([]);
   const [destinataireCarnetId, setDestinataireCarnetId] = useState<string | null>(null);
+  const [commerce, setCommerce] = useState<Commercant | null>(null);
 
   useEffect(() => {
     if (!session) return;
     getMonCommerce(session.user.id).then((commercant) => {
       if (!commercant) return;
+      setCommerce(commercant);
       if (commercant.adresse) setAdresseCommerce(commercant.adresse);
 
       const planEffectif = calculerPlanEffectif(commercant);
@@ -143,6 +146,8 @@ export default function NouvelleLivraisonScreen() {
       const course = await creerCourse({
         clientId: session.user.id,
         adresseDepart: adresseCommerce,
+        nomExpediteur: commerce?.responsable || utilisateur?.nom || undefined,
+        telephoneExpediteur: utilisateur?.telephone || undefined,
         adresseArrivee,
         latitudeArrivee: coordArrivee?.latitude,
         longitudeArrivee: coordArrivee?.longitude,
