@@ -104,6 +104,18 @@ l'interface elle-même était un vrai problème). Le middleware lit désormais
 déconnectée et redirigée vers `/login?erreur=acces_refuse`, avec un message
 affiché sur la page de connexion.
 
+### 8. `commercants.commission_taux` non verrouillé (migration `0035`)
+
+Le profil commerçant (mobile) permet désormais au commerçant de modifier sa
+propre fiche (adresse, responsable, WhatsApp, activité, volume, photo) —
+`commercants_update_own_or_admin` (RLS, 0011) autorisait déjà l'écriture de
+n'importe quelle colonne sur sa propre ligne, et `commission_taux` n'était
+pas dans la liste verrouillée par `proteger_colonnes_privilegiees_commercants`
+(0031, qui ne couvrait que les 4 colonnes d'abonnement). Un commerçant
+aurait donc pu s'auto-attribuer un taux de commission via un appel API
+direct. La fonction verrouille maintenant aussi `commission_taux` pour
+toute session non-admin.
+
 ## Délibérément non corrigé dans cette passe
 
 - **`notifications_insert_authenticated` / `historique_coursier_insert_authenticated`**
@@ -125,6 +137,7 @@ affiché sur la page de connexion.
 Dans l'ordre, dans le SQL Editor Supabase :
 1. `supabase/migrations/0028_securite_verrouillage_colonnes.sql`
 2. `supabase/migrations/0029_securite_badges_notations_storage.sql`
+3. `supabase/migrations/0035_securite_commission_taux_commercants.sql`
 
 ## Vérification effectuée
 
