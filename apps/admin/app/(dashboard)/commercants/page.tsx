@@ -64,6 +64,7 @@ export default function CommercantsPage() {
   const [historique, setHistorique] = useState<HistoriqueAbonnement[]>([]);
   const [configPaiement, setConfigPaiement] = useState<ConfigurationPaiementAbonnement | null>(null);
   const [chargement, setChargement] = useState(true);
+  const [erreursChargement, setErreursChargement] = useState<string[]>([]);
   const [section, setSection] = useState<Section>("liste");
 
   const [enEdition, setEnEdition] = useState<string | null>(null);
@@ -88,24 +89,32 @@ export default function CommercantsPage() {
 
   function charger() {
     setChargement(true);
-    return Promise.all([
-      getUtilisateurs(),
-      getCommercantsBruts(),
-      getCourses(),
-      getDemandesAbonnement(),
-      getHistoriqueAbonnements(),
-      getConfigurationPaiementAbonnement(),
-    ])
-      .then(([u, c, co, d, h, config]) => {
-        setUtilisateurs(u);
-        setCommercants(c);
-        setCourses(co);
-        setDemandes(d);
-        setHistorique(h);
-        setConfigPaiement(config);
-        setBrouillonConfig(config);
-      })
-      .finally(() => setChargement(false));
+    // Chaque requête est isolée (au lieu d'un seul Promise.all) : si l'une
+    // échoue (ex. table/RPC abonnements pas encore migrée côté Supabase),
+    // les autres continuent de s'afficher normalement au lieu que toute la
+    // page (y compris la liste des commerçants) reste vide sans explication.
+    const requetes: [string, () => Promise<void>][] = [
+      ["utilisateurs", () => getUtilisateurs().then(setUtilisateurs)],
+      ["commerçants", () => getCommercantsBruts().then(setCommercants)],
+      ["courses", () => getCourses().then(setCourses)],
+      ["demandes d'abonnement", () => getDemandesAbonnement().then(setDemandes)],
+      ["historique des abonnements", () => getHistoriqueAbonnements().then(setHistorique)],
+      [
+        "configuration de paiement",
+        () =>
+          getConfigurationPaiementAbonnement().then((config) => {
+            setConfigPaiement(config);
+            setBrouillonConfig(config);
+          }),
+      ],
+    ];
+    return Promise.allSettled(requetes.map(([, fn]) => fn())).then((resultats) => {
+      const echecs = requetes
+        .filter((_, i) => resultats[i]?.status === "rejected")
+        .map(([label]) => label);
+      setErreursChargement(echecs);
+      setChargement(false);
+    });
   }
 
   const clientsCommerce = useMemo(
@@ -331,6 +340,13 @@ export default function CommercantsPage() {
           </button>
         ))}
       </div>
+
+      {erreursChargement.length > 0 && (
+        <div className="mt-4 rounded-lg border border-colimo-rouge/30 bg-colimo-rouge-clair px-4 py-3 text-sm text-colimo-rouge">
+          Certaines données n&apos;ont pas pu être chargées : {erreursChargement.join(", ")}. Vérifiez que les
+          migrations Supabase des abonnements (0031 à 0034) sont bien toutes appliquées.
+        </div>
+      )}
 
       {section === "liste" && (
         <div className="mt-6 flex flex-col gap-4">
