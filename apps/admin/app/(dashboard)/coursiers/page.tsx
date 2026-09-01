@@ -19,6 +19,7 @@ import {
   reactiverCoursier,
   rejeterDossierCoursier,
   suspendreCoursier,
+  supprimerCompteUtilisateur,
   validerDossierCoursier,
 } from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
@@ -179,6 +180,28 @@ export default function CoursiersPage() {
     const motif = window.prompt("Motif de la désactivation (optionnel) :") ?? undefined;
     await desactiverCoursier(coursier.id, { motif: motif || undefined });
     await chargerTout();
+  }
+
+  async function supprimerCompte(coursier: CoursierAvecStatutEffectif) {
+    if (
+      !window.confirm(
+        `Supprimer le compte de ${nomCoursier(coursier)} ?\n\nSi ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé.\n\nCette action est irréversible.`
+      )
+    ) {
+      return;
+    }
+    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
+    try {
+      const resultat = await supprimerCompteUtilisateur(coursier.utilisateurId, motif || undefined);
+      window.alert(
+        resultat.mode === "suppression_definitive"
+          ? `Compte de ${nomCoursier(coursier)} supprimé définitivement.`
+          : `Ce compte avait de l'historique : ses données personnelles ont été anonymisées et sa connexion bloquée définitivement (l'historique de courses/paiements est conservé).`
+      );
+      await chargerTout();
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de supprimer ce compte.");
+    }
   }
 
   async function toggleBadgeActif(badge: BadgeCoursier) {
@@ -413,6 +436,12 @@ export default function CoursiersPage() {
                             Désactiver
                           </button>
                         )}
+                        <button
+                          onClick={() => supprimerCompte(c)}
+                          className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair"
+                        >
+                          Supprimer
+                        </button>
                       </div>
                     </td>
                   </tr>

@@ -50,6 +50,9 @@ import {
   getHistoriqueAbonnements as getHistoriqueAbonnementsQuery,
   getConfigurationPaiementAbonnement as getConfigurationPaiementAbonnementQuery,
   patchConfigurationPaiementAbonnement as patchConfigurationPaiementAbonnementQuery,
+  getHistoriqueSuppressionsComptes as getHistoriqueSuppressionsComptesQuery,
+  type HistoriqueSuppressionCompte,
+  type ResultatSuppressionCompte,
   type ActionHistoriqueAbonnement,
   type ActionHistoriqueCoursier,
   type BadgeCoursier,
@@ -424,4 +427,31 @@ export async function ajouterCommentaireInterne(coursierId: string, commentaire:
 
 export function recalculerBadgesEtNiveau(utilisateurId: string): Promise<void> {
   return recalculerBadgesEtNiveauQuery(createClient(), utilisateurId);
+}
+
+// --- Suppression de compte utilisateur ----------------------------------
+//
+// Passe par une route serveur (app/api/utilisateurs/[id]/route.ts) et non
+// par une requête Supabase directe : révoquer l'accès à Supabase Auth
+// (suppression réelle ou bannissement) nécessite la clé service-role, qui
+// ne doit jamais atteindre le navigateur.
+
+export async function supprimerCompteUtilisateur(
+  utilisateurId: string,
+  motif?: string
+): Promise<ResultatSuppressionCompte> {
+  const reponse = await fetch(`/api/utilisateurs/${utilisateurId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ motif: motif ?? null }),
+  });
+  const corps = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) {
+    throw new Error(corps?.erreur || "Impossible de supprimer ce compte.");
+  }
+  return corps as ResultatSuppressionCompte;
+}
+
+export function getHistoriqueSuppressionsComptes(): Promise<HistoriqueSuppressionCompte[]> {
+  return getHistoriqueSuppressionsComptesQuery(createClient());
 }
