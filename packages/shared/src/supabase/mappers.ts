@@ -36,6 +36,7 @@ import type { BadgeCoursier, BadgeCoursierAttribue, ModeAttributionBadge, RegleB
 import type { NiveauCoursier } from "../coursiers/niveaux/types";
 import type { ActionHistoriqueCoursier, HistoriqueCoursier } from "../coursiers/historique/types";
 import type { HistoriqueAnnulation, RoleAnnulation } from "../annulations/types";
+import type { HistoriqueSuppressionCompte } from "../comptes/types";
 import type { PackPayant } from "../abonnements/types";
 import type { StatutDemandeAbonnement, DemandeAbonnement } from "../abonnements/demandes/types";
 import type { ActionHistoriqueAbonnement, HistoriqueAbonnement } from "../abonnements/historique/types";
@@ -185,6 +186,18 @@ export interface HistoriqueAnnulationRow {
   created_at: string;
 }
 
+export interface HistoriqueSuppressionCompteRow {
+  id: string;
+  utilisateur_id: string;
+  nom_original: string;
+  telephone_original: string;
+  type_compte: UserType;
+  mode: "anonymisation" | "suppression_definitive";
+  administrateur_id: string;
+  motif: string | null;
+  created_at: string;
+}
+
 export interface NotationRow {
   id: string;
   course_id: string;
@@ -317,6 +330,20 @@ export function historiqueAnnulationFromRow(row: HistoriqueAnnulationRow): Histo
     commentaire: row.commentaire,
     statutPrecedent: row.statut_precedent,
     nouveauStatut: row.nouveau_statut,
+    createdAt: row.created_at,
+  };
+}
+
+export function historiqueSuppressionCompteFromRow(row: HistoriqueSuppressionCompteRow): HistoriqueSuppressionCompte {
+  return {
+    id: row.id,
+    utilisateurId: row.utilisateur_id,
+    nomOriginal: row.nom_original,
+    telephoneOriginal: row.telephone_original,
+    typeCompte: row.type_compte,
+    mode: row.mode,
+    administrateurId: row.administrateur_id,
+    motif: row.motif,
     createdAt: row.created_at,
   };
 }

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import StatutBadge from "@/components/StatutBadge";
-import { getUtilisateurs, getCourses, updateUtilisateur } from "@/lib/api";
+import { getUtilisateurs, getCourses, updateUtilisateur, supprimerCompteUtilisateur } from "@/lib/api";
 import { ZONE_LABELS, type Course, type Utilisateur, type Zone } from "@colimo/shared";
 
 type FiltreType = "tous" | "particulier" | "commerce";
@@ -65,6 +65,31 @@ export default function ClientsPage() {
     const nouveauStatut = client.statut === "suspendu" ? "actif" : "suspendu";
     const misAJour = await updateUtilisateur(client.id, { statut: nouveauStatut });
     setUtilisateurs((prev) => prev.map((u) => (u.id === client.id ? misAJour : u)));
+  }
+
+  async function supprimerCompte(client: Utilisateur) {
+    if (
+      !window.confirm(
+        `Supprimer le compte de ${client.nom} ?\n\nSi ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé.\n\nCette action est irréversible.`
+      )
+    ) {
+      return;
+    }
+    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
+    try {
+      const resultat = await supprimerCompteUtilisateur(client.id, motif || undefined);
+      if (resultat.mode === "suppression_definitive") {
+        setUtilisateurs((prev) => prev.filter((u) => u.id !== client.id));
+        window.alert(`Compte de ${client.nom} supprimé définitivement.`);
+      } else if (resultat.utilisateur) {
+        setUtilisateurs((prev) => prev.map((u) => (u.id === client.id ? resultat.utilisateur! : u)));
+        window.alert(
+          `Ce compte avait de l'historique : ses données personnelles ont été anonymisées et sa connexion bloquée définitivement (l'historique de courses/paiements est conservé).`
+        );
+      }
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de supprimer ce compte.");
+    }
   }
 
   return (
@@ -199,6 +224,12 @@ export default function ClientsPage() {
                           className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                         >
                           {client.statut === "suspendu" ? "Réactiver" : "Suspendre"}
+                        </button>
+                        <button
+                          onClick={() => supprimerCompte(client)}
+                          className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair"
+                        >
+                          Supprimer
                         </button>
                       </div>
                     )}

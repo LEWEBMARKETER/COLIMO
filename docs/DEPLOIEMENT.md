@@ -4,11 +4,15 @@
 
 - Projet Vercel : `colimo-admin` (équipe `lewebmarketer-1318`)
 - Root Directory : `apps/admin`
-- Branche de production à utiliser : `claude/colimo-project-analysis-tg9vqv`
-  (à changer vers `main` une fois la branche fusionnée)
+- Production Branch : `main` (déploiement automatique à chaque fusion)
 - Variables d'environnement :
   - `NEXT_PUBLIC_SUPABASE_URL` = `https://cynivhfxbvbugxeirfba.supabase.co`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = clé publique du projet Supabase
+  - `SUPABASE_SERVICE_ROLE_KEY` = clé secrète `service_role` du projet
+    Supabase (**sans** préfixe `NEXT_PUBLIC_` — jamais exposée au
+    navigateur) — nécessaire à la suppression de compte utilisateur
+    (`app/api/utilisateurs/[id]/route.ts`), seule route serveur du projet.
+    Voir `docs/SUPPRESSION_COMPTES.md`.
 
 ## App mobile / PWA (Vercel)
 
