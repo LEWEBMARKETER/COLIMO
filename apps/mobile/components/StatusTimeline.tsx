@@ -1,6 +1,11 @@
 import { Text, View } from "react-native";
 import { COURSE_STATUS_LABELS, type Course, type CourseStatus } from "@colimo/shared";
 
+// Pick plutôt que Course entier : réutilisé aussi par l'écran de suivi
+// public (destinataire sans compte), qui ne reçoit qu'une vue réduite de la
+// course (packages/shared/src/suivi/types.ts) — pas de prix/paiement/etc.
+type CourseAvecEtapes = Pick<Course, "statut" | "createdAt" | "accepteeAt" | "recupereeAt" | "livreeAt" | "confirmeeAt">;
+
 const ETAPES: CourseStatus[] = ["en_attente", "acceptee", "retrait", "en_cours", "livree", "confirmee"];
 
 function formatHeure(iso: string | null): string | null {
@@ -21,7 +26,7 @@ function formatDuree(debutMs: number, finMs: number): string {
   return `${heures} h${reste ? ` ${reste} min` : ""}`;
 }
 
-function timestampEtape(course: Course, etape: CourseStatus): string | null {
+function timestampEtape(course: CourseAvecEtapes, etape: CourseStatus): string | null {
   switch (etape) {
     case "en_attente":
       return course.createdAt;
@@ -38,7 +43,7 @@ function timestampEtape(course: Course, etape: CourseStatus): string | null {
   }
 }
 
-export default function StatusTimeline({ course }: { course: Course }) {
+export default function StatusTimeline({ course }: { course: CourseAvecEtapes }) {
   const indexActuel = ETAPES.indexOf(course.statut);
   const debut = new Date(course.createdAt).getTime();
   const fin = course.confirmeeAt

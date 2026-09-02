@@ -124,6 +124,7 @@ export interface CourseRow {
   motif_annulation: string | null;
   commentaire_annulation: string | null;
   statut_avant_litige: CourseStatus | null;
+  token_suivi: string;
   created_at: string;
 }
 
@@ -298,6 +299,7 @@ export function courseFromRow(row: CourseRow): Course {
     motifAnnulation: row.motif_annulation,
     commentaireAnnulation: row.commentaire_annulation,
     statutAvantLitige: row.statut_avant_litige,
+    tokenSuivi: row.token_suivi,
     createdAt: row.created_at,
   };
 }

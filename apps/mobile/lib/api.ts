@@ -8,6 +8,7 @@ import {
   getCommercantsBruts as getCommercantsBrutsQuery,
   getCommunications as getCommunicationsQuery,
   getCourse as getCourseQuery,
+  getCourseSuiviPublic as getCourseSuiviPublicQuery,
   getCoursierByUtilisateurId as getCoursierByUtilisateurIdQuery,
   getCoursiers as getCoursiersQuery,
   getCourses as getCoursesQuery,
@@ -61,6 +62,7 @@ import {
   type ConfigurationPaiementAbonnement,
   type Coursier,
   type Course,
+  type CourseSuiviPublic,
   type CourseStatus,
   type DemandeAbonnement,
   type InvitationCommerce,
@@ -148,6 +150,17 @@ export function getCourses(params?: {
 
 export function getCourse(id: string): Promise<Course> {
   return getCourseQuery(supabase, id);
+}
+
+// Accessible sans session (le destinataire n'a en général aucun compte
+// COLIMO) — cf. app/suivi/[token].tsx.
+export function getCourseSuiviPublic(token: string): Promise<CourseSuiviPublic | null> {
+  return getCourseSuiviPublicQuery(supabase, token);
+}
+
+export function lienSuiviPublic(tokenSuivi: string): string {
+  const origine = typeof window !== "undefined" ? window.location.origin : "https://colimo.online";
+  return `${origine}/suivi/${tokenSuivi}`;
 }
 
 export function creerCourse(body: {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { MODE_PAIEMENT_LABELS, formatFCFA, peutAnnulerCourse, type Coursier, type Course, type Utilisateur } from "@colimo/shared";
@@ -12,7 +12,7 @@ import NoteEtoiles from "@/components/NoteEtoiles";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
-import { getCourse, getCoursierByUtilisateurId, getUtilisateur, patchCourse, recalculerBadgesEtNiveau } from "@/lib/api";
+import { getCourse, getCoursierByUtilisateurId, getUtilisateur, lienSuiviPublic, patchCourse, recalculerBadgesEtNiveau } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
 
@@ -138,7 +138,19 @@ export default function TrackScreen() {
       <BandeauStatut statut={course.statut} numeroCommande={course.numeroCommande} />
 
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}>
-        <Text className="font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="flex-1 font-texte text-colimo-neutre-fonce/70">{course.typeColis}</Text>
+          <Text
+            onPress={() =>
+              Share.share({
+                message: `Suivez ma livraison COLIMO (${course.numeroCommande}) en temps réel : ${lienSuiviPublic(course.tokenSuivi)}`,
+              })
+            }
+            className="font-texte-medium text-xs text-colimo-rouge"
+          >
+            Partager le suivi
+          </Text>
+        </View>
 
         <Carte sombre className="mt-3">
           <View className="flex-row items-end justify-between">
