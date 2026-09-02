@@ -56,6 +56,10 @@ export default function LoginScreen() {
 
         <Bouton label="Se connecter" onPress={handleConnexion} chargement={envoiEnCours} />
 
+        <Pressable onPress={() => router.push("/(auth)/forgot-password")} className="mt-4">
+          <Text className="text-center font-texte-medium text-sm text-colimo-rouge">Mot de passe oublié ?</Text>
+        </Pressable>
+
         <View className="mt-8 gap-2">
           <Pressable onPress={() => router.push("/(auth)/register-client")}>
             <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/70">

@@ -10,6 +10,7 @@ export * from "./coursiers";
 export * from "./annulations";
 export * from "./abonnements";
 export * from "./comptes";
+export * from "./motDePasse";
 export * from "./otp";
 export * from "./paiements";
 export * from "./supabase/client";

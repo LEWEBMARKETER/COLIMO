@@ -444,6 +444,25 @@ export async function connecter(email: string, password: string): Promise<void> 
   if (error) throw error;
 }
 
+// Ne révèle jamais si l'adresse correspond à un compte : Supabase répond
+// systématiquement sans erreur pour ce point d'entrée (par conception), on
+// ne fait que relayer une éventuelle vraie panne (réseau, service HS).
+export async function demanderReinitialisationMotDePasse(email: string): Promise<void> {
+  const origine = typeof window !== "undefined" ? window.location.origin : "https://colimo.online";
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origine}/reset-password`,
+  });
+  if (error) throw error;
+}
+
+// N'est utilisable qu'avec la session de récupération temporaire établie
+// par le lien reçu par e-mail (cf. app/(auth)/reset-password.tsx) — ne crée
+// ni ne modifie aucune autre donnée du profil.
+export async function mettreAJourMotDePasse(nouveauMotDePasse: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password: nouveauMotDePasse });
+  if (error) throw error;
+}
+
 export async function inscrireClient(input: {
   email: string;
   password: string;
