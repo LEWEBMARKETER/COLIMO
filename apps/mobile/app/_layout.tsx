@@ -1,8 +1,10 @@
 import "../global.css";
+import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { Stack, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
 import { AuthProvider } from "@/lib/AuthContext";
+import SplashAnimee from "@/components/SplashAnimee";
 
 // Pages vitrine : elles gèrent elles-mêmes leur mise en page desktop (nav large,
 // sections en colonnes) et ne doivent donc pas être bridées dans le cadre étroit
@@ -24,6 +26,11 @@ export default function RootLayout() {
     Inter_400Regular,
     Inter_500Medium,
   });
+  // Rejoue à chaque chargement de page (ouverture de l'app installée sur
+  // l'écran d'accueil, ou rechargement) — ce composant racine n'est monté
+  // qu'une fois par cycle de vie de la page, jamais lors de la navigation
+  // interne entre écrans.
+  const [splashTerminee, setSplashTerminee] = useState(false);
 
   if (!policesChargees) {
     return (
@@ -35,21 +42,23 @@ export default function RootLayout() {
 
   const vitrine = PAGES_VITRINE.includes(pathname);
 
-  if (vitrine) {
-    return (
-      <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-      </AuthProvider>
-    );
-  }
-
+  // AuthProvider est monté dès que les polices sont prêtes, pas seulement
+  // après le splash : la session Supabase se charge ainsi en parallèle de
+  // l'animation plutôt qu'après coup, pour éviter un deuxième temps de
+  // chargement (l'écran /index) juste après l'écran de lancement.
   return (
     <AuthProvider>
-      <View className="flex-1 bg-colimo-neutre-clair md:items-center md:py-8">
-        <View className="w-full flex-1 bg-colimo-fond md:max-w-[480px] md:rounded-[28px] md:shadow-2xl md:overflow-hidden">
-          <Stack screenOptions={{ headerShown: false }} />
+      {!splashTerminee ? (
+        <SplashAnimee onTermine={() => setSplashTerminee(true)} />
+      ) : vitrine ? (
+        <Stack screenOptions={{ headerShown: false }} />
+      ) : (
+        <View className="flex-1 bg-colimo-neutre-clair md:items-center md:py-8">
+          <View className="w-full flex-1 bg-colimo-fond md:max-w-[480px] md:rounded-[28px] md:shadow-2xl md:overflow-hidden">
+            <Stack screenOptions={{ headerShown: false }} />
+          </View>
         </View>
-      </View>
+      )}
     </AuthProvider>
   );
 }
