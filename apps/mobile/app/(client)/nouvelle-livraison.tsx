@@ -22,7 +22,14 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
-import { creerCourse, getDestinatairesCommerce, getMonCommerce, getPointsDepartCommerce, initierPaiementManuel } from "@/lib/api";
+import {
+  creerCourse,
+  getDestinatairesCommerce,
+  getMonCommerce,
+  getPointsDepartCommerce,
+  initierPaiementManuel,
+  lienSuiviPublic,
+} from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
 
@@ -174,6 +181,7 @@ export default function NouvelleLivraisonScreen() {
         variables: {
           nom_client: course.nomDestinataire ?? "client",
           numero_commande: course.numeroCommande,
+          lien_suivi: lienSuiviPublic(course.tokenSuivi),
         },
       });
       await notifierEvenement("notification_livraison_creee", {

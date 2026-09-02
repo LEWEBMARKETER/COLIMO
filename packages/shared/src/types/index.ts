@@ -284,6 +284,7 @@ export interface Course {
   motifAnnulation: string | null;
   commentaireAnnulation: string | null;
   statutAvantLitige: CourseStatus | null;
+  tokenSuivi: string;
   createdAt: string;
 }
 

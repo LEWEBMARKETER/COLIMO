@@ -29,7 +29,7 @@ import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import Stepper from "@/components/ui/Stepper";
-import { creerCourse, getCodePromoParCode, initierPaiementManuel } from "@/lib/api";
+import { creerCourse, getCodePromoParCode, initierPaiementManuel, lienSuiviPublic } from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -201,6 +201,7 @@ export default function PublishScreen() {
         variables: {
           nom_client: course.nomDestinataire ?? "client",
           numero_commande: course.numeroCommande,
+          lien_suivi: lienSuiviPublic(course.tokenSuivi),
         },
       });
       await notifierEvenement("notification_livraison_creee", {
