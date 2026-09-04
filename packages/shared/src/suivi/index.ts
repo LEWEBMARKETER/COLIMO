@@ -28,6 +28,11 @@ interface CourseSuiviPublicRow {
   coursier_prenom: string | null;
   coursier_telephone: string | null;
   coursier_note: number | null;
+  coursier_latitude: number | null;
+  coursier_longitude: number | null;
+  coursier_position_maj_at: string | null;
+  distance_restante_m: number | null;
+  eta_secondes: number | null;
   acceptee_at: string | null;
   recuperee_at: string | null;
   livree_at: string | null;
@@ -61,6 +66,11 @@ function courseSuiviPublicFromRow(row: CourseSuiviPublicRow): CourseSuiviPublic 
     coursierPrenom: row.coursier_prenom,
     coursierTelephone: row.coursier_telephone,
     coursierNote: row.coursier_note,
+    coursierLatitude: row.coursier_latitude,
+    coursierLongitude: row.coursier_longitude,
+    coursierPositionMajAt: row.coursier_position_maj_at,
+    distanceRestanteM: row.distance_restante_m,
+    etaSecondes: row.eta_secondes,
     accepteeAt: row.acceptee_at,
     recupereeAt: row.recuperee_at,
     livreeAt: row.livree_at,
@@ -71,10 +81,12 @@ function courseSuiviPublicFromRow(row: CourseSuiviPublicRow): CourseSuiviPublic 
 
 // Accessible sans session (le destinataire n'a en général aucun compte
 // COLIMO) — la fonction RPC get_course_suivi_public est security definer
-// et ne renvoie que la ligne correspondant au jeton, jamais un accès plus
-// large à la table courses.
-export async function getCourseSuiviPublic(client: SupabaseClient, token: string): Promise<CourseSuiviPublic | null> {
-  const { data, error } = await client.rpc("get_course_suivi_public", { p_token: token }).maybeSingle();
+// et ne renvoie que la ligne correspondant au code de suivi, jamais un
+// accès plus large à la table courses. `code` est le code court affiché/
+// partagé (ex. CLM-X7P4-K92M, courses.code_suivi) — pas l'ancien jeton uuid
+// (token_suivi, conservé en base mais plus utilisé côté application).
+export async function getCourseSuiviPublic(client: SupabaseClient, code: string): Promise<CourseSuiviPublic | null> {
+  const { data, error } = await client.rpc("get_course_suivi_public", { p_code: code }).maybeSingle();
   if (error) throw error;
   return data ? courseSuiviPublicFromRow(data as CourseSuiviPublicRow) : null;
 }

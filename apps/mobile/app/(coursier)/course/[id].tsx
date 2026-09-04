@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import * as Location from "expo-location";
 import {
   COURSE_STATUS_LABELS,
+  DEPLACEMENT_MIN_ENVOI_POSITION_M,
+  INTERVALLE_ENVOI_POSITION_MS,
   MODE_PAIEMENT_LABELS,
   formatFCFA,
   type Course,
@@ -18,7 +21,7 @@ import NotationForm from "@/components/NotationForm";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
-import { getCourse, patchCourse } from "@/lib/api";
+import { getCourse, patchCourse, recalculerEtaCourse, upsertPositionCoursier } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
 
@@ -29,6 +32,7 @@ const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
 };
 
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
+const STATUTS_ACTIFS = new Set(["acceptee", "retrait", "en_cours"]);
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,6 +44,63 @@ export default function CourseDetailScreen() {
     if (!id) return;
     getCourse(id as string).then(setCourse);
   }, [id]);
+
+  // Transmission de la position GPS — uniquement pendant une course active,
+  // jamais en arrière-plan une fois celle-ci terminée/annulée. Fréquence
+  // native (watchPositionAsync) plutôt qu'un setInterval manuel : au moins
+  // toutes les 12s, ou plus tôt en cas de déplacement d'au moins 30m —
+  // cf. packages/shared/src/positions/types.ts.
+  useEffect(() => {
+    if (!session || !course || !STATUTS_ACTIFS.has(course.statut)) return;
+    const courseId = course.id;
+
+    let souscription: Location.LocationSubscription | null = null;
+    let annule = false;
+
+    async function demarrerSuivi() {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted" || annule) return;
+
+      souscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: INTERVALLE_ENVOI_POSITION_MS,
+          distanceInterval: DEPLACEMENT_MIN_ENVOI_POSITION_M,
+        },
+        async (position) => {
+          if (annule || !session) return;
+          try {
+            await upsertPositionCoursier({
+              coursierId: session.user.id,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              precisionM: position.coords.accuracy ?? null,
+              vitesseKmh:
+                position.coords.speed != null && position.coords.speed >= 0
+                  ? position.coords.speed * 3.6
+                  : null,
+              capDegres: position.coords.heading ?? null,
+            });
+            // Le serveur applique lui-même le throttle (temps/déplacement) : un
+            // appel fréquent ici ne déclenche pas systématiquement un appel
+            // Mapbox Directions payant, cf. api/mapbox/directions.
+            const misAJour = await recalculerEtaCourse(courseId);
+            if (!annule) setCourse(misAJour);
+          } catch {
+            // Une coupure réseau ponctuelle ne doit jamais interrompre la course.
+          }
+        }
+      );
+    }
+
+    demarrerSuivi();
+
+    return () => {
+      annule = true;
+      souscription?.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course?.id, course?.statut, session?.user.id]);
 
   const EVENEMENT_PAR_STATUT: Partial<Record<CourseStatus, EvenementCommunication>> = {
     retrait: "colis_recupere",

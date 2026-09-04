@@ -285,7 +285,33 @@ export interface Course {
   commentaireAnnulation: string | null;
   statutAvantLitige: CourseStatus | null;
   tokenSuivi: string;
+  // Code court lisible (ex. CLM-X7P4-K92M) utilisé pour le lien de suivi
+  // public envoyé au destinataire — remplace tokenSuivi côté application
+  // (colonne conservée en base, plus utilisée par le code depuis 0038).
+  codeSuivi: string;
+  // Distance restante / ETA mis en cache par la fonction serveur Mapbox,
+  // recalculés uniquement de façon ponctuelle (throttle) — jamais à
+  // chaque position GPS. Null tant qu'aucun calcul n'a encore eu lieu.
+  distanceRestanteM: number | null;
+  etaSecondes: number | null;
+  etaCalculeAt: string | null;
+  // "mapbox" si issu d'un appel Directions réussi, "estimation" si calculé
+  // en mode dégradé (Mapbox indisponible — distance à vol d'oiseau).
+  etaSource: string | null;
   createdAt: string;
+}
+
+// Position courante d'un coursier (une ligne par coursier, écrasée à
+// chaque mise à jour) — jamais transmise en dehors d'une course active,
+// cf. supabase/migrations/0038_geolocalisation_coursiers.sql.
+export interface PositionCoursier {
+  coursierId: string;
+  latitude: number;
+  longitude: number;
+  precisionM: number | null;
+  vitesseKmh: number | null;
+  capDegres: number | null;
+  majAt: string;
 }
 
 export type LitigeMotif =

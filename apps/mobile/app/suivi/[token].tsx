@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import { CATEGORIE_COLIS_EMOJIS, type CourseSuiviPublic } from "@colimo/shared";
+import { CATEGORIE_COLIS_EMOJIS, formatDistanceM, formatDureeSecondes, type CourseSuiviPublic } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
 import CarteItineraire from "@/components/CarteItineraire";
 import BandeauStatut from "@/components/BandeauStatut";
@@ -93,7 +93,22 @@ export default function SuiviPublicScreen() {
               <CarteItineraire
                 depart={{ latitude: course.latitudeDepart, longitude: course.longitudeDepart }}
                 arrivee={{ latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }}
+                positionCoursier={
+                  course.coursierLatitude != null && course.coursierLongitude != null
+                    ? { latitude: course.coursierLatitude, longitude: course.coursierLongitude }
+                    : null
+                }
               />
+              {course.coursierLatitude != null && (course.distanceRestanteM != null || course.etaSecondes != null) && (
+                <View className="-mt-2 mb-4 flex-row items-center justify-between rounded-2xl bg-colimo-rouge-clair px-4 py-3">
+                  <Text className="font-texte-medium text-sm text-colimo-rouge">
+                    {course.distanceRestanteM != null ? formatDistanceM(course.distanceRestanteM) : "—"} restants
+                  </Text>
+                  <Text className="font-texte-medium text-sm text-colimo-rouge">
+                    {course.etaSecondes != null ? `~${formatDureeSecondes(course.etaSecondes)}` : "—"}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 

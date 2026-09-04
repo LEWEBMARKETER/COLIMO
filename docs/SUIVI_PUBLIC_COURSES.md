@@ -1,3 +1,9 @@
+> **Mise à jour (0038)** : le lien public utilise désormais un code court
+> lisible (`courses.code_suivi`, ex. `CLM-X7P4-K92M`) au lieu du jeton uuid
+> `token_suivi` décrit ci-dessous (conservé en base, plus utilisé). La
+> position du coursier, la distance restante et l'ETA ont aussi été
+> ajoutées à ce même écran — voir `docs/GEOLOCALISATION.md` pour le détail.
+
 # Suivi public d'une course par le destinataire
 
 Le destinataire d'un colis (celui qui le reçoit) n'a, la plupart du temps,

@@ -12,6 +12,7 @@ import type {
   ModePaiement,
   Notation,
   PaymentOperator,
+  PositionCoursier,
   PieceIdentiteType,
   QuiPaie,
   ResolutionLitige,
@@ -125,7 +126,22 @@ export interface CourseRow {
   commentaire_annulation: string | null;
   statut_avant_litige: CourseStatus | null;
   token_suivi: string;
+  code_suivi: string;
+  distance_restante_m: number | null;
+  eta_secondes: number | null;
+  eta_calcule_at: string | null;
+  eta_source: string | null;
   created_at: string;
+}
+
+export interface PositionCoursierRow {
+  coursier_id: string;
+  latitude: number;
+  longitude: number;
+  precision_m: number | null;
+  vitesse_kmh: number | null;
+  cap_degres: number | null;
+  maj_at: string;
 }
 
 export interface CommercantRow {
@@ -300,7 +316,24 @@ export function courseFromRow(row: CourseRow): Course {
     commentaireAnnulation: row.commentaire_annulation,
     statutAvantLitige: row.statut_avant_litige,
     tokenSuivi: row.token_suivi,
+    codeSuivi: row.code_suivi,
+    distanceRestanteM: row.distance_restante_m,
+    etaSecondes: row.eta_secondes,
+    etaCalculeAt: row.eta_calcule_at,
+    etaSource: row.eta_source,
     createdAt: row.created_at,
+  };
+}
+
+export function positionCoursierFromRow(row: PositionCoursierRow): PositionCoursier {
+  return {
+    coursierId: row.coursier_id,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    precisionM: row.precision_m,
+    vitesseKmh: row.vitesse_kmh,
+    capDegres: row.cap_degres,
+    majAt: row.maj_at,
   };
 }
 
