@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Share, Text, View } from "react-native";
+import { ActivityIndicator, Linking, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 import { router, useLocalSearchParams } from "expo-router";
 import {
+  COURSE_STATUS_LABELS,
   MODE_PAIEMENT_LABELS,
   formatDistanceM,
   formatDureeSecondes,
@@ -38,9 +41,10 @@ import { notifierEvenement } from "@/lib/communication";
 
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
 const STATUTS_AVEC_POSITION = new Set(["acceptee", "retrait", "en_cours"]);
+const STATUTS_TERMINAUX = new Set(["livree", "confirmee", "annulee", "retournee"]);
 
 export default function TrackScreen() {
-  const { session } = useAuth();
+  const { session, utilisateur } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [course, setCourse] = useState<Course | null>(null);
   const [confirmationEnCours, setConfirmationEnCours] = useState(false);
@@ -48,6 +52,36 @@ export default function TrackScreen() {
   const [coursier, setCoursier] = useState<Coursier | null>(null);
   const [coursierUtilisateur, setCoursierUtilisateur] = useState<Utilisateur | null>(null);
   const [positionCoursier, setPositionCoursier] = useState<PositionCoursier | null>(null);
+  const [recuEnCours, setRecuEnCours] = useState(false);
+
+  async function telechargerRecu() {
+    if (!course) return;
+    setRecuEnCours(true);
+    try {
+      const html = `
+        <html><body style="font-family: sans-serif; padding: 24px;">
+          <h2 style="color:#C41E24;">COLIMO — Reçu de livraison</h2>
+          <p><strong>N° commande :</strong> ${course.numeroCommande}</p>
+          <p><strong>Date :</strong> ${new Date(course.createdAt).toLocaleString("fr-FR")}</p>
+          <p><strong>Statut :</strong> ${COURSE_STATUS_LABELS[course.statut]}</p>
+          <hr />
+          <p><strong>Récupération :</strong> ${course.adresseDepart}</p>
+          <p><strong>Livraison :</strong> ${course.adresseArrivee}${course.nomDestinataire ? ` — ${course.nomDestinataire}` : ""}</p>
+          <p><strong>Colis :</strong> ${course.typeColis}</p>
+          <hr />
+          <p><strong>Montant :</strong> ${formatFCFA(course.prix)}</p>
+          <p><strong>Mode de paiement :</strong> ${MODE_PAIEMENT_LABELS[course.modePaiement]}</p>
+        </body></html>`;
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: "application/pdf", UTI: "com.adobe.pdf" });
+      }
+    } catch {
+      // Le reçu est un complément — une erreur ici ne doit rien bloquer d'autre.
+    } finally {
+      setRecuEnCours(false);
+    }
+  }
 
   async function confirmerReception() {
     if (!course || !session) return;
@@ -232,17 +266,27 @@ export default function TrackScreen() {
           )}
 
         {coursierUtilisateur && (
-          <View className="mt-3 flex-row items-center justify-between rounded-2xl border border-colimo-neutre-clair bg-white p-4">
-            <View>
-              <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
-                Votre coursier
-              </Text>
-              <Text className="mt-0.5 font-texte-medium text-colimo-neutre-fonce">
-                {coursierUtilisateur.prenom ? `${coursierUtilisateur.prenom} ` : ""}
-                {coursierUtilisateur.nom}
-              </Text>
+          <View className="mt-3 rounded-2xl border border-colimo-neutre-clair bg-white p-4">
+            <View className="flex-row items-center justify-between">
+              <View>
+                <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
+                  Votre coursier
+                </Text>
+                <Text className="mt-0.5 font-texte-medium text-colimo-neutre-fonce">
+                  {coursierUtilisateur.prenom ? `${coursierUtilisateur.prenom} ` : ""}
+                  {coursierUtilisateur.nom}
+                </Text>
+              </View>
+              <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
             </View>
-            <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
+            {coursierUtilisateur.telephone && !contactsFermes && (
+              <Bouton
+                label={`Appeler ${coursierUtilisateur.prenom ?? coursierUtilisateur.nom}`}
+                variante="contour"
+                onPress={() => Linking.openURL(`tel:${coursierUtilisateur.telephone}`)}
+                className="mt-3 py-2.5"
+              />
+            )}
           </View>
         )}
 
@@ -332,6 +376,26 @@ export default function TrackScreen() {
               className="py-4"
             />
           )}
+        </View>
+      )}
+
+      {STATUTS_TERMINAUX.has(course.statut) && (
+        <View className="border-t border-colimo-neutre-clair bg-colimo-fond px-6 pb-2 pt-3">
+          {utilisateur?.typeClient === "commerce" && (
+            <Bouton
+              label="↻ Refaire cette livraison"
+              variante="contour"
+              onPress={() => router.push(`/(client)/nouvelle-livraison?depuisCourseId=${course.id}`)}
+              className="py-3"
+            />
+          )}
+          <Bouton
+            label="Télécharger le reçu"
+            variante="contour"
+            onPress={telechargerRecu}
+            chargement={recuEnCours}
+            className="mt-2 py-3"
+          />
         </View>
       )}
     </SafeAreaView>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   CATEGORIE_COLIS_EMOJIS,
   CATEGORIE_COLIS_LABELS,
@@ -24,6 +24,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import {
   creerCourse,
+  getCourse,
   getDestinatairesCommerce,
   getMonCommerce,
   getPointsDepartCommerce,
@@ -64,6 +65,7 @@ function TitreSection({ children }: { children: string }) {
 
 export default function NouvelleLivraisonScreen() {
   const { session, utilisateur } = useAuth();
+  const { depuisCourseId } = useLocalSearchParams<{ depuisCourseId?: string }>();
   const [depart, setDepart] = useState<Zone | null>(utilisateur?.zone ?? null);
   const [adresseCommerce, setAdresseCommerce] = useState("Adresse du commerce");
   const [arrivee, setArrivee] = useState<Zone | null>(null);
@@ -104,6 +106,28 @@ export default function NouvelleLivraisonScreen() {
       }
     });
   }, [session]);
+
+  // "↻ Refaire cette livraison" (depuis track/[id].tsx, course terminée) —
+  // préremplit les champs destinataire/livraison à partir de l'ancienne
+  // course. Le commerçant vérifie puis confirme, rien n'est publié
+  // automatiquement.
+  useEffect(() => {
+    if (!depuisCourseId) return;
+    getCourse(depuisCourseId).then((c) => {
+      setArrivee(c.zoneArrivee);
+      setAdresseArrivee(c.adresseArrivee);
+      setRepereArrivee(c.repereArrivee ?? "");
+      if (c.latitudeArrivee !== undefined && c.longitudeArrivee !== undefined) {
+        setCoordArrivee({ latitude: c.latitudeArrivee, longitude: c.longitudeArrivee });
+      }
+      setNomDestinataire(c.nomDestinataire ?? "");
+      setTelephoneDestinataire(c.telephoneDestinataire ?? "");
+      setNatureCommande(c.typeColis);
+      setInstructions(c.instructions ?? "");
+      if (c.poidsEstime != null) setPoidsEstime(String(c.poidsEstime));
+      if (c.valeurDeclaree != null) setMontant(String(c.valeurDeclaree));
+    });
+  }, [depuisCourseId]);
 
   function choisirPointDepart(id: string) {
     const point = pointsDepart.find((p) => p.id === id);
