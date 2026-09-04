@@ -3,12 +3,13 @@ import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { MODE_PAIEMENT_LABELS, ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
+import HistoriqueCommerce from "@/components/HistoriqueCommerce";
 import StatutChip from "@/components/ui/StatutChip";
 import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function HistoriqueClientScreen() {
-  const { session } = useAuth();
+  const { session, utilisateur } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [chargement, setChargement] = useState(true);
 
@@ -18,6 +19,19 @@ export default function HistoriqueClientScreen() {
       .then(setCourses)
       .finally(() => setChargement(false));
   }, [session]);
+
+  // Le commerce dispose d'un centre de suivi dédié (filtres par statut,
+  // coursier, ETA) — bien plus riche que la simple liste ci-dessous, gardée
+  // telle quelle pour les particuliers.
+  if (utilisateur?.typeClient === "commerce") {
+    return (
+      <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
+        <View className="flex-1 px-6 py-6">
+          <HistoriqueCommerce />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (chargement) {
     return (

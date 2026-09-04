@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { COURSE_STATUS_LABELS, formatFCFA, type CommerceDestinataire, type Course } from "@colimo/shared";
+import { router } from "expo-router";
+import {
+  COURSE_STATUS_LABELS,
+  calculerPlanEffectif,
+  formatFCFA,
+  type Commercant,
+  type CommerceDestinataire,
+  type Course,
+} from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
@@ -66,6 +74,7 @@ function DestinataireCarte({ destinataire, onSupprimer }: { destinataire: Commer
 
 export default function DestinatairesScreen() {
   const { session } = useAuth();
+  const [commerce, setCommerce] = useState<Commercant | null>(null);
   const [commerceId, setCommerceId] = useState<string | null>(null);
   const [destinataires, setDestinataires] = useState<CommerceDestinataire[]>([]);
   const [nom, setNom] = useState("");
@@ -79,10 +88,31 @@ export default function DestinatairesScreen() {
     if (!session) return;
     getMonCommerce(session.user.id).then((c) => {
       if (!c) return;
+      setCommerce(c);
       setCommerceId(c.id);
       getDestinatairesCommerce(c.id).then(setDestinataires);
     });
   }, [session]);
+
+  const planEffectif = commerce ? calculerPlanEffectif(commerce) : "gratuit";
+
+  if (commerce && planEffectif === "gratuit") {
+    return (
+      <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
+        <View className="flex-1 items-center justify-center px-8">
+          <Text className="text-center font-titre text-lg text-colimo-neutre-fonce">🔒 Pack Starter</Text>
+          <Text className="mt-2 text-center font-texte text-sm text-colimo-neutre-fonce/60">
+            Enregistrez jusqu&apos;à 100 destinataires pour créer vos livraisons en quelques secondes.
+          </Text>
+          <Bouton
+            label="Découvrir l'offre"
+            onPress={() => router.push("/(client)/commerce/decouvrir?feature=carnet_destinataires")}
+            className="mt-6"
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   async function ajouter() {
     if (!commerceId || !nom.trim() || !telephone.trim()) return;

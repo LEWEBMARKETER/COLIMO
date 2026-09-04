@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { formatFCFA, type Course, type CoursierAvecUtilisateur } from "@colimo/shared";
+import {
+  calculerStatistiquesAvanceesCommercant,
+  calculerStatistiquesCommercant,
+  formatFCFA,
+  type Course,
+  type CoursierAvecUtilisateur,
+} from "@colimo/shared";
 import Carte from "@/components/ui/Carte";
 import { getCoursiers, getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-
-function estCeMois(dateIso: string): boolean {
-  const d = new Date(dateIso);
-  const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-}
 
 export default function MesStatistiquesScreen() {
   const { session } = useAuth();
@@ -36,18 +36,15 @@ export default function MesStatistiquesScreen() {
     );
   }
 
-  const coursesMois = courses.filter((c) => estCeMois(c.createdAt) && c.statut !== "annulee");
-  const coutMensuel = coursesMois.reduce((s, c) => s + c.prix, 0);
-
-  const confirmees = courses.filter((c) => c.statut === "confirmee");
-  const annuleesOuRetournees = courses.filter((c) => c.statut === "annulee" || c.statut === "retournee");
-  const totalTerminales = confirmees.length + annuleesOuRetournees.length;
-  const tauxReussite = totalTerminales > 0 ? Math.round((confirmees.length / totalTerminales) * 100) : null;
-
-  const durees = confirmees
-    .filter((c) => c.accepteeAt && c.livreeAt)
-    .map((c) => (new Date(c.livreeAt as string).getTime() - new Date(c.accepteeAt as string).getTime()) / 60000);
-  const delaiMoyen = durees.length > 0 ? Math.round(durees.reduce((s, d) => s + d, 0) / durees.length) : null;
+  // Mêmes fonctions que CommerceDashboard.tsx (packages/shared/src/abonnements/
+  // statistics) — évite que "taux de réussite"/"délai moyen" aient une
+  // définition différente selon l'écran.
+  const statistiquesMois = calculerStatistiquesCommercant(courses);
+  const statistiquesAvancees = calculerStatistiquesAvanceesCommercant(courses);
+  const tauxReussite = Math.round(statistiquesAvancees.tauxReussite * 100);
+  const delaiMoyen = statistiquesAvancees.dureeLivraisonMoyenneSecondes
+    ? Math.round(statistiquesAvancees.dureeLivraisonMoyenneSecondes / 60)
+    : null;
 
   const coursCoursier = new Map<string, number>();
   courses
@@ -74,7 +71,7 @@ export default function MesStatistiquesScreen() {
           </Carte>
           <Carte className="min-w-[47%] flex-1">
             <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Coût du mois</Text>
-            <Text className="mt-1 font-titre text-lg text-colimo-rouge">{formatFCFA(coutMensuel)}</Text>
+            <Text className="mt-1 font-titre text-lg text-colimo-rouge">{formatFCFA(statistiquesMois.depensesMois)}</Text>
           </Carte>
           <Carte className="min-w-[47%] flex-1">
             <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Délai moyen</Text>
@@ -84,9 +81,7 @@ export default function MesStatistiquesScreen() {
           </Carte>
           <Carte className="min-w-[47%] flex-1">
             <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Taux de réussite</Text>
-            <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">
-              {tauxReussite !== null ? `${tauxReussite}%` : "—"}
-            </Text>
+            <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">{tauxReussite}%</Text>
           </Carte>
         </View>
 

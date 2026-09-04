@@ -9,6 +9,7 @@ import {
   formatFCFA,
   joursAvantExpiration,
   type Commercant,
+  type CommerceCoursierFavori,
   type Course,
   type CoursierAvecUtilisateur,
 } from "@colimo/shared";
@@ -16,7 +17,7 @@ import BadgeAbonnement from "@/components/BadgeAbonnement";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
-import { getCoursiers, getCourses, getMonCommerce } from "@/lib/api";
+import { getCoursiers, getCoursiersFavorisCommerce, getCourses, getMonCommerce } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 const STATUTS_EN_COURS = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
@@ -33,12 +34,22 @@ export default function CommerceDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
   const [commerce, setCommerce] = useState<Commercant | null>(null);
+  const [favorisReels, setFavorisReels] = useState<CommerceCoursierFavori[] | null>(null);
 
   useEffect(() => {
     if (!session) return;
     getCourses({ clientId: session.user.id }).then(setCourses);
     getCoursiers().then(setCoursiers);
-    getMonCommerce(session.user.id).then(setCommerce);
+    getMonCommerce(session.user.id).then((c) => {
+      setCommerce(c);
+      // Une fois le Pack Business actif, la vraie liste de coursiers favoris
+      // (enregistrée par le commerce) remplace le top informel calculé par
+      // fréquence ci-dessous — évite d'afficher deux notions différentes de
+      // "favori" au même endroit.
+      if (c && calculerPlanEffectif(c) === "business") {
+        getCoursiersFavorisCommerce(c.id).then(setFavorisReels);
+      }
+    });
   }, [session]);
 
   const planEffectif = commerce ? calculerPlanEffectif(commerce) : "gratuit";
@@ -53,18 +64,29 @@ export default function CommerceDashboard() {
   const terminees = courses.filter((c) => STATUTS_TERMINEES.has(c.statut)).length;
   const depensesJour = coursesJour.filter((c) => c.statut !== "annulee").reduce((s, c) => s + c.prix, 0);
 
+  // Business : vraie liste enregistrée (commerce_coursiers_favoris). Autres
+  // plans : top-3 informel calculé par fréquence de livraisons confirmées,
+  // en l'absence d'accès à la fonctionnalité "coursiers favoris" elle-même.
   const coursCoursier = new Map<string, number>();
   courses
     .filter((c) => c.coursierId && c.statut === "confirmee")
     .forEach((c) => coursCoursier.set(c.coursierId as string, (coursCoursier.get(c.coursierId as string) ?? 0) + 1));
-  const favoris = [...coursCoursier.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([utilisateurId, nombre]) => {
-      const coursier = coursiers.find((c) => c.utilisateurId === utilisateurId);
-      const nom = coursier ? (coursier.utilisateur.prenom ?? coursier.utilisateur.nom) : "Coursier";
-      return { nom, nombre };
-    });
+
+  const favoris =
+    planEffectif === "business"
+      ? (favorisReels ?? []).map((f) => {
+          const coursier = coursiers.find((c) => c.utilisateurId === f.coursierId);
+          const nom = coursier ? (coursier.utilisateur.prenom ?? coursier.utilisateur.nom) : "Coursier";
+          return { nom, nombre: coursCoursier.get(f.coursierId) ?? 0 };
+        })
+      : [...coursCoursier.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([utilisateurId, nombre]) => {
+            const coursier = coursiers.find((c) => c.utilisateurId === utilisateurId);
+            const nom = coursier ? (coursier.utilisateur.prenom ?? coursier.utilisateur.nom) : "Coursier";
+            return { nom, nombre };
+          });
 
   return (
     <View>
@@ -113,7 +135,9 @@ export default function CommerceDashboard() {
         <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Coursiers favoris</Text>
         {favoris.length === 0 ? (
           <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/50">
-            Pas encore assez de livraisons confirmées
+            {planEffectif === "business"
+              ? "Aucun coursier favori enregistré pour le moment."
+              : "Pas encore assez de livraisons confirmées"}
           </Text>
         ) : (
           favoris.map((f) => (
