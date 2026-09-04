@@ -30,6 +30,13 @@ export interface CourseSuiviPublic {
   coursierPrenom: string | null;
   coursierTelephone: string | null;
   coursierNote: number | null;
+  // Uniquement renseigné pendant une course active (acceptee/retrait/
+  // en_cours) — cf. get_course_suivi_public (0038).
+  coursierLatitude: number | null;
+  coursierLongitude: number | null;
+  coursierPositionMajAt: string | null;
+  distanceRestanteM: number | null;
+  etaSecondes: number | null;
   accepteeAt: string | null;
   recupereeAt: string | null;
   livreeAt: string | null;

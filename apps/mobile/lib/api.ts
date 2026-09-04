@@ -49,6 +49,10 @@ import {
   getCoursiersFavorisCommerce as getCoursiersFavorisCommerceQuery,
   ajouterCoursierFavori as ajouterCoursierFavoriQuery,
   retirerCoursierFavori as retirerCoursierFavoriQuery,
+  upsertPositionCoursier as upsertPositionCoursierQuery,
+  getPositionCoursier as getPositionCoursierQuery,
+  souscrirePositionCoursier as souscrirePositionCoursierQuery,
+  doitRecalculerEta,
   type ActiviteCommerce,
   type CategorieColis,
   type CodePromo,
@@ -75,6 +79,7 @@ import {
   type Paiement,
   type PaymentOperator,
   type PieceIdentiteType,
+  type PositionCoursier,
   type QuiPaie,
   type RoleCommerceMembre,
   type TailleColis,
@@ -153,14 +158,70 @@ export function getCourse(id: string): Promise<Course> {
 }
 
 // Accessible sans session (le destinataire n'a en général aucun compte
-// COLIMO) — cf. app/suivi/[token].tsx.
-export function getCourseSuiviPublic(token: string): Promise<CourseSuiviPublic | null> {
-  return getCourseSuiviPublicQuery(supabase, token);
+// COLIMO) — cf. app/suivi/[token].tsx. `code` est le code court de suivi
+// (course.codeSuivi, ex. CLM-X7P4-K92M), pas l'ancien jeton uuid.
+export function getCourseSuiviPublic(code: string): Promise<CourseSuiviPublic | null> {
+  return getCourseSuiviPublicQuery(supabase, code);
 }
 
-export function lienSuiviPublic(tokenSuivi: string): string {
+export function lienSuiviPublic(codeSuivi: string): string {
   const origine = typeof window !== "undefined" ? window.location.origin : "https://colimo.online";
-  return `${origine}/suivi/${tokenSuivi}`;
+  return `${origine}/suivi/${codeSuivi}`;
+}
+
+// --- Géolocalisation temps réel des coursiers ----------------------------
+
+// N'écrit (et n'est autorisé par la RLS à écrire) que la position du
+// coursier connecté — n'appeler que pendant une course active, cf.
+// app/(coursier)/course/[id].tsx.
+export function upsertPositionCoursier(position: {
+  coursierId: string;
+  latitude: number;
+  longitude: number;
+  precisionM?: number | null;
+  vitesseKmh?: number | null;
+  capDegres?: number | null;
+}): Promise<PositionCoursier> {
+  return upsertPositionCoursierQuery(supabase, position);
+}
+
+export function getPositionCoursier(coursierId: string): Promise<PositionCoursier | null> {
+  return getPositionCoursierQuery(supabase, coursierId);
+}
+
+export function souscrirePositionCoursier(
+  coursierId: string,
+  surMaj: (position: PositionCoursier) => void
+): ReturnType<typeof souscrirePositionCoursierQuery> {
+  return souscrirePositionCoursierQuery(supabase, coursierId, surMaj);
+}
+
+// Décide si un recalcul ETA côté serveur (appel Mapbox Directions, payant)
+// est pertinent avant de solliciter le réseau — la fonction serveur
+// applique de toute façon la même règle de façon autoritaire.
+export { doitRecalculerEta };
+
+// Déclenche le recalcul distance/ETA côté serveur (fonction Vercel,
+// api/mapbox/directions — clé Mapbox secrète jamais exposée ici) et
+// renvoie la course mise à jour. Nécessite une session (coursier ou client
+// de la course concernée) : le jeton d'accès est transmis pour que la
+// fonction vérifie l'autorisation avant d'appeler Mapbox.
+export async function recalculerEtaCourse(courseId: string): Promise<Course> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const jeton = sessionData.session?.access_token;
+  if (!jeton) throw new Error("Session expirée.");
+
+  const reponse = await fetch("/api/mapbox/directions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${jeton}` },
+    body: JSON.stringify({ courseId }),
+  });
+  if (!reponse.ok) {
+    const corps = await reponse.json().catch(() => ({}));
+    throw new Error(corps.erreur ?? "Impossible de calculer le trajet pour le moment.");
+  }
+  const { course } = await reponse.json();
+  return course as Course;
 }
 
 export function creerCourse(body: {

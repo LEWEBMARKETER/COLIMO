@@ -51,6 +51,8 @@ import {
   getConfigurationPaiementAbonnement as getConfigurationPaiementAbonnementQuery,
   patchConfigurationPaiementAbonnement as patchConfigurationPaiementAbonnementQuery,
   getHistoriqueSuppressionsComptes as getHistoriqueSuppressionsComptesQuery,
+  getPositionsCoursiers as getPositionsCoursiersQuery,
+  type PositionCoursier,
   type HistoriqueSuppressionCompte,
   type ResultatSuppressionCompte,
   type ActionHistoriqueAbonnement,
@@ -299,6 +301,17 @@ export async function rejeterPaiement(paiementId: string, motif?: string): Promi
 export function getCoursiersAvecStatutEffectif(): Promise<CoursierAvecStatutEffectif[]> {
   return getCoursiersAvecStatutEffectifQuery(createClient());
 }
+
+// --- Carte live (géolocalisation) -----------------------------------------
+
+export function getPositionsCoursiers(): Promise<PositionCoursier[]> {
+  return getPositionsCoursiersQuery(createClient());
+}
+
+// L'abonnement Realtime (souscrireToutesPositionsCoursiers) n'est volontairement
+// pas exposé ici : il doit être ouvert et fermé sur la MÊME instance de
+// client Supabase (createClient() en crée une nouvelle à chaque appel), donc
+// géré directement dans le composant — cf. app/(dashboard)/carte/page.tsx.
 
 export function getCoursierAvecUtilisateur(id: string) {
   return getCoursierAvecUtilisateurQuery(createClient(), id);

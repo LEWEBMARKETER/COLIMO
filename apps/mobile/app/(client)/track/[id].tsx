@@ -2,7 +2,17 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { MODE_PAIEMENT_LABELS, formatFCFA, peutAnnulerCourse, type Coursier, type Course, type Utilisateur } from "@colimo/shared";
+import {
+  MODE_PAIEMENT_LABELS,
+  formatDistanceM,
+  formatDureeSecondes,
+  formatFCFA,
+  peutAnnulerCourse,
+  type Coursier,
+  type Course,
+  type PositionCoursier,
+  type Utilisateur,
+} from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
 import CarteItineraire from "@/components/CarteItineraire";
 import BandeauStatut from "@/components/BandeauStatut";
@@ -12,11 +22,22 @@ import NoteEtoiles from "@/components/NoteEtoiles";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
-import { getCourse, getCoursierByUtilisateurId, getUtilisateur, lienSuiviPublic, patchCourse, recalculerBadgesEtNiveau } from "@/lib/api";
+import {
+  getCourse,
+  getCoursierByUtilisateurId,
+  getPositionCoursier,
+  getUtilisateur,
+  lienSuiviPublic,
+  patchCourse,
+  recalculerBadgesEtNiveau,
+  souscrirePositionCoursier,
+} from "@/lib/api";
+import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
 
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
+const STATUTS_AVEC_POSITION = new Set(["acceptee", "retrait", "en_cours"]);
 
 export default function TrackScreen() {
   const { session } = useAuth();
@@ -26,6 +47,7 @@ export default function TrackScreen() {
   const [erreurConfirmation, setErreurConfirmation] = useState<string | null>(null);
   const [coursier, setCoursier] = useState<Coursier | null>(null);
   const [coursierUtilisateur, setCoursierUtilisateur] = useState<Utilisateur | null>(null);
+  const [positionCoursier, setPositionCoursier] = useState<PositionCoursier | null>(null);
 
   async function confirmerReception() {
     if (!course || !session) return;
@@ -96,6 +118,31 @@ export default function TrackScreen() {
     getUtilisateur(course.coursierId).then(setCoursierUtilisateur);
   }, [course?.coursierId]);
 
+  // Position du coursier en temps réel — uniquement pendant une course
+  // active (la RLS de positions_coursiers refuse de toute façon l'accès en
+  // dehors de ce cas, cf. 0038) : valeur initiale via une lecture directe,
+  // puis mises à jour via Supabase Realtime (canal postgres_changes).
+  useEffect(() => {
+    if (!course?.coursierId || !STATUTS_AVEC_POSITION.has(course.statut)) {
+      setPositionCoursier(null);
+      return;
+    }
+
+    let annule = false;
+    getPositionCoursier(course.coursierId).then((position) => {
+      if (!annule) setPositionCoursier(position);
+    });
+
+    const canal = souscrirePositionCoursier(course.coursierId, (position) => {
+      if (!annule) setPositionCoursier(position);
+    });
+
+    return () => {
+      annule = true;
+      supabase.removeChannel(canal);
+    };
+  }, [course?.coursierId, course?.statut]);
+
   if (!course) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-colimo-fond">
@@ -143,7 +190,7 @@ export default function TrackScreen() {
           <Text
             onPress={() =>
               Share.share({
-                message: `Suivez ma livraison COLIMO (${course.numeroCommande}) en temps réel : ${lienSuiviPublic(course.tokenSuivi)}`,
+                message: `Suivez ma livraison COLIMO (${course.numeroCommande}) en temps réel : ${lienSuiviPublic(course.codeSuivi)}`,
               })
             }
             className="font-texte-medium text-xs text-colimo-rouge"
@@ -167,7 +214,20 @@ export default function TrackScreen() {
               <CarteItineraire
                 depart={{ latitude: course.latitudeDepart, longitude: course.longitudeDepart }}
                 arrivee={{ latitude: course.latitudeArrivee, longitude: course.longitudeArrivee }}
+                positionCoursier={
+                  positionCoursier ? { latitude: positionCoursier.latitude, longitude: positionCoursier.longitude } : null
+                }
               />
+              {(course.distanceRestanteM != null || course.etaSecondes != null) && positionCoursier && (
+                <View className="-mt-2 mb-4 flex-row items-center justify-between rounded-2xl bg-colimo-rouge-clair px-4 py-3">
+                  <Text className="font-texte-medium text-sm text-colimo-rouge">
+                    {course.distanceRestanteM != null ? formatDistanceM(course.distanceRestanteM) : "—"} restants
+                  </Text>
+                  <Text className="font-texte-medium text-sm text-colimo-rouge">
+                    {course.etaSecondes != null ? `~${formatDureeSecondes(course.etaSecondes)}` : "—"}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 

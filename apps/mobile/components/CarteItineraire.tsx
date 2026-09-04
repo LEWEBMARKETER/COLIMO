@@ -9,6 +9,10 @@ interface CarteItineraireProps {
   labelDepart?: string;
   labelArrivee?: string;
   hauteur?: number;
+  // Position live du coursier (course active uniquement) — mise à jour par
+  // injection JS ciblée dans CarteOSM, sans recentrer/recharger la carte.
+  positionCoursier?: Coordonnees | null;
+  labelCoursier?: string;
 }
 
 export default function CarteItineraire({
@@ -17,6 +21,8 @@ export default function CarteItineraire({
   labelDepart = "Récupération",
   labelArrivee = "Livraison",
   hauteur = 220,
+  positionCoursier = null,
+  labelCoursier = "Coursier",
 }: CarteItineraireProps) {
   const [itineraire, setItineraire] = useState<Itineraire | null>(null);
 
@@ -36,9 +42,13 @@ export default function CarteItineraire({
     { id: "arrivee", coordonnees: arrivee, couleur: "#2563EB", label: labelArrivee },
   ];
 
+  const pointLive = positionCoursier
+    ? { id: "coursier", coordonnees: positionCoursier, couleur: "#16A34A", label: labelCoursier }
+    : null;
+
   return (
     <View className="mb-4">
-      <CarteOSM points={points} trace={itineraire?.trace} hauteur={hauteur} />
+      <CarteOSM points={points} trace={itineraire?.trace} hauteur={hauteur} pointLive={pointLive} />
       {itineraire && (
         <View className="mt-2 flex-row justify-between">
           <Text className="font-texte text-xs text-colimo-neutre-fonce/60">

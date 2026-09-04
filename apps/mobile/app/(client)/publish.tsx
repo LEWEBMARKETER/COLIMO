@@ -201,7 +201,7 @@ export default function PublishScreen() {
         variables: {
           nom_client: course.nomDestinataire ?? "client",
           numero_commande: course.numeroCommande,
-          lien_suivi: lienSuiviPublic(course.tokenSuivi),
+          lien_suivi: lienSuiviPublic(course.codeSuivi),
         },
       });
       await notifierEvenement("notification_livraison_creee", {

@@ -10,6 +10,7 @@ const GROUPES = [
     label: "Activité",
     liens: [
       { href: "/", label: "Dashboard" },
+      { href: "/carte", label: "Carte en direct" },
       { href: "/courses", label: "Courses" },
       { href: "/paiements", label: "Paiements" },
       { href: "/litiges", label: "Litiges" },
