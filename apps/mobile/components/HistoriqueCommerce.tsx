@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { formatDureeSecondes, formatFCFA, type Course, type CourseStatus, type CoursierAvecUtilisateur } from "@colimo/shared";
+import GroupePastilles from "@/components/ui/GroupePastilles";
 import StatutChip from "@/components/ui/StatutChip";
 import { getCoursiers, getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
@@ -71,24 +72,7 @@ export default function HistoriqueCommerce() {
     <View className="flex-1">
       <Text className="mb-3 font-titre text-2xl text-colimo-neutre-fonce">Mes livraisons</Text>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 mb-3 px-6" contentContainerStyle={{ gap: 8 }}>
-        {FILTRES.map((f) => {
-          const actif = filtre === f.valeur;
-          return (
-            <Pressable
-              key={f.valeur}
-              onPress={() => setFiltre(f.valeur)}
-              className={`rounded-full border px-3.5 py-1.5 ${
-                actif ? "border-colimo-rouge bg-colimo-rouge" : "border-colimo-neutre-clair bg-white"
-              }`}
-            >
-              <Text className={`font-texte-medium text-xs ${actif ? "text-white" : "text-colimo-neutre-fonce/70"}`}>
-                {f.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <GroupePastilles label="Filtrer" options={FILTRES} value={filtre} onChange={setFiltre} className="mb-1" />
 
       <FlatList
         data={coursesFiltrees}
