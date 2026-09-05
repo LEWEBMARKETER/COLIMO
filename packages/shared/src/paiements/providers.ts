@@ -16,10 +16,29 @@ export interface InstructionsPaiement {
   instructions: string;
 }
 
+export interface ResultatPaiementAutomatique {
+  succes: boolean;
+  /** Identifiant renvoyé par le fournisseur, pour rapprochement avec le webhook de confirmation. */
+  transactionExterneId?: string;
+  erreur?: string;
+}
+
 export interface FournisseurPaiement {
   nom: string;
   /** Informations à afficher au client pour effectuer le paiement. */
   obtenirInstructions(montant: string, reference: string): InstructionsPaiement;
+  /**
+   * Optionnel : un fournisseur automatique (API Airtel Money/Moov Money, ou
+   * un agrégateur) peut en plus déclencher lui-même une demande de paiement
+   * (STK push) — cf. docs/PAIEMENT_AUTOMATIQUE.md. Absent tant qu'aucun
+   * fournisseur réel n'est branché ; fournisseurManuelAirtelMoney
+   * ci-dessous ne l'implémente pas.
+   */
+  initierPaiementAutomatique?(params: {
+    montant: number;
+    numeroPayeur: string;
+    reference: string;
+  }): Promise<ResultatPaiementAutomatique>;
 }
 
 const fournisseurManuelAirtelMoney: FournisseurPaiement = {

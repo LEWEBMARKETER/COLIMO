@@ -32,12 +32,24 @@ export default function CoursierDashboard() {
 
   const chargerCourses = useCallback(async () => {
     if (coursier?.disponibilite && zonesDisponibilite.length > 0) {
-      setCourses(await getCourses({ zones: zonesDisponibilite, statut: "en_attente" }));
+      const disponibles = await getCourses({ zones: zonesDisponibilite, statut: "en_attente" });
+      // Mise en avant du meilleur match : les courses dans la zone
+      // principale du coursier remontent en premier — le pool reste le
+      // même pour tous, seul l'ordre d'affichage change (aucun changement
+      // au mécanisme d'acceptation, premier arrivé premier servi).
+      const zonePrincipale = utilisateur?.zone;
+      const tri = [...disponibles].sort((a, b) => {
+        const aMatch = zonePrincipale && a.zoneDepart === zonePrincipale ? 1 : 0;
+        const bMatch = zonePrincipale && b.zoneDepart === zonePrincipale ? 1 : 0;
+        if (aMatch !== bMatch) return bMatch - aMatch;
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+      setCourses(tri);
     } else {
       setCourses([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [coursier?.disponibilite, JSON.stringify(zonesDisponibilite)]);
+  }, [coursier?.disponibilite, JSON.stringify(zonesDisponibilite), utilisateur?.zone]);
 
   useEffect(() => {
     setChargement(true);
@@ -172,6 +184,7 @@ export default function CoursierDashboard() {
             course={item}
             onVoirDetails={() => router.push(`/(coursier)/apercu/${item.id}`)}
             onAccepter={() => accepter(item)}
+            recommandee={!!utilisateur?.zone && item.zoneDepart === utilisateur.zone}
           />
         )}
       />

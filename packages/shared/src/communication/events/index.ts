@@ -48,6 +48,7 @@ export type EvenementCommunication =
   | "notification_litige_ouvert"
   | "notification_litige_resolu"
   | "notification_coursier_compte_valide"
+  | "notification_coursier_nouvelle_course_disponible"
   // Abonnements commerçants (COLIMO PRO)
   | "abonnement_demande_recue"
   | "abonnement_active"
@@ -90,6 +91,7 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   notification_litige_ouvert: "notification_litige_ouvert",
   notification_litige_resolu: "notification_litige_resolu",
   notification_coursier_compte_valide: "notification_coursier_compte_valide",
+  notification_coursier_nouvelle_course_disponible: "notification_coursier_nouvelle_course_disponible",
 
   abonnement_demande_recue: "abonnement_demande_recue",
   abonnement_active: "abonnement_active",
@@ -136,6 +138,7 @@ export const EVENEMENT_CANAL: Record<EvenementCommunication, "email" | "sms" | "
   notification_litige_ouvert: "push",
   notification_litige_resolu: "push",
   notification_coursier_compte_valide: "push",
+  notification_coursier_nouvelle_course_disponible: "push",
 
   abonnement_demande_recue: "push",
   abonnement_active: "push",

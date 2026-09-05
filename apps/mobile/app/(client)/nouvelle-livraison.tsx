@@ -32,7 +32,7 @@ import {
   lienSuiviPublic,
 } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
-import { notifierEvenement } from "@/lib/communication";
+import { notifierEvenement, notifierMeilleursCoursiers } from "@/lib/communication";
 
 const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
   valeur,
@@ -208,6 +208,7 @@ export default function NouvelleLivraisonScreen() {
           lien_suivi: lienSuiviPublic(course.codeSuivi),
         },
       });
+      await notifierMeilleursCoursiers(course, session.user.id);
       await notifierEvenement("notification_livraison_creee", {
         declenchePar: session.user.id,
         destinataire: session.user.id,

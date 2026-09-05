@@ -19,6 +19,9 @@ import {
   getModelesCommunication as getModelesCommunicationQuery,
   getCommunications as getCommunicationsQuery,
   getPaiements as getPaiementsQuery,
+  getConfigurationPaiementAutomatique as getConfigurationPaiementAutomatiqueQuery,
+  patchConfigurationPaiementAutomatique as patchConfigurationPaiementAutomatiqueQuery,
+  getWebhooksPaiement as getWebhooksPaiementQuery,
   getUtilisateurs as getUtilisateursQuery,
   getCoursiers as getCoursiersQuery,
   patchCatalogueBadge as patchCatalogueBadgeQuery,
@@ -76,7 +79,10 @@ import {
   type ModeleCommunication,
   type NiveauCoursier,
   type PackPayant,
+  type ConfigurationPaiementAutomatique,
   type Paiement,
+  type PaymentOperator,
+  type WebhookPaiement,
   type RegleBadge,
   type ResolutionLitige,
   type StatutCommunication,
@@ -294,6 +300,26 @@ export async function rejeterPaiement(paiementId: string, motif?: string): Promi
   } = await client.auth.getUser();
   if (!user) throw new Error("Non authentifié");
   return rejeterPaiementQuery(client, paiementId, user.id, motif);
+}
+
+export function getConfigurationPaiementAutomatique(): Promise<ConfigurationPaiementAutomatique> {
+  return getConfigurationPaiementAutomatiqueQuery(createClient());
+}
+
+export async function patchConfigurationPaiementAutomatique(body: {
+  actif?: boolean;
+  fournisseur?: PaymentOperator | null;
+}): Promise<ConfigurationPaiementAutomatique> {
+  const client = createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+  return patchConfigurationPaiementAutomatiqueQuery(client, user.id, body);
+}
+
+export function getWebhooksPaiement(limite?: number): Promise<WebhookPaiement[]> {
+  return getWebhooksPaiementQuery(createClient(), limite);
 }
 
 // --- Module Coursiers : statuts, badges, niveaux, historique ---
