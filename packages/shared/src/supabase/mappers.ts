@@ -32,7 +32,7 @@ import type { CanalCommunication, StatutCommunication } from "../communication/t
 import type { ModeleCommunication } from "../communication/templates/types";
 import type { CommunicationEnvoyee } from "../communication/history/types";
 import type { CodeOtp, ObjectifOtp } from "../otp/types";
-import type { Paiement, StatutPaiementManuel } from "../paiements/types";
+import type { ConfigurationPaiementAutomatique, Paiement, StatutPaiementManuel } from "../paiements/types";
 import type { BadgeCoursier, BadgeCoursierAttribue, ModeAttributionBadge, RegleBadge } from "../coursiers/badges/types";
 import type { NiveauCoursier } from "../coursiers/niveaux/types";
 import type { ActionHistoriqueCoursier, HistoriqueCoursier } from "../coursiers/historique/types";
@@ -541,6 +541,8 @@ export interface PaiementRow {
   valide_at: string | null;
   motif_rejet: string | null;
   declare_at: string | null;
+  transaction_externe_id: string | null;
+  mode: "manuel" | "automatique";
   created_at: string;
   updated_at: string;
 }
@@ -563,8 +565,29 @@ export function paiementFromRow(row: PaiementRow): Paiement {
     valideAt: row.valide_at,
     motifRejet: row.motif_rejet,
     declareAt: row.declare_at,
+    transactionExterneId: row.transaction_externe_id,
+    mode: row.mode,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+export interface ConfigurationPaiementAutomatiqueRow {
+  id: number;
+  actif: boolean;
+  fournisseur: "airtel_money" | "moov_money" | null;
+  mis_a_jour_par: string | null;
+  mis_a_jour_at: string;
+}
+
+export function configurationPaiementAutomatiqueFromRow(
+  row: ConfigurationPaiementAutomatiqueRow
+): ConfigurationPaiementAutomatique {
+  return {
+    actif: row.actif,
+    fournisseur: row.fournisseur,
+    misAJourParId: row.mis_a_jour_par,
+    misAJourAt: row.mis_a_jour_at,
   };
 }
 

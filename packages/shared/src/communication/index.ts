@@ -6,4 +6,5 @@ export * from "./history";
 export * from "./statistics";
 export * from "./settings";
 export * from "./campaigns";
+export * from "./push";
 export * from "./service";

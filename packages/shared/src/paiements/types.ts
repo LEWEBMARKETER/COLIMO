@@ -37,6 +37,22 @@ export interface Paiement {
   valideAt: string | null;
   motifRejet: string | null;
   declareAt: string | null;
+  // "automatique" si confirmé par un fournisseur mobile money branché (cf.
+  // packages/shared/src/paiements/providers.ts) — "manuel" (valeur par
+  // défaut) tant qu'aucun fournisseur automatique n'est actif.
+  transactionExterneId: string | null;
+  mode: "manuel" | "automatique";
   createdAt: string;
   updatedAt: string;
+}
+
+// Bascule unique (id fixe), lisible par tout utilisateur authentifié pour
+// savoir si le paiement automatique est actif, modifiable par un admin
+// uniquement. Les identifiants du fournisseur lui-même ne sont jamais
+// stockés ici (variables d'environnement serveur, cf. docs/PAIEMENT_AUTOMATIQUE.md).
+export interface ConfigurationPaiementAutomatique {
+  actif: boolean;
+  fournisseur: PaymentOperator | null;
+  misAJourParId: string | null;
+  misAJourAt: string;
 }

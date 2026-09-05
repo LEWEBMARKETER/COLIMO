@@ -3,16 +3,28 @@
 import { useEffect, useMemo, useState } from "react";
 import StatCard from "@/components/StatCard";
 import StatutBadge from "@/components/StatutBadge";
-import { getCourses, getPaiements, getUtilisateurs, rejeterPaiement, validerPaiement } from "@/lib/api";
+import {
+  getConfigurationPaiementAutomatique,
+  getCourses,
+  getPaiements,
+  getUtilisateurs,
+  getWebhooksPaiement,
+  patchConfigurationPaiementAutomatique,
+  rejeterPaiement,
+  validerPaiement,
+} from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 import {
   RESEAU_PAIEMENT_LABELS,
   STATUT_PAIEMENT_LABELS,
   estUrlHttpSure,
   formatFCFA,
+  type ConfigurationPaiementAutomatique,
   type Course,
   type Paiement,
+  type PaymentOperator,
   type Utilisateur,
+  type WebhookPaiement,
 } from "@colimo/shared";
 
 const ONGLETS = ["a_valider", "historique"] as const;
@@ -30,16 +42,44 @@ export default function PaiementsPage() {
   const [chargement, setChargement] = useState(true);
   const [onglet, setOnglet] = useState<Onglet>("a_valider");
   const [enCours, setEnCours] = useState<string | null>(null);
+  const [configAuto, setConfigAuto] = useState<ConfigurationPaiementAutomatique | null>(null);
+  const [webhooks, setWebhooks] = useState<WebhookPaiement[]>([]);
+  const [configEnCours, setConfigEnCours] = useState(false);
+  const [afficherWebhooks, setAfficherWebhooks] = useState(false);
 
   useEffect(() => {
-    Promise.all([getPaiements(), getCourses(), getUtilisateurs()])
-      .then(([p, c, u]) => {
+    Promise.all([getPaiements(), getCourses(), getUtilisateurs(), getConfigurationPaiementAutomatique()])
+      .then(([p, c, u, cfg]) => {
         setPaiements(p);
         setCourses(c);
         setUtilisateurs(u);
+        setConfigAuto(cfg);
       })
       .finally(() => setChargement(false));
   }, []);
+
+  async function basculerPaiementAutomatique(actif: boolean) {
+    setConfigEnCours(true);
+    try {
+      setConfigAuto(await patchConfigurationPaiementAutomatique({ actif }));
+    } finally {
+      setConfigEnCours(false);
+    }
+  }
+
+  async function changerFournisseur(fournisseur: PaymentOperator | "") {
+    setConfigEnCours(true);
+    try {
+      setConfigAuto(await patchConfigurationPaiementAutomatique({ fournisseur: fournisseur || null }));
+    } finally {
+      setConfigEnCours(false);
+    }
+  }
+
+  async function afficherJournalWebhooks() {
+    if (!afficherWebhooks) setWebhooks(await getWebhooksPaiement(20));
+    setAfficherWebhooks((v) => !v);
+  }
 
   const course = useMemo(() => (id: string) => courses.find((c) => c.id === id), [courses]);
   const utilisateur = useMemo(() => (id: string) => utilisateurs.find((u) => u.id === id), [utilisateurs]);
@@ -105,6 +145,79 @@ export default function PaiementsPage() {
         <StatCard label="À valider" value={String(enAttenteValidation.length)} sombre />
         <StatCard label="Montant en attente" value={formatFCFA(montantEnAttente)} />
         <StatCard label="Confirmés ce mois-ci" value={String(confirmesCeMois)} />
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-colimo-neutre-clair bg-white p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-texte-medium text-sm font-semibold text-colimo-neutre-fonce">Paiement automatique</h2>
+            <p className="mt-1 text-xs text-colimo-neutre-fonce/60">
+              Désactivé : le flux manuel ci-dessous (déclaration + validation) reste seul actif. À n&apos;activer
+              qu&apos;une fois un fournisseur (Airtel Money/Moov Money) réellement configuré côté serveur
+              (variables d&apos;environnement Vercel) — cf. docs/PAIEMENT_AUTOMATIQUE.md.
+            </p>
+          </div>
+          <label className="flex shrink-0 items-center gap-2 text-sm font-medium text-colimo-neutre-fonce">
+            <input
+              type="checkbox"
+              checked={configAuto?.actif ?? false}
+              disabled={configEnCours || !configAuto}
+              onChange={(e) => basculerPaiementAutomatique(e.target.checked)}
+            />
+            Actif
+          </label>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="text-xs font-medium text-colimo-neutre-fonce/70">
+            Fournisseur
+            <select
+              className="ml-2 rounded-lg border border-colimo-neutre-clair px-2 py-1 text-sm"
+              value={configAuto?.fournisseur ?? ""}
+              disabled={configEnCours || !configAuto}
+              onChange={(e) => changerFournisseur(e.target.value as PaymentOperator | "")}
+            >
+              <option value="">— Non configuré —</option>
+              <option value="airtel_money">Airtel Money</option>
+              <option value="moov_money">Moov Money</option>
+            </select>
+          </label>
+          <button
+            onClick={afficherJournalWebhooks}
+            className="rounded-lg border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+          >
+            {afficherWebhooks ? "Masquer" : "Voir"} le journal des webhooks
+          </button>
+        </div>
+
+        {afficherWebhooks && (
+          <div className="mt-3 max-h-64 overflow-y-auto rounded-lg border border-colimo-neutre-clair">
+            {webhooks.length === 0 ? (
+              <p className="p-3 text-xs text-colimo-neutre-fonce/50">Aucun webhook reçu pour l&apos;instant.</p>
+            ) : (
+              <table className="w-full text-xs">
+                <thead className="bg-colimo-neutre-clair/40 text-left text-colimo-neutre-fonce/60">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Date</th>
+                    <th className="px-3 py-2 font-medium">Fournisseur</th>
+                    <th className="px-3 py-2 font-medium">Traité</th>
+                    <th className="px-3 py-2 font-medium">Erreur</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {webhooks.map((w) => (
+                    <tr key={w.id} className="border-t border-colimo-neutre-clair">
+                      <td className="px-3 py-2">{new Date(w.createdAt).toLocaleString("fr-FR")}</td>
+                      <td className="px-3 py-2">{w.fournisseur}</td>
+                      <td className="px-3 py-2">{w.traite ? "✓" : "—"}</td>
+                      <td className="px-3 py-2 text-colimo-rouge">{w.erreur ?? ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="mt-6 flex gap-2 border-b border-colimo-neutre-clair">

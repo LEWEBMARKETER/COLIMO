@@ -1,8 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PaymentOperator } from "../types";
 import { patchCourse } from "../supabase/queries";
-import { paiementFromRow, type PaiementRow } from "../supabase/mappers";
-import type { Paiement, StatutPaiementManuel } from "./types";
+import {
+  configurationPaiementAutomatiqueFromRow,
+  paiementFromRow,
+  type ConfigurationPaiementAutomatiqueRow,
+  type PaiementRow,
+} from "../supabase/mappers";
+import type { ConfigurationPaiementAutomatique, Paiement, StatutPaiementManuel } from "./types";
 
 // Module de paiement indépendant du module des commandes : ce fichier est
 // le seul endroit qui sache que "payer" signifie aujourd'hui "attendre une
@@ -138,4 +143,68 @@ export async function getPaiements(
   const { data, error } = await requete;
   if (error) throw error;
   return (data as PaiementRow[]).map(paiementFromRow);
+}
+
+// --- Paiement automatique (scaffold, cf. docs/PAIEMENT_AUTOMATIQUE.md) ---
+// `actif` reste à false tant qu'aucun identifiant fournisseur réel n'est
+// configuré côté serveur — le flux manuel ci-dessus continue de s'appliquer
+// sans aucun changement. Lu par tout utilisateur authentifié (l'app doit
+// savoir si elle peut proposer le paiement automatique), modifié par
+// l'admin uniquement (RLS, 0040).
+export async function getConfigurationPaiementAutomatique(
+  client: SupabaseClient
+): Promise<ConfigurationPaiementAutomatique> {
+  const { data, error } = await client
+    .from("configuration_paiements_automatiques")
+    .select("*")
+    .eq("id", 1)
+    .single();
+  if (error) throw error;
+  return configurationPaiementAutomatiqueFromRow(data as ConfigurationPaiementAutomatiqueRow);
+}
+
+export async function patchConfigurationPaiementAutomatique(
+  client: SupabaseClient,
+  adminId: string,
+  body: { actif?: boolean; fournisseur?: PaymentOperator | null }
+): Promise<ConfigurationPaiementAutomatique> {
+  const { data, error } = await client
+    .from("configuration_paiements_automatiques")
+    .update({ ...body, mis_a_jour_par: adminId, mis_a_jour_at: new Date().toISOString() })
+    .eq("id", 1)
+    .select()
+    .single();
+  if (error) throw error;
+  return configurationPaiementAutomatiqueFromRow(data as ConfigurationPaiementAutomatiqueRow);
+}
+
+export interface WebhookPaiement {
+  id: string;
+  fournisseur: string;
+  payload: Record<string, unknown>;
+  traite: boolean;
+  erreur: string | null;
+  createdAt: string;
+}
+
+// Journal brut des appels webhook reçus — réservé à l'admin (RLS), utile
+// pour diagnostiquer une intégration fournisseur qui n'a encore jamais été
+// exercée en conditions réelles dans cet environnement.
+export async function getWebhooksPaiement(client: SupabaseClient, limite = 50): Promise<WebhookPaiement[]> {
+  const { data, error } = await client
+    .from("webhooks_paiement")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limite);
+  if (error) throw error;
+  return (
+    data as { id: string; fournisseur: string; payload: Record<string, unknown>; traite: boolean; erreur: string | null; created_at: string }[]
+  ).map((row) => ({
+    id: row.id,
+    fournisseur: row.fournisseur,
+    payload: row.payload,
+    traite: row.traite,
+    erreur: row.erreur,
+    createdAt: row.created_at,
+  }));
 }

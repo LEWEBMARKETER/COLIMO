@@ -6,9 +6,18 @@ interface CourseDisponibleCardProps {
   course: Course;
   onVoirDetails: () => void;
   onAccepter: () => void;
+  // Course dans la zone principale du coursier (utilisateur.zone) — mise en
+  // avant purement indicative, le pool et l'ordre d'acceptation restent
+  // inchangés (premier arrivé premier servi).
+  recommandee?: boolean;
 }
 
-export default function CourseDisponibleCard({ course, onVoirDetails, onAccepter }: CourseDisponibleCardProps) {
+export default function CourseDisponibleCard({
+  course,
+  onVoirDetails,
+  onAccepter,
+  recommandee = false,
+}: CourseDisponibleCardProps) {
   return (
     <View className="rounded-lg border-2 border-colimo-neutre-fonce bg-white p-4">
       <Pressable onPress={onVoirDetails}>
@@ -30,6 +39,11 @@ export default function CourseDisponibleCard({ course, onVoirDetails, onAccepter
           {course.livraisonPrioritaire && (
             <Text className="ml-2 rounded-full bg-colimo-rouge-clair px-2 py-0.5 text-xs font-medium text-colimo-rouge">
               Prioritaire
+            </Text>
+          )}
+          {recommandee && (
+            <Text className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+              ★ Pour vous
             </Text>
           )}
         </View>

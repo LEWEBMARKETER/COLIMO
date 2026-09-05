@@ -1,10 +1,17 @@
 import "../global.css";
 import { useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { Stack, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
 import { AuthProvider } from "@/lib/AuthContext";
 import SplashAnimee from "@/components/SplashAnimee";
+import { initialiserFournisseurPush } from "@/lib/pushProvider";
+
+// Ne concerne que le web (fetch relatif vers /api/push/envoyer) — sans
+// effet en natif, où ce fournisseur resterait de toute façon inutilisable.
+if (Platform.OS === "web") {
+  initialiserFournisseurPush();
+}
 
 // Pages vitrine : elles gèrent elles-mêmes leur mise en page desktop (nav large,
 // sections en colonnes) et ne doivent donc pas être bridées dans le cadre étroit

@@ -30,7 +30,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import Stepper from "@/components/ui/Stepper";
 import { creerCourse, getCodePromoParCode, initierPaiementManuel, lienSuiviPublic } from "@/lib/api";
-import { notifierEvenement } from "@/lib/communication";
+import { notifierEvenement, notifierMeilleursCoursiers } from "@/lib/communication";
 import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIES = (Object.keys(CATEGORIE_COLIS_LABELS) as CategorieColis[]).map((valeur) => ({
@@ -204,6 +204,7 @@ export default function PublishScreen() {
           lien_suivi: lienSuiviPublic(course.codeSuivi),
         },
       });
+      await notifierMeilleursCoursiers(course, session.user.id);
       await notifierEvenement("notification_livraison_creee", {
         declenchePar: session.user.id,
         destinataire: session.user.id,
