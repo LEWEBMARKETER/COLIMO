@@ -33,6 +33,7 @@ interface CourseSuiviPublicRow {
   coursier_position_maj_at: string | null;
   distance_restante_m: number | null;
   eta_secondes: number | null;
+  code_otp: string | null;
   acceptee_at: string | null;
   recuperee_at: string | null;
   livree_at: string | null;
@@ -71,6 +72,7 @@ function courseSuiviPublicFromRow(row: CourseSuiviPublicRow): CourseSuiviPublic 
     coursierPositionMajAt: row.coursier_position_maj_at,
     distanceRestanteM: row.distance_restante_m,
     etaSecondes: row.eta_secondes,
+    codeOtp: row.code_otp,
     accepteeAt: row.acceptee_at,
     recupereeAt: row.recuperee_at,
     livreeAt: row.livree_at,

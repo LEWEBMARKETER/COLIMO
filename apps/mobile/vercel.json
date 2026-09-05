@@ -1,5 +1,8 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/livraison/finaliser-en-attente", "schedule": "0 * * * *" }
   ]
 }

@@ -11,6 +11,7 @@ import {
   formatDureeSecondes,
   formatFCFA,
   peutAnnulerCourse,
+  type ConfirmationLivraison,
   type Coursier,
   type Course,
   type PositionCoursier,
@@ -26,13 +27,15 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
 import {
+  confirmerReceptionClient,
+  getConfirmationLivraison,
   getCourse,
   getCoursierByUtilisateurId,
   getPositionCoursier,
   getUtilisateur,
   lienSuiviPublic,
-  patchCourse,
   recalculerBadgesEtNiveau,
+  renvoyerOtpLivraison,
   souscrirePositionCoursier,
 } from "@/lib/api";
 import { supabase } from "@/lib/supabaseClient";
@@ -42,6 +45,7 @@ import { notifierEvenement } from "@/lib/communication";
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
 const STATUTS_AVEC_POSITION = new Set(["acceptee", "retrait", "en_cours"]);
 const STATUTS_TERMINAUX = new Set(["livree", "confirmee", "annulee", "retournee"]);
+const STATUTS_AVEC_OTP = new Set(["acceptee", "retrait", "en_cours"]);
 
 export default function TrackScreen() {
   const { session, utilisateur } = useAuth();
@@ -53,6 +57,10 @@ export default function TrackScreen() {
   const [coursierUtilisateur, setCoursierUtilisateur] = useState<Utilisateur | null>(null);
   const [positionCoursier, setPositionCoursier] = useState<PositionCoursier | null>(null);
   const [recuEnCours, setRecuEnCours] = useState(false);
+  const [confirmationLivraison, setConfirmationLivraison] = useState<ConfirmationLivraison | null>(null);
+  const [renvoiEnCours, setRenvoiEnCours] = useState(false);
+  const [erreurRenvoi, setErreurRenvoi] = useState<string | null>(null);
+  const [signalementEnCours, setSignalementEnCours] = useState(false);
 
   async function telechargerRecu() {
     if (!course) return;
@@ -88,7 +96,8 @@ export default function TrackScreen() {
     setConfirmationEnCours(true);
     setErreurConfirmation(null);
     try {
-      const misAJour = await patchCourse(course.id, { statut: "confirmee" });
+      await confirmerReceptionClient(course.id);
+      const misAJour = await getCourse(course.id);
       setCourse(misAJour);
       await notifierEvenement("livraison_terminee", {
         declenchePar: session.user.id,
@@ -151,6 +160,51 @@ export default function TrackScreen() {
     getCoursierByUtilisateurId(course.coursierId).then(setCoursier);
     getUtilisateur(course.coursierId).then(setCoursierUtilisateur);
   }, [course?.coursierId]);
+
+  // Code de réception — jamais visible du coursier (0042). Masqué dès qu'il
+  // a été vérifié ou que la livraison est terminée/annulée.
+  useEffect(() => {
+    if (!course || !STATUTS_AVEC_OTP.has(course.statut)) {
+      setConfirmationLivraison(null);
+      return;
+    }
+    let annule = false;
+    getConfirmationLivraison(course.id).then((c) => {
+      if (!annule) setConfirmationLivraison(c);
+    });
+    return () => {
+      annule = true;
+    };
+  }, [course?.id, course?.statut]);
+
+  async function renvoyerCode() {
+    if (!course) return;
+    setRenvoiEnCours(true);
+    setErreurRenvoi(null);
+    try {
+      await renvoyerOtpLivraison(course.id);
+      setConfirmationLivraison(await getConfirmationLivraison(course.id));
+    } catch (e) {
+      setErreurRenvoi(e instanceof Error ? e.message : "Impossible de renvoyer un code pour le moment.");
+    } finally {
+      setRenvoiEnCours(false);
+    }
+  }
+
+  async function signalerProbleme() {
+    if (course) {
+      setSignalementEnCours(true);
+      try {
+        await confirmerReceptionClient(course.id, true);
+      } catch {
+        // Le signalement est un complément d'information ; l'ouverture du
+        // litige ci-dessous reste la voie de traitement principale.
+      } finally {
+        setSignalementEnCours(false);
+      }
+    }
+    router.push(`/(client)/litige/${course?.id}`);
+  }
 
   // Position du coursier en temps réel — uniquement pendant une course
   // active (la RLS de positions_coursiers refuse de toute façon l'accès en
@@ -239,6 +293,29 @@ export default function TrackScreen() {
             <Text className="font-texte text-xs text-white/60">{MODE_PAIEMENT_LABELS[course.modePaiement]}</Text>
           </View>
         </Carte>
+
+        {confirmationLivraison && !confirmationLivraison.otpVerifieAt && (
+          <View className="mt-3 items-center rounded-2xl border-2 border-colimo-rouge bg-white p-4">
+            <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
+              Votre code de réception
+            </Text>
+            <Text className="mt-1 font-titre-bold text-3xl text-colimo-rouge" style={{ letterSpacing: 6 }}>
+              {confirmationLivraison.codeOtp}
+            </Text>
+            <Text className="mt-1 text-center font-texte text-xs text-colimo-neutre-fonce/60">
+              Communiquez ce code uniquement au coursier lorsque vous recevez votre colis.
+            </Text>
+            <Text
+              onPress={renvoiEnCours ? undefined : renvoyerCode}
+              className={`mt-3 font-texte-medium text-xs ${renvoiEnCours ? "text-colimo-neutre-fonce/40" : "text-colimo-rouge"}`}
+            >
+              🔄 {renvoiEnCours ? "Envoi en cours…" : "Générer/envoyer à nouveau le code"}
+            </Text>
+            {erreurRenvoi && (
+              <Text className="mt-1 text-center font-texte text-xs text-colimo-rouge">{erreurRenvoi}</Text>
+            )}
+          </View>
+        )}
 
         {course.latitudeDepart !== undefined &&
           course.longitudeDepart !== undefined &&
@@ -352,7 +429,7 @@ export default function TrackScreen() {
           {(STATUTS_SIGNALABLES.has(course.statut) || (course.coursierId && !contactsFermes)) && (
             <Text className="mb-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50">
               {STATUTS_SIGNALABLES.has(course.statut) && (
-                <Text onPress={() => router.push(`/(client)/litige/${course.id}`)}>Signaler un problème</Text>
+                <Text onPress={signalerProbleme}>Signaler un problème</Text>
               )}
               {STATUTS_SIGNALABLES.has(course.statut) && course.coursierId && !contactsFermes && "  ·  "}
               {course.coursierId && !contactsFermes && (

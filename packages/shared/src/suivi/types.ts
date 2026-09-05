@@ -37,6 +37,10 @@ export interface CourseSuiviPublic {
   coursierPositionMajAt: string | null;
   distanceRestanteM: number | null;
   etaSecondes: number | null;
+  // Uniquement pendant "en_cours" et avant vérification par le coursier
+  // (0042) — le destinataire est souvent la seule personne présente à la
+  // remise, il doit donc pouvoir voir/communiquer ce code lui-même.
+  codeOtp: string | null;
   accepteeAt: string | null;
   recupereeAt: string | null;
   livreeAt: string | null;

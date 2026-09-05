@@ -85,6 +85,20 @@ export default function SuiviPublicScreen() {
           {CATEGORIE_COLIS_EMOJIS[course.categorieColis]} {course.typeColis}
         </Text>
 
+        {course.codeOtp && (
+          <View className="mt-3 items-center rounded-2xl border-2 border-colimo-rouge bg-white p-4">
+            <Text className="font-texte-medium text-xs uppercase tracking-wide text-colimo-neutre-fonce/50">
+              Votre code de réception
+            </Text>
+            <Text className="mt-1 font-titre-bold text-3xl text-colimo-rouge" style={{ letterSpacing: 6 }}>
+              {course.codeOtp}
+            </Text>
+            <Text className="mt-1 text-center font-texte text-xs text-colimo-neutre-fonce/60">
+              Communiquez ce code uniquement au coursier lorsqu&apos;il vous remet le colis.
+            </Text>
+          </View>
+        )}
+
         {course.latitudeDepart !== null &&
           course.longitudeDepart !== null &&
           course.latitudeArrivee !== null &&

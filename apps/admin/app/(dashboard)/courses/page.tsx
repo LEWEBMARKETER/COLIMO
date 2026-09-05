@@ -4,7 +4,15 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StatutBadge from "@/components/StatutBadge";
 import CarteCourses from "@/components/CarteCourses";
-import { annulerCourseAdmin, getCourses, getUtilisateurs, getCoursiers, patchCourse, type CoursierAvecUtilisateur } from "@/lib/api";
+import {
+  annulerCourseAdmin,
+  getConfirmationsLivraisonAdmin,
+  getCourses,
+  getUtilisateurs,
+  getCoursiers,
+  patchCourse,
+  type CoursierAvecUtilisateur,
+} from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 import {
   CATEGORIE_COLIS_LABELS,
@@ -14,6 +22,7 @@ import {
   ZONE_LABELS,
   calculerFraisRetour,
   formatFCFA,
+  type ConfirmationLivraison,
   type Course,
   type MotifAnnulationAdmin,
   type Utilisateur,
@@ -44,6 +53,7 @@ function CoursesContenu() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
+  const [confirmations, setConfirmations] = useState<ConfirmationLivraison[]>([]);
   const [filtreZone, setFiltreZone] = useState<string>("toutes");
   const [chargement, setChargement] = useState(true);
   const [panneauAnnulation, setPanneauAnnulation] = useState<string | null>(null);
@@ -54,7 +64,13 @@ function CoursesContenu() {
   useEffect(() => {
     getUtilisateurs().then(setUtilisateurs);
     getCoursiers().then(setCoursiers);
+    getConfirmationsLivraisonAdmin().then(setConfirmations);
   }, []);
+
+  const confirmationParCourse = useMemo(
+    () => new Map(confirmations.map((c) => [c.courseId, c])),
+    [confirmations]
+  );
 
   useEffect(() => {
     setChargement(true);
@@ -204,6 +220,7 @@ function CoursesContenu() {
               <th className="px-4 py-3 font-medium">Prix</th>
               <th className="px-4 py-3 font-medium">Paiement</th>
               <th className="px-4 py-3 font-medium">Statut</th>
+              <th className="px-4 py-3 font-medium">Preuve de livraison</th>
               <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
@@ -240,6 +257,33 @@ function CoursesContenu() {
                 <td className="px-4 py-3">{MODE_PAIEMENT_LABELS[course.modePaiement]}</td>
                 <td className="px-4 py-3">
                   <StatutBadge statut={course.statut} label={COURSE_STATUS_LABELS[course.statut]} />
+                </td>
+                <td className="px-4 py-3 text-xs">
+                  {(() => {
+                    const confirmation = confirmationParCourse.get(course.id);
+                    if (!confirmation) return <span className="text-colimo-neutre-fonce/40">—</span>;
+                    return (
+                      <div className="flex flex-col gap-0.5 text-colimo-neutre-fonce/70">
+                        <span>{confirmation.otpVerifieAt ? "✅ Code vérifié" : "⏳ Code non utilisé"}</span>
+                        <span>
+                          {confirmation.clientConfirmationStatut === "confirme" && "✅ Client confirmé"}
+                          {confirmation.clientConfirmationStatut === "auto_finalise" && "⏱️ Finalisé automatiquement"}
+                          {confirmation.clientConfirmationStatut === "signale" && "⚠️ Signalé par le client"}
+                          {confirmation.clientConfirmationStatut === "en_attente" && "En attente du client"}
+                        </span>
+                        {confirmation.preuvePhotoUrl && (
+                          <a
+                            href={confirmation.preuvePhotoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-medium text-colimo-rouge hover:underline"
+                          >
+                            📷 Voir la photo
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-1.5">
@@ -321,7 +365,7 @@ function CoursesContenu() {
             ))}
             {!chargement && coursesAffichees.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <td colSpan={11} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
                   Aucune course pour ce filtre
                 </td>
               </tr>

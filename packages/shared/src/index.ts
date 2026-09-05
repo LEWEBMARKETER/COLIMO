@@ -13,6 +13,7 @@ export * from "./comptes";
 export * from "./motDePasse";
 export * from "./suivi";
 export * from "./positions";
+export * from "./confirmationLivraison";
 export * from "./otp";
 export * from "./paiements";
 export * from "./supabase/client";
