@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
 import CourseDisponibleCard from "@/components/CourseDisponibleCard";
+import BandeauNotificationsPush from "@/components/BandeauNotificationsPush";
 import ClocheNotifications from "@/components/ClocheNotifications";
 import { getCourses, patchCoursier } from "@/lib/api";
 import { accepterCourse } from "@/lib/coursierActions";
@@ -113,6 +114,12 @@ export default function CoursierDashboard() {
               </Text>
               {session && <ClocheNotifications utilisateurId={session.user.id} route="/(coursier)/notifications" />}
             </View>
+
+            {session && (
+              <View className="mt-3">
+                <BandeauNotificationsPush utilisateurId={session.user.id} />
+              </View>
+            )}
 
             {/* Chiffre-clé du jour, traitement éditorial : le nombre porte
                 l'information, la légende reste discrète. */}

@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
 import StatutChip from "@/components/ui/StatutChip";
+import BandeauNotificationsPush from "@/components/BandeauNotificationsPush";
 import ClocheNotifications from "@/components/ClocheNotifications";
 import CommerceDashboard from "@/components/CommerceDashboard";
 import { getCourses } from "@/lib/api";
@@ -33,6 +34,7 @@ export default function ClientHome() {
               <ClocheNotifications utilisateurId={session.user.id} route="/(client)/notifications" />
             </View>
           )}
+          {session && <BandeauNotificationsPush utilisateurId={session.user.id} />}
           <CommerceDashboard />
         </ScrollView>
       </SafeAreaView>
@@ -60,6 +62,12 @@ export default function ClientHome() {
           </View>
           {session && <ClocheNotifications utilisateurId={session.user.id} route="/(client)/notifications" />}
         </View>
+
+        {session && (
+          <View className="mt-4">
+            <BandeauNotificationsPush utilisateurId={session.user.id} />
+          </View>
+        )}
 
         {courseActive && (
           <Pressable onPress={() => router.push(`/(client)/track/${courseActive.id}`)} className="mt-6">
