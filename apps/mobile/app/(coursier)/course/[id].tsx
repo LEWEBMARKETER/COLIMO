@@ -11,6 +11,7 @@ import {
   formatFCFA,
   type Course,
   type CourseStatus,
+  type EtatConfirmationCoursier,
   type EvenementCommunication,
 } from "@colimo/shared";
 import ContactCarte from "@/components/ContactCarte";
@@ -18,17 +19,31 @@ import CarteItineraire from "@/components/CarteItineraire";
 import BandeauStatut from "@/components/BandeauStatut";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
+import PreuveLivraisonPicker, { type FichierPreuveLivraison } from "@/components/PreuveLivraisonPicker";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
+import ChampTexte from "@/components/ui/ChampTexte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
-import { getCourse, patchCourse, recalculerEtaCourse, upsertPositionCoursier } from "@/lib/api";
+import {
+  enregistrerPreuveLivraison,
+  getCourse,
+  getEtatConfirmationCoursier,
+  patchCourse,
+  recalculerEtaCourse,
+  uploaderPreuveLivraison,
+  upsertPositionCoursier,
+  verifierOtpLivraison,
+} from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
 
+// "livree" n'est plus atteignable via ce mapping générique : elle ne peut
+// désormais être posée que par verifier_otp_livraison (0042), après saisie
+// du code de réception par le coursier — cf. panneau "Remettre le colis"
+// plus bas. acceptee->retrait->en_cours restent inchangés.
 const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
   acceptee: "retrait",
   retrait: "en_cours",
-  en_cours: "livree",
 };
 
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
@@ -39,11 +54,71 @@ export default function CourseDetailScreen() {
   const { session, utilisateur } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [maj, setMaj] = useState(false);
+  const [etatConfirmation, setEtatConfirmation] = useState<EtatConfirmationCoursier | null>(null);
+  const [codeSaisi, setCodeSaisi] = useState("");
+  const [verificationEnCours, setVerificationEnCours] = useState(false);
+  const [erreurOtp, setErreurOtp] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<FichierPreuveLivraison | null>(null);
+  const [envoiPreuveEnCours, setEnvoiPreuveEnCours] = useState(false);
+  const [erreurPreuve, setErreurPreuve] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     getCourse(id as string).then(setCourse);
   }, [id]);
+
+  // État de la confirmation (tentatives restantes, preuve déjà envoyée...) —
+  // jamais le code lui-même (get_etat_confirmation_coursier, 0042). Rechargé
+  // à chaque changement de statut pour reprendre au bon endroit si le
+  // coursier quitte puis revient sur l'écran en cours de remise.
+  useEffect(() => {
+    if (!course || (course.statut !== "en_cours" && course.statut !== "livree")) return;
+    getEtatConfirmationCoursier(course.id).then(setEtatConfirmation);
+  }, [course?.id, course?.statut]);
+
+  async function verifierCode() {
+    if (!course || codeSaisi.trim().length < 4) return;
+    setVerificationEnCours(true);
+    setErreurOtp(null);
+    try {
+      const resultat = await verifierOtpLivraison(course.id, codeSaisi.trim());
+      if (resultat.valide) {
+        setCodeSaisi("");
+        const [misAJour, etat] = await Promise.all([getCourse(course.id), getEtatConfirmationCoursier(course.id)]);
+        setCourse(misAJour);
+        setEtatConfirmation(etat);
+      } else {
+        setErreurOtp(
+          resultat.erreur === "trop_de_tentatives"
+            ? "Trop de tentatives incorrectes. Contactez le support COLIMO."
+            : resultat.erreur === "expire"
+              ? "Ce code a expiré — demandez au client de le renvoyer."
+              : `❌ Code incorrect${resultat.tentativesRestantes != null ? ` (${resultat.tentativesRestantes} tentative${resultat.tentativesRestantes > 1 ? "s" : ""} restante${resultat.tentativesRestantes > 1 ? "s" : ""})` : ""}.`
+        );
+        const etat = await getEtatConfirmationCoursier(course.id);
+        setEtatConfirmation(etat);
+      }
+    } catch (e) {
+      setErreurOtp(e instanceof Error ? e.message : "Impossible de vérifier ce code. Réessayez.");
+    } finally {
+      setVerificationEnCours(false);
+    }
+  }
+
+  async function envoyerPreuveLivraison() {
+    if (!course || !photo) return;
+    setEnvoiPreuveEnCours(true);
+    setErreurPreuve(null);
+    try {
+      const { chemin, url } = await uploaderPreuveLivraison(course.id, photo.uri, photo.mimeType);
+      await enregistrerPreuveLivraison(course.id, chemin, url);
+      setEtatConfirmation(await getEtatConfirmationCoursier(course.id));
+    } catch (e) {
+      setErreurPreuve(e instanceof Error ? e.message : "Impossible d'envoyer la photo. Réessayez.");
+    } finally {
+      setEnvoiPreuveEnCours(false);
+    }
+  }
 
   // Transmission de la position GPS — uniquement pendant une course active,
   // jamais en arrière-plan une fois celle-ci terminée/annulée. Fréquence
@@ -158,6 +233,8 @@ export default function CourseDetailScreen() {
 
   const prochain = PROCHAIN_STATUT[course.statut];
   const contactsFermes = course.statut === "confirmee";
+  const attendOtp = course.statut === "en_cours";
+  const attendPreuve = course.statut === "livree" && !!etatConfirmation && !etatConfirmation.preuvePhotoUploadedAt;
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
@@ -237,8 +314,50 @@ export default function CourseDetailScreen() {
         )}
       </ScrollView>
 
-      {(prochain || !contactsFermes || STATUTS_SIGNALABLES.has(course.statut)) && (
+      {(prochain || attendOtp || attendPreuve || !contactsFermes || STATUTS_SIGNALABLES.has(course.statut)) && (
         <View className="border-t-2 border-colimo-neutre-fonce bg-colimo-fond px-6 pb-2 pt-3">
+          {attendOtp && (
+            <View className="mb-3 rounded-2xl border-2 border-colimo-neutre-fonce bg-white p-4">
+              <Text className="font-texte-medium text-sm text-colimo-neutre-fonce">📦 Confirmation de livraison</Text>
+              <Text className="mt-1 font-texte text-xs text-colimo-neutre-fonce/60">
+                Demandez le code de réception au client.
+              </Text>
+              <ChampTexte
+                label="Code de réception"
+                value={codeSaisi}
+                onChangeText={(v) => setCodeSaisi(v.replace(/[^0-9]/g, ""))}
+                keyboardType="number-pad"
+                maxLength={6}
+                placeholder="_ _ _ _"
+                className="mb-0 mt-3"
+                style={{ textAlign: "center", fontSize: 24, letterSpacing: 8 }}
+              />
+              {erreurOtp && <Text className="mt-2 font-texte text-xs text-colimo-rouge">{erreurOtp}</Text>}
+              <Bouton
+                label="Vérifier le code"
+                onPress={verifierCode}
+                chargement={verificationEnCours}
+                disabled={codeSaisi.trim().length < 4}
+                className="mt-3 py-3.5"
+              />
+            </View>
+          )}
+
+          {attendPreuve && (
+            <View className="mb-3 rounded-2xl border-2 border-colimo-neutre-fonce bg-white p-4">
+              <Text className="mb-2 font-texte-medium text-sm text-emerald-700">✅ Code valide</Text>
+              <PreuveLivraisonPicker value={photo} onChange={setPhoto} />
+              {erreurPreuve && <Text className="mt-2 font-texte text-xs text-colimo-rouge">{erreurPreuve}</Text>}
+              <Bouton
+                label="Confirmer la livraison"
+                onPress={envoyerPreuveLivraison}
+                chargement={envoiPreuveEnCours}
+                disabled={!photo}
+                className="mt-3 py-3.5"
+              />
+            </View>
+          )}
+
           {(!contactsFermes || STATUTS_SIGNALABLES.has(course.statut)) && (
             <Text className="mb-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50">
               {STATUTS_SIGNALABLES.has(course.statut) && (

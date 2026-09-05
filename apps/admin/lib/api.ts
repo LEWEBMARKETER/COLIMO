@@ -19,6 +19,7 @@ import {
   getModelesCommunication as getModelesCommunicationQuery,
   getCommunications as getCommunicationsQuery,
   getPaiements as getPaiementsQuery,
+  getConfirmationsLivraisonAdmin as getConfirmationsLivraisonAdminQuery,
   getConfigurationPaiementAutomatique as getConfigurationPaiementAutomatiqueQuery,
   patchConfigurationPaiementAutomatique as patchConfigurationPaiementAutomatiqueQuery,
   getWebhooksPaiement as getWebhooksPaiementQuery,
@@ -80,6 +81,7 @@ import {
   type NiveauCoursier,
   type PackPayant,
   type ConfigurationPaiementAutomatique,
+  type ConfirmationLivraison,
   type Paiement,
   type PaymentOperator,
   type WebhookPaiement,
@@ -282,6 +284,10 @@ export function patchModeleCommunication(
 
 export function getPaiements(params?: { statut?: StatutPaiementManuel }): Promise<Paiement[]> {
   return getPaiementsQuery(createClient(), params);
+}
+
+export function getConfirmationsLivraisonAdmin(): Promise<ConfirmationLivraison[]> {
+  return getConfirmationsLivraisonAdminQuery(createClient());
 }
 
 export async function validerPaiement(paiementId: string): Promise<Paiement> {

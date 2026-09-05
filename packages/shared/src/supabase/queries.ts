@@ -381,7 +381,7 @@ export async function envoyerMessage(
 
 export async function uploadFichier(
   client: SupabaseClient,
-  bucket: "avatars" | "documents",
+  bucket: "avatars" | "documents" | "delivery-proofs",
   chemin: string,
   fichier: ArrayBuffer,
   contentType: string

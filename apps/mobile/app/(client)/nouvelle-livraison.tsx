@@ -25,6 +25,7 @@ import GroupePastilles from "@/components/ui/GroupePastilles";
 import {
   creerCourse,
   getCourse,
+  getConfirmationLivraison,
   getDestinatairesCommerce,
   getMonCommerce,
   getPointsDepartCommerce,
@@ -199,6 +200,7 @@ export default function NouvelleLivraisonScreen() {
         destinataireCarnetId: destinataireCarnetId ?? undefined,
         pointDepartId: pointDepartId ?? undefined,
       });
+      const confirmationLivraison = await getConfirmationLivraison(course.id).catch(() => null);
       await notifierEvenement("livraison_creee", {
         declenchePar: session.user.id,
         destinataire: course.telephoneDestinataire,
@@ -206,6 +208,7 @@ export default function NouvelleLivraisonScreen() {
           nom_client: course.nomDestinataire ?? "client",
           numero_commande: course.numeroCommande,
           lien_suivi: lienSuiviPublic(course.codeSuivi),
+          code_otp: confirmationLivraison?.codeOtp ?? "",
         },
       });
       await notifierMeilleursCoursiers(course, session.user.id);

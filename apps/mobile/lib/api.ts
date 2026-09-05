@@ -53,6 +53,15 @@ import {
   getPositionCoursier as getPositionCoursierQuery,
   souscrirePositionCoursier as souscrirePositionCoursierQuery,
   doitRecalculerEta,
+  getConfirmationLivraison as getConfirmationLivraisonQuery,
+  renvoyerOtpLivraison as renvoyerOtpLivraisonQuery,
+  verifierOtpLivraison as verifierOtpLivraisonQuery,
+  getEtatConfirmationCoursier as getEtatConfirmationCoursierQuery,
+  enregistrerPreuveLivraison as enregistrerPreuveLivraisonQuery,
+  confirmerReceptionClient as confirmerReceptionClientQuery,
+  type ConfirmationLivraison,
+  type EtatConfirmationCoursier,
+  type ResultatVerificationOtp,
   type ActiviteCommerce,
   type CategorieColis,
   type CodePromo,
@@ -398,6 +407,32 @@ export function annulerCourseClient(body: { courseId: string; motif: string; com
   return annulerCourseClientQuery(supabase, body);
 }
 
+// --- Confirmation de livraison (OTP + double confirmation + preuve photo) ---
+
+export function getConfirmationLivraison(courseId: string): Promise<ConfirmationLivraison | null> {
+  return getConfirmationLivraisonQuery(supabase, courseId);
+}
+
+export function renvoyerOtpLivraison(courseId: string): Promise<string> {
+  return renvoyerOtpLivraisonQuery(supabase, courseId);
+}
+
+export function verifierOtpLivraison(courseId: string, code: string): Promise<ResultatVerificationOtp> {
+  return verifierOtpLivraisonQuery(supabase, courseId, code);
+}
+
+export function getEtatConfirmationCoursier(courseId: string): Promise<EtatConfirmationCoursier | null> {
+  return getEtatConfirmationCoursierQuery(supabase, courseId);
+}
+
+export function enregistrerPreuveLivraison(courseId: string, chemin: string, url: string): Promise<void> {
+  return enregistrerPreuveLivraisonQuery(supabase, courseId, chemin, url);
+}
+
+export function confirmerReceptionClient(courseId: string, signaler = false): Promise<void> {
+  return confirmerReceptionClientQuery(supabase, courseId, signaler);
+}
+
 export function creerNotation(body: {
   courseId: string;
   auteurId: string;
@@ -469,6 +504,22 @@ export async function uploaderPreuveLitige(
   const extension = mimeType.split("/")[1] ?? "jpg";
   const nomFichier = `${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
   return uploadFichier(supabase, "documents", `${utilisateurId}/litiges/${courseId}/${nomFichier}`, donnees, mimeType);
+}
+
+// Chemin "<courseId>/<fichier>" (pas "<utilisateurId>/...") : le bucket
+// delivery-proofs doit rester lisible par le client ET le coursier de la
+// même course, cf. RLS storage.objects (0042).
+export async function uploaderPreuveLivraison(
+  courseId: string,
+  uri: string,
+  mimeType: string
+): Promise<{ chemin: string; url: string }> {
+  const donnees = await uriVersArrayBuffer(uri);
+  const extension = mimeType.split("/")[1] ?? "jpg";
+  const nomFichier = `${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
+  const chemin = `${courseId}/${nomFichier}`;
+  const url = await uploadFichier(supabase, "delivery-proofs", chemin, donnees, mimeType);
+  return { chemin, url };
 }
 
 export async function uploaderCapturePaiement(

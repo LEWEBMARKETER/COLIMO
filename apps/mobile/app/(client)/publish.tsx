@@ -29,7 +29,7 @@ import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import Stepper from "@/components/ui/Stepper";
-import { creerCourse, getCodePromoParCode, initierPaiementManuel, lienSuiviPublic } from "@/lib/api";
+import { creerCourse, getCodePromoParCode, getConfirmationLivraison, initierPaiementManuel, lienSuiviPublic } from "@/lib/api";
 import { notifierEvenement, notifierMeilleursCoursiers } from "@/lib/communication";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -195,6 +195,7 @@ export default function PublishScreen() {
         quiPaie,
         programmeePour,
       });
+      const confirmationLivraison = await getConfirmationLivraison(course.id).catch(() => null);
       await notifierEvenement("livraison_creee", {
         declenchePar: session.user.id,
         destinataire: course.telephoneDestinataire,
@@ -202,6 +203,7 @@ export default function PublishScreen() {
           nom_client: course.nomDestinataire ?? "client",
           numero_commande: course.numeroCommande,
           lien_suivi: lienSuiviPublic(course.codeSuivi),
+          code_otp: confirmationLivraison?.codeOtp ?? "",
         },
       });
       await notifierMeilleursCoursiers(course, session.user.id);
