@@ -41,6 +41,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
+import { jouerIdentiteSonoreColimo } from "@/lib/sonIdentite";
 
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
 const STATUTS_AVEC_POSITION = new Set(["acceptee", "retrait", "en_cours"]);
@@ -97,6 +98,7 @@ export default function TrackScreen() {
     setErreurConfirmation(null);
     try {
       await confirmerReceptionClient(course.id);
+      jouerIdentiteSonoreColimo();
       const misAJour = await getCourse(course.id);
       setCourse(misAJour);
       await notifierEvenement("livraison_terminee", {

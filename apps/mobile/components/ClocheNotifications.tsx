@@ -4,6 +4,7 @@ import { router, type Href } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getMesCommunications } from "@/lib/api";
 import { supabase } from "@/lib/supabaseClient";
+import { jouerIdentiteSonoreColimo } from "@/lib/sonIdentite";
 
 interface ClocheNotificationsProps {
   utilisateurId: string;
@@ -41,6 +42,14 @@ export default function ClocheNotifications({ utilisateurId, route }: ClocheNoti
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `utilisateur_id=eq.${utilisateurId}` },
         () => rafraichir()
+      )
+      // Identité sonore uniquement sur une nouvelle notification (INSERT) —
+      // pas sur les UPDATE de lecture, qui rafraîchissent le compteur ci-dessus
+      // sans qu'il y ait de nouvel événement à signaler.
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `utilisateur_id=eq.${utilisateurId}` },
+        () => jouerIdentiteSonoreColimo()
       )
       .subscribe();
 

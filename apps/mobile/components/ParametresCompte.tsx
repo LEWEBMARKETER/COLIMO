@@ -1,7 +1,9 @@
-import { Pressable, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, Switch, Text, View } from "react-native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAuth } from "@/lib/AuthContext";
+import { definirSonNotificationsActive, sonNotificationsActive } from "@/lib/sonIdentite";
 
 interface Lien {
   label: string;
@@ -17,6 +19,12 @@ interface Lien {
  */
 export default function ParametresCompte() {
   const { signOut } = useAuth();
+  const [sonActif, setSonActif] = useState(sonNotificationsActive);
+
+  function basculerSon(actif: boolean) {
+    setSonActif(actif);
+    definirSonNotificationsActive(actif);
+  }
 
   async function handleDeconnexion() {
     await signOut();
@@ -36,6 +44,18 @@ export default function ParametresCompte() {
 
   return (
     <View className="mt-8 overflow-hidden rounded-2xl bg-white shadow-sm">
+      <View className="flex-row items-center justify-between gap-3 border-b border-colimo-neutre-clair px-4 py-3.5">
+        <View className="flex-1 flex-row items-center gap-3">
+          <Ionicons name="musical-notes-outline" size={18} color="#2B2622" />
+          <Text className="font-texte text-sm text-colimo-neutre-fonce">Son des notifications</Text>
+        </View>
+        <Switch
+          value={sonActif}
+          onValueChange={basculerSon}
+          trackColor={{ true: "#C41E24" }}
+          accessibilityLabel="Activer ou désactiver le son des notifications"
+        />
+      </View>
       {liens.map((lien, index) => (
         <Pressable
           key={lien.label}

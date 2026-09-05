@@ -36,6 +36,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { notifierEvenement } from "@/lib/communication";
+import { jouerIdentiteSonoreColimo } from "@/lib/sonIdentite";
 
 // "livree" n'est plus atteignable via ce mapping générique : elle ne peut
 // désormais être posée que par verifier_otp_livraison (0042), après saisie
@@ -84,6 +85,7 @@ export default function CourseDetailScreen() {
       const resultat = await verifierOtpLivraison(course.id, codeSaisi.trim());
       if (resultat.valide) {
         setCodeSaisi("");
+        jouerIdentiteSonoreColimo();
         const [misAJour, etat] = await Promise.all([getCourse(course.id), getEtatConfirmationCoursier(course.id)]);
         setCourse(misAJour);
         setEtatConfirmation(etat);
