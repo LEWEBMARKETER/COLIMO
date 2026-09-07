@@ -73,8 +73,13 @@ export default function RegisterCoursierScreen() {
         variables: { prenom },
       });
       router.replace("/(coursier)/dashboard");
-    } catch {
-      setErreur("Impossible d'envoyer l'inscription. Réessayez.");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "";
+      setErreur(
+        message.includes("supprimé récemment")
+          ? message
+          : "Impossible d'envoyer l'inscription. Réessayez."
+      );
     } finally {
       setEnvoiEnCours(false);
     }

@@ -17,6 +17,12 @@ import { utilisateurFromRow, type UtilisateurRow } from "@colimo/shared";
 // réelle ; si elle échoue (contrainte de clé étrangère), on bascule sur une
 // anonymisation + bannissement définitif de la connexion, qui fonctionne
 // pour tout compte sans jamais casser l'historique métier.
+//
+// Dans les deux cas, le téléphone et l'email réels sont libérés (remplacés
+// par un placeholder) pour permettre une réinscription future avec la même
+// identité — pour un coursier, un trigger (0044) bloque cette réinscription
+// pendant 24h après la suppression, journalisée dans
+// historique_suppressions_compte (déjà alimentée dans les deux branches).
 
 const BAN_DUREE_PERMANENTE = "876000h"; // ~100 ans — convention Supabase pour un bannissement définitif
 
@@ -81,6 +87,14 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ erreur: "Impossible de supprimer un compte administrateur." }, { status: 400 });
   }
 
+  // Récupéré avant toute suppression/anonymisation : sert à la fois pour
+  // l'audit (historique_suppressions_compte.email_original) et pour libérer
+  // l'email au niveau Auth en cas d'anonymisation (cf. plus bas) — une fois
+  // le compte réellement supprimé, l'utilisateur Auth n'existe plus et cet
+  // appel échouerait.
+  const { data: authCible } = await serviceClient.auth.admin.getUserById(cibleId);
+  const emailOriginal = authCible?.user?.email ?? null;
+
   // Un coursier avec une course active (acceptee/retrait/en_cours) ne peut
   // être ni suspendu ni désactivé (verrouillé au niveau base par le trigger
   // coursiers_bloquer_transition_course_active, 0043) ni supprimé — la
@@ -118,6 +132,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       utilisateur_id: cible.id,
       nom_original: cible.nom,
       telephone_original: cible.telephone,
+      email_original: emailOriginal,
       type_compte: cible.type,
       mode: "suppression_definitive",
       administrateur_id: user.id,
@@ -162,7 +177,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     .select("id, statut")
     .maybeSingle();
 
-  await serviceClient.auth.admin.updateUserById(cibleId, { ban_duration: BAN_DUREE_PERMANENTE });
+  // Libère l'email réel côté Auth (sinon il resterait verrouillé
+  // indéfiniment par ce compte banni, empêchant toute réinscription future
+  // même après le délai — pour un coursier, ce délai est de 24h, cf. 0044).
+  await serviceClient.auth.admin.updateUserById(cibleId, {
+    email: emailOriginal ? `supprime-${cibleId}@colimo-supprime.invalid` : undefined,
+    ban_duration: BAN_DUREE_PERMANENTE,
+  });
 
   if (cible.type === "coursier" && coursierAnonymise) {
     await serviceClient.from("historique_coursier").insert({
@@ -178,6 +199,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     utilisateur_id: cible.id,
     nom_original: cible.nom,
     telephone_original: cible.telephone,
+    email_original: emailOriginal,
     type_compte: cible.type,
     mode: "anonymisation",
     administrateur_id: user.id,

@@ -12,6 +12,7 @@ export interface HistoriqueSuppressionCompte {
   utilisateurId: string;
   nomOriginal: string;
   telephoneOriginal: string;
+  emailOriginal: string | null;
   typeCompte: UserType;
   mode: ModeSuppressionCompte;
   administrateurId: string;
