@@ -42,6 +42,13 @@ export default function ClientTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="support"
+        options={{
+          title: "Support",
+          tabBarIcon: ({ color, size }) => <Ionicons name="help-buoy-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="profil"
         options={{
           title: "Profil",
