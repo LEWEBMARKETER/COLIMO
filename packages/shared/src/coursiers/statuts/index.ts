@@ -6,6 +6,15 @@ import { recalculerBadgesEtNiveau } from "../automation";
 
 export interface CoursierAvecStatutEffectif extends CoursierAvecUtilisateur {
   statutEffectif: StatutCoursierEffectif;
+  /**
+   * Distinct de statutEffectif === "occupe" : reste vrai même si le
+   * coursier est passé "hors_ligne" en cours de course (le statut affiché
+   * ne dérive "occupe" que depuis "en_ligne", cf. calculerStatutEffectif).
+   * Utilisé côté admin pour bloquer suspendre/désactiver/supprimer tant
+   * qu'une course est active — l'application serveur du même garde-fou vit
+   * dans le trigger coursiers_bloquer_transition_course_active (0043).
+   */
+  aCourseEnCours: boolean;
 }
 
 /**
@@ -30,10 +39,14 @@ async function getCoursierIdsAvecCourseActive(client: SupabaseClient): Promise<S
 
 export async function getCoursiersAvecStatutEffectif(client: SupabaseClient): Promise<CoursierAvecStatutEffectif[]> {
   const [coursiers, idsActifs] = await Promise.all([getCoursiers(client), getCoursierIdsAvecCourseActive(client)]);
-  return coursiers.map((c) => ({
-    ...c,
-    statutEffectif: calculerStatutEffectif(c.statut, idsActifs.has(c.utilisateurId)),
-  }));
+  return coursiers.map((c) => {
+    const aCourseEnCours = idsActifs.has(c.utilisateurId);
+    return {
+      ...c,
+      statutEffectif: calculerStatutEffectif(c.statut, aCourseEnCours),
+      aCourseEnCours,
+    };
+  });
 }
 
 export async function changerStatutCoursier(

@@ -22,6 +22,7 @@ import {
   reactiverCoursier,
   recalculerBadgesEtNiveau,
   retirerBadge,
+  supprimerCompteUtilisateur,
   suspendreCoursier,
 } from "@/lib/api";
 import {
@@ -99,32 +100,87 @@ export default function FicheCoursierPage() {
 
   async function enregistrerStatut() {
     if (!coursier) return;
+    if (aCourseEnCours && ["suspendu", "desactive"].includes(nouveauStatut)) {
+      window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le suspendre/désactiver.");
+      return;
+    }
     const motif = ["suspendu", "desactive"].includes(nouveauStatut) ? window.prompt("Motif (optionnel) :") ?? undefined : undefined;
-    await changerStatutCoursier(coursier.id, nouveauStatut, { ancienStatut: coursier.statut, motif });
-    await charger();
+    try {
+      await changerStatutCoursier(coursier.id, nouveauStatut, { ancienStatut: coursier.statut, motif });
+      await charger();
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de modifier le statut.");
+    }
   }
 
   async function suspendre() {
     if (!coursier) return;
+    if (aCourseEnCours) {
+      window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le suspendre.");
+      return;
+    }
     const motif = window.prompt(
       "Motif de la suspension (obligatoire) :\nEx. mauvais comportement, documents expirés, litiges élevés, fraude, demande personnelle"
     );
     if (!motif) return;
-    await suspendreCoursier(coursier.id, { motif });
-    await charger();
+    try {
+      await suspendreCoursier(coursier.id, { motif });
+      await charger();
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de suspendre ce coursier.");
+    }
   }
 
   async function reactiver() {
     if (!coursier) return;
-    await reactiverCoursier(coursier.id);
-    await charger();
+    try {
+      await reactiverCoursier(coursier.id);
+      await charger();
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de réactiver ce coursier.");
+    }
   }
 
   async function desactiver() {
     if (!coursier) return;
+    if (aCourseEnCours) {
+      window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le désactiver.");
+      return;
+    }
     if (!window.confirm("Désactiver définitivement ce compte ?")) return;
-    await desactiverCoursier(coursier.id);
-    await charger();
+    try {
+      await desactiverCoursier(coursier.id);
+      await charger();
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de désactiver ce coursier.");
+    }
+  }
+
+  async function supprimer() {
+    if (!coursier) return;
+    if (aCourseEnCours) {
+      window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le supprimer.");
+      return;
+    }
+    if (
+      !window.confirm(
+        "Supprimer définitivement ce coursier ? Cette action est irréversible.\n\nSi ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé."
+      )
+    ) {
+      return;
+    }
+    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
+    try {
+      const resultat = await supprimerCompteUtilisateur(coursier.utilisateurId, motif || undefined);
+      window.alert(
+        resultat.mode === "suppression_definitive"
+          ? "Compte supprimé définitivement."
+          : "Ce compte avait de l'historique : ses données personnelles ont été anonymisées et sa connexion bloquée définitivement (l'historique de courses/paiements est conservé)."
+      );
+      router.push("/coursiers");
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de supprimer ce compte.");
+    }
   }
 
   async function attribuer() {
@@ -233,6 +289,12 @@ export default function FicheCoursierPage() {
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-colimo-neutre-clair bg-white p-5">
           <p className="mb-3 font-medium text-colimo-neutre-fonce">Statut</p>
+          {aCourseEnCours && (
+            <p className="mb-3 rounded-lg bg-colimo-rouge-clair px-3 py-2 text-xs text-colimo-rouge">
+              ⚠️ Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de suspendre, désactiver ou
+              supprimer ce compte.
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             <select
               value={nouveauStatut}
@@ -249,7 +311,7 @@ export default function FicheCoursierPage() {
               onClick={enregistrerStatut}
               className="rounded-md bg-colimo-rouge px-3 py-1.5 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
             >
-              Modifier le statut
+              ✏️ Modifier le statut
             </button>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -258,24 +320,36 @@ export default function FicheCoursierPage() {
                 onClick={reactiver}
                 className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
               >
-                Réactiver
+                ♻️ Réactiver
               </button>
             ) : (
               <button
                 onClick={suspendre}
-                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                disabled={aCourseEnCours}
+                title={aCourseEnCours ? "Course active en cours — réaffectez-la avant de suspendre" : undefined}
+                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Suspendre
+                ⏸️ Suspendre
               </button>
             )}
             {coursier.statut !== "desactive" && (
               <button
                 onClick={desactiver}
-                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair"
+                disabled={aCourseEnCours}
+                title={aCourseEnCours ? "Course active en cours — réaffectez-la avant de désactiver" : undefined}
+                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Désactiver
+                🚫 Désactiver
               </button>
             )}
+            <button
+              onClick={supprimer}
+              disabled={aCourseEnCours}
+              title={aCourseEnCours ? "Course active en cours — réaffectez-la avant de supprimer" : undefined}
+              className="rounded-md border border-colimo-rouge/30 px-3 py-1.5 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              🗑️ Supprimer définitivement
+            </button>
           </div>
         </div>
 
@@ -298,7 +372,7 @@ export default function FicheCoursierPage() {
               onClick={enregistrerNiveau}
               className="rounded-md bg-colimo-rouge px-3 py-1.5 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
             >
-              Modifier le niveau
+              ✏️ Modifier le niveau
             </button>
           </div>
         </div>

@@ -160,32 +160,56 @@ export default function CoursiersPage() {
   }
 
   async function suspendre(coursier: CoursierAvecStatutEffectif) {
+    if (coursier.aCourseEnCours) {
+      window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le suspendre.");
+      return;
+    }
     const motif = window.prompt(
       `Suspendre ${nomCoursier(coursier)} — motif (obligatoire) :\nEx. mauvais comportement, documents expirés, litiges élevés, fraude, demande personnelle`
     );
     if (!motif) return;
     const commentaire = window.prompt("Commentaire interne (optionnel) :") ?? undefined;
-    await suspendreCoursier(coursier.id, { motif, commentaire: commentaire || undefined });
-    await chargerTout();
+    try {
+      await suspendreCoursier(coursier.id, { motif, commentaire: commentaire || undefined });
+      await chargerTout();
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de suspendre ce coursier.");
+    }
   }
 
   async function reactiver(coursier: CoursierAvecStatutEffectif) {
     if (!window.confirm(`Réactiver ${nomCoursier(coursier)} ?`)) return;
-    await reactiverCoursier(coursier.id);
-    await chargerTout();
+    try {
+      await reactiverCoursier(coursier.id);
+      await chargerTout();
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de réactiver ce coursier.");
+    }
   }
 
   async function desactiver(coursier: CoursierAvecStatutEffectif) {
+    if (coursier.aCourseEnCours) {
+      window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le désactiver.");
+      return;
+    }
     if (!window.confirm(`Désactiver définitivement ${nomCoursier(coursier)} ? Cette action ferme le compte.`)) return;
     const motif = window.prompt("Motif de la désactivation (optionnel) :") ?? undefined;
-    await desactiverCoursier(coursier.id, { motif: motif || undefined });
-    await chargerTout();
+    try {
+      await desactiverCoursier(coursier.id, { motif: motif || undefined });
+      await chargerTout();
+    } catch (erreur) {
+      window.alert(erreur instanceof Error ? erreur.message : "Impossible de désactiver ce coursier.");
+    }
   }
 
   async function supprimerCompte(coursier: CoursierAvecStatutEffectif) {
+    if (coursier.aCourseEnCours) {
+      window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le supprimer.");
+      return;
+    }
     if (
       !window.confirm(
-        `Supprimer le compte de ${nomCoursier(coursier)} ?\n\nSi ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé.\n\nCette action est irréversible.`
+        `Supprimer définitivement ce coursier ? Cette action est irréversible.\n\n${nomCoursier(coursier)} — si ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé.`
       )
     ) {
       return;
@@ -340,7 +364,7 @@ export default function CoursiersPage() {
                           href={`/coursiers/${c.id}`}
                           className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                         >
-                          Voir la fiche
+                          👁️ Voir la fiche
                         </Link>
                       </div>
                     </td>
@@ -416,31 +440,37 @@ export default function CoursiersPage() {
                             onClick={() => reactiver(c)}
                             className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                           >
-                            Réactiver
+                            ♻️ Réactiver
                           </button>
                         ) : (
                           c.statutVerification === "valide" && (
                             <button
                               onClick={() => suspendre(c)}
-                              className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                              disabled={c.aCourseEnCours}
+                              title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de suspendre" : undefined}
+                              className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:cursor-not-allowed disabled:opacity-40"
                             >
-                              Suspendre
+                              ⏸️ Suspendre
                             </button>
                           )
                         )}
                         {c.statut !== "desactive" && (
                           <button
                             onClick={() => desactiver(c)}
-                            className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair"
+                            disabled={c.aCourseEnCours}
+                            title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de désactiver" : undefined}
+                            className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
                           >
-                            Désactiver
+                            🚫 Désactiver
                           </button>
                         )}
                         <button
                           onClick={() => supprimerCompte(c)}
-                          className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair"
+                          disabled={c.aCourseEnCours}
+                          title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de supprimer" : undefined}
+                          className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          Supprimer
+                          🗑️ Supprimer
                         </button>
                       </div>
                     </td>
