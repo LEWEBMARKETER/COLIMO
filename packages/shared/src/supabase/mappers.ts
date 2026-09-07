@@ -208,6 +208,7 @@ export interface HistoriqueSuppressionCompteRow {
   utilisateur_id: string;
   nom_original: string;
   telephone_original: string;
+  email_original?: string | null;
   type_compte: UserType;
   mode: "anonymisation" | "suppression_definitive";
   administrateur_id: string;
@@ -375,6 +376,7 @@ export function historiqueSuppressionCompteFromRow(row: HistoriqueSuppressionCom
     utilisateurId: row.utilisateur_id,
     nomOriginal: row.nom_original,
     telephoneOriginal: row.telephone_original,
+    emailOriginal: row.email_original ?? null,
     typeCompte: row.type_compte,
     mode: row.mode,
     administrateurId: row.administrateur_id,
