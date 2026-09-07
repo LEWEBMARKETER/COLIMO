@@ -710,3 +710,23 @@ export async function inscrireCoursier(input: {
 
   return { utilisateur, coursier };
 }
+
+// Formulaire de contact de l'onglet Support — passe par une route serveur
+// (api/support/contact.ts) car l'envoi réel se fait par SMTP, dont les
+// identifiants ne doivent jamais atteindre le navigateur.
+export async function envoyerDemandeSupport(input: {
+  nom: string;
+  email: string;
+  sujet: string;
+  message: string;
+}): Promise<void> {
+  const reponse = await fetch("/api/support/contact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const corps = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) {
+    throw new Error(corps?.erreur || "Impossible d'envoyer votre demande. Réessayez.");
+  }
+}
