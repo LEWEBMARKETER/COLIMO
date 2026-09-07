@@ -81,6 +81,30 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ erreur: "Impossible de supprimer un compte administrateur." }, { status: 400 });
   }
 
+  // Un coursier avec une course active (acceptee/retrait/en_cours) ne peut
+  // être ni suspendu ni désactivé (verrouillé au niveau base par le trigger
+  // coursiers_bloquer_transition_course_active, 0043) ni supprimé — la
+  // suppression réelle échouerait de toute façon (FK RESTRICT depuis
+  // courses), mais le repli anonymisation+bannissement, lui, réussirait et
+  // couperait l'accès du coursier en pleine livraison. Vérifié ici, avant
+  // toute tentative, pour échouer immédiatement avec un message clair.
+  if (cible.type === "coursier") {
+    const { count: nombreCoursesActives } = await serviceClient
+      .from("courses")
+      .select("id", { count: "exact", head: true })
+      .eq("coursier_id", cibleId)
+      .in("statut", ["acceptee", "retrait", "en_cours"]);
+    if ((nombreCoursesActives ?? 0) > 0) {
+      return NextResponse.json(
+        {
+          erreur:
+            "Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de suspendre, désactiver ou supprimer ce compte.",
+        },
+        { status: 409 }
+      );
+    }
+  }
+
   const corps = await request.json().catch(() => ({}));
   const motif: string | null = typeof corps?.motif === "string" && corps.motif.trim() ? corps.motif.trim() : null;
 
@@ -124,12 +148,31 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     .update({ adresse: null, responsable: null, whatsapp: null, photo_commerce_url: null })
     .eq("utilisateur_id", cibleId);
 
-  await serviceClient
+  // Pour un coursier, l'anonymisation doit aussi le sortir de la
+  // disponibilité (sinon un compte banni de la connexion resterait "en_ligne"
+  // et continuerait d'apparaître disponible pour l'attribution — le
+  // bannissement Auth ne touche que la connexion, pas coursiers.statut).
+  const misesAJourCoursier: Record<string, unknown> = { documents: [], piece_identite_url: null };
+  if (cible.type === "coursier") misesAJourCoursier.statut = "desactive";
+
+  const { data: coursierAnonymise } = await serviceClient
     .from("coursiers")
-    .update({ documents: [], piece_identite_url: null })
-    .eq("utilisateur_id", cibleId);
+    .update(misesAJourCoursier)
+    .eq("utilisateur_id", cibleId)
+    .select("id, statut")
+    .maybeSingle();
 
   await serviceClient.auth.admin.updateUserById(cibleId, { ban_duration: BAN_DUREE_PERMANENTE });
+
+  if (cible.type === "coursier" && coursierAnonymise) {
+    await serviceClient.from("historique_coursier").insert({
+      coursier_id: coursierAnonymise.id,
+      action: "desactivation",
+      nouvelle_valeur: "desactive",
+      motif: motif ?? "Compte supprimé (anonymisation — historique existant conservé)",
+      administrateur_id: user.id,
+    });
+  }
 
   await serviceClient.from("historique_suppressions_compte").insert({
     utilisateur_id: cible.id,
