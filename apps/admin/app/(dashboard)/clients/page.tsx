@@ -8,12 +8,19 @@ import { ZONE_LABELS, type Course, type Utilisateur, type Zone } from "@colimo/s
 
 type FiltreType = "tous" | "particulier" | "commerce";
 
+const STATUT_CLIENT_LABELS: Record<string, string> = {
+  actif: "Actif",
+  suspendu: "Suspendu",
+  desactive: "Supprimé",
+};
+
 export default function ClientsPage() {
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [chargement, setChargement] = useState(true);
   const [recherche, setRecherche] = useState("");
   const [filtreType, setFiltreType] = useState<FiltreType>("tous");
+  const [afficherSupprimes, setAfficherSupprimes] = useState(false);
   const [enEdition, setEnEdition] = useState<string | null>(null);
   const [brouillon, setBrouillon] = useState<{ nom: string; telephone: string; zone: Zone | "" }>({
     nom: "",
@@ -30,16 +37,22 @@ export default function ClientsPage() {
       .finally(() => setChargement(false));
   }, []);
 
+  const nombreSupprimes = useMemo(
+    () => utilisateurs.filter((u) => u.type === "client" && u.statut === "desactive").length,
+    [utilisateurs]
+  );
+
   const clients = useMemo(() => {
     return utilisateurs
       .filter((u) => u.type === "client")
+      .filter((u) => afficherSupprimes || u.statut !== "desactive")
       .filter((u) => filtreType === "tous" || u.typeClient === filtreType)
       .filter((u) => {
         const q = recherche.trim().toLowerCase();
         if (!q) return true;
         return u.nom.toLowerCase().includes(q) || u.telephone.includes(q);
       });
-  }, [utilisateurs, filtreType, recherche]);
+  }, [utilisateurs, filtreType, recherche, afficherSupprimes]);
 
   const nombreCommandes = useMemo(
     () => (clientId: string) => courses.filter((c) => c.clientId === clientId).length,
@@ -121,6 +134,12 @@ export default function ClientsPage() {
             </button>
           ))}
         </div>
+        {nombreSupprimes > 0 && (
+          <label className="flex items-center gap-2 text-xs text-colimo-neutre-fonce/60">
+            <input type="checkbox" checked={afficherSupprimes} onChange={(e) => setAfficherSupprimes(e.target.checked)} />
+            Afficher les comptes supprimés ({nombreSupprimes})
+          </label>
+        )}
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
@@ -190,13 +209,12 @@ export default function ClientsPage() {
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <StatutBadge
-                      statut={client.statut}
-                      label={client.statut === "suspendu" ? "Suspendu" : "Actif"}
-                    />
+                    <StatutBadge statut={client.statut} label={STATUT_CLIENT_LABELS[client.statut] ?? "Actif"} />
                   </td>
                   <td className="px-4 py-3">
-                    {enCours ? (
+                    {client.statut === "desactive" ? (
+                      <span className="text-xs text-colimo-neutre-fonce/40">Compte supprimé — aucune action possible</span>
+                    ) : enCours ? (
                       <div className="flex gap-2">
                         <button
                           onClick={() => enregistrerEdition(client.id)}
