@@ -7,12 +7,15 @@ import {
   CATEGORIE_COLIS_LABELS,
   calculatePrice,
   calculerPlanEffectif,
+  calculerReductionPromo,
+  codePromoValide,
   formatFCFA,
   isRouteDesservie,
   type CategorieColis,
   type Commercant,
   type CommerceDestinataire,
   type CommercePointDepart,
+  type CodePromo,
   type Zone,
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
@@ -24,6 +27,7 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
 import {
   creerCourse,
+  getCodePromoParCode,
   getCourse,
   getConfirmationLivraison,
   getDestinatairesCommerce,
@@ -81,6 +85,10 @@ export default function NouvelleLivraisonScreen() {
   const [typeLivraison, setTypeLivraison] = useState<TypeLivraison>("standard");
   const [datePreference, setDatePreference] = useState("");
   const [modePaiement, setModePaiement] = useState<ModePaiementCommerce>("especes");
+  const [codePromoTexte, setCodePromoTexte] = useState("");
+  const [codePromoApplique, setCodePromoApplique] = useState<CodePromo | null>(null);
+  const [verificationPromoEnCours, setVerificationPromoEnCours] = useState(false);
+  const [erreurPromo, setErreurPromo] = useState<string | null>(null);
   const [instructions, setInstructions] = useState("");
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -155,9 +163,30 @@ export default function NouvelleLivraisonScreen() {
     return calculatePrice(depart, arrivee, { livraisonPrioritaire: typeLivraison === "express" });
   }, [depart, arrivee, typeLivraison]);
 
+  const reduction = pricing && codePromoApplique ? calculerReductionPromo(pricing.total, codePromoApplique) : 0;
+
   const peutPublier = Boolean(
     pricing && telephoneDestinataire.trim() && adresseArrivee.trim() && natureCommande.trim() && !envoiEnCours
   );
+
+  async function appliquerCodePromo() {
+    if (!codePromoTexte.trim()) return;
+    setVerificationPromoEnCours(true);
+    setErreurPromo(null);
+    try {
+      const promo = await getCodePromoParCode(codePromoTexte.trim());
+      if (!promo || !codePromoValide(promo)) {
+        setErreurPromo("Code promo invalide ou expiré.");
+        setCodePromoApplique(null);
+        return;
+      }
+      setCodePromoApplique(promo);
+    } catch {
+      setErreurPromo("Impossible de vérifier ce code. Réessayez.");
+    } finally {
+      setVerificationPromoEnCours(false);
+    }
+  }
 
   async function handlePublier() {
     if (!depart || !arrivee || !pricing || !session) return;
@@ -190,7 +219,9 @@ export default function NouvelleLivraisonScreen() {
         livraisonPrioritaire: typeLivraison === "express",
         modePaiement,
         valeurDeclaree: Number(montant) || undefined,
-        prix: pricing.total,
+        prix: Math.max(pricing.total - reduction, 0),
+        codePromoId: codePromoApplique?.id,
+        reductionPromo: reduction,
         nomDestinataire: nomDestinataire.trim() || undefined,
         telephoneDestinataire: telephoneDestinataire.trim(),
         repereArrivee: repereArrivee.trim() || undefined,
@@ -325,6 +356,30 @@ export default function NouvelleLivraisonScreen() {
           onChange={setModePaiement}
         />
 
+        <View className="mb-2 mt-4 flex-row items-end gap-2">
+          <ChampTexte
+            label="Code promo (optionnel)"
+            value={codePromoTexte}
+            onChangeText={(t) => {
+              setCodePromoTexte(t.toUpperCase());
+              setCodePromoApplique(null);
+              setErreurPromo(null);
+            }}
+            autoCapitalize="characters"
+            placeholder="Ex : BIENVENUE10"
+            className="mb-0 flex-1"
+          />
+          <Bouton
+            label={codePromoApplique ? "Appliqué ✓" : "Appliquer"}
+            variante="contour"
+            onPress={appliquerCodePromo}
+            disabled={!codePromoTexte.trim() || verificationPromoEnCours}
+            chargement={verificationPromoEnCours}
+            className="px-4 py-3"
+          />
+        </View>
+        {erreurPromo && <Text className="mb-4 -mt-2 font-texte text-xs text-colimo-rouge">{erreurPromo}</Text>}
+
         <TitreSection>Livraison</TitreSection>
         <ZoneSelector label="Zone de départ (votre commerce)" value={depart} onChange={setDepart} />
         <GroupePastilles
@@ -361,7 +416,7 @@ export default function NouvelleLivraisonScreen() {
 
         {pricing && (
           <View className="mt-4 mb-6">
-            <PriceSummary pricing={pricing} />
+            <PriceSummary pricing={pricing} reduction={reduction} />
           </View>
         )}
 
