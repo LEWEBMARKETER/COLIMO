@@ -24,3 +24,14 @@ export interface ResultatSuppressionCompte {
   mode: ModeSuppressionCompte;
   utilisateur?: Utilisateur | null;
 }
+
+// Préfixe posé par apps/admin/app/api/utilisateurs/[id]/route.ts sur le
+// téléphone d'un compte anonymisé (`supprime-<uuid>`) — utilisé ici comme
+// signal fiable de "ce compte a été supprimé", car statut === "desactive"
+// ne l'est pas pour un coursier (désactivation manuelle par un admin,
+// indépendante de toute suppression, cf. suspendreCoursier/desactiverCoursier).
+export const PREFIXE_TELEPHONE_COMPTE_SUPPRIME = "supprime-";
+
+export function estCompteSupprime(telephone: string): boolean {
+  return telephone.startsWith(PREFIXE_TELEPHONE_COMPTE_SUPPRIME);
+}
