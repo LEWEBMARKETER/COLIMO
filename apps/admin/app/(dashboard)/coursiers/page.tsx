@@ -29,6 +29,7 @@ import {
   ZONE_LABELS,
   calculerStatistiquesCoursier,
   calculerTableauDeBordCoursiers,
+  estCompteSupprime,
   type ActionHistoriqueCoursier,
   type BadgeCoursier,
   type BadgeCoursierAttribue,
@@ -83,6 +84,7 @@ export default function CoursiersPage() {
   const [filtreStatut, setFiltreStatut] = useState<StatutCoursierEffectif | "tous">("tous");
   const [filtreHistoriqueCoursier, setFiltreHistoriqueCoursier] = useState<string>("tous");
   const [filtreHistoriqueAction, setFiltreHistoriqueAction] = useState<ActionHistoriqueCoursier | "toutes">("toutes");
+  const [afficherSupprimes, setAfficherSupprimes] = useState(false);
 
   async function chargerTout() {
     const [c, b, n, ba, h] = await Promise.all([
@@ -115,14 +117,29 @@ export default function CoursiersPage() {
     return map;
   }, [badgesAttribues]);
 
+  const nombreSupprimes = useMemo(
+    () => coursiers.filter((c) => estCompteSupprime(c.utilisateur.telephone)).length,
+    [coursiers]
+  );
+
+  // Un coursier supprimé (anonymisé) garde statut = "desactive", mais ça ne
+  // suffit pas à le repérer : une désactivation manuelle normale (sans
+  // suppression) produit exactement le même statut. Seul le préfixe posé
+  // par la route de suppression sur le téléphone est un signal fiable
+  // (cf. packages/shared/src/comptes/types.ts).
+  const coursiersVisibles = useMemo(
+    () => (afficherSupprimes ? coursiers : coursiers.filter((c) => !estCompteSupprime(c.utilisateur.telephone))),
+    [coursiers, afficherSupprimes]
+  );
+
   const tableauDeBord = useMemo(
-    () => calculerTableauDeBordCoursiers(coursiers, niveaux, badgesAttribues.length),
-    [coursiers, niveaux, badgesAttribues]
+    () => calculerTableauDeBordCoursiers(coursiersVisibles, niveaux, badgesAttribues.length),
+    [coursiersVisibles, niveaux, badgesAttribues]
   );
 
   const coursiersFiltres = useMemo(
-    () => (filtreStatut === "tous" ? coursiers : coursiers.filter((c) => c.statutEffectif === filtreStatut)),
-    [coursiers, filtreStatut]
+    () => (filtreStatut === "tous" ? coursiersVisibles : coursiersVisibles.filter((c) => c.statutEffectif === filtreStatut)),
+    [coursiersVisibles, filtreStatut]
   );
 
   const historiqueFiltre = useMemo(
@@ -256,10 +273,17 @@ export default function CoursiersPage() {
         ))}
       </div>
 
+      {nombreSupprimes > 0 && (
+        <label className="mt-3 flex items-center gap-2 text-xs text-colimo-neutre-fonce/60">
+          <input type="checkbox" checked={afficherSupprimes} onChange={(e) => setAfficherSupprimes(e.target.checked)} />
+          Afficher les comptes supprimés ({nombreSupprimes})
+        </label>
+      )}
+
       {section === "dashboard" && (
         <div className="mt-6 flex flex-col gap-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Coursiers" value={String(coursiers.length)} sombre />
+            <StatCard label="Coursiers" value={String(coursiersVisibles.length)} sombre />
             {STATUTS_EFFECTIFS_FILTRE.map((s) => (
               <StatCard key={s} label={STATUT_COURSIER_LABELS[s]} value={String(tableauDeBord.parStatut[s])} />
             ))}
@@ -314,7 +338,7 @@ export default function CoursiersPage() {
               </tr>
             </thead>
             <tbody>
-              {coursiers.map((c) => {
+              {coursiersVisibles.map((c) => {
                 const niveau = c.niveauId ? niveauParId.get(c.niveauId) : undefined;
                 const mesBadges = badgesParCoursier.get(c.id) ?? [];
                 return (
@@ -371,7 +395,7 @@ export default function CoursiersPage() {
                   </tr>
                 );
               })}
-              {!chargement && coursiers.length === 0 && (
+              {!chargement && coursiersVisibles.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
                     Aucun coursier inscrit
@@ -418,61 +442,65 @@ export default function CoursiersPage() {
                       <StatutBadge statut={c.statutEffectif} label={STATUT_COURSIER_LABELS[c.statutEffectif]} />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        {c.statutVerification === "en_attente" && (
-                          <>
+                      {estCompteSupprime(c.utilisateur.telephone) ? (
+                        <span className="text-xs text-colimo-neutre-fonce/40">Compte supprimé — aucune action possible</span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {c.statutVerification === "en_attente" && (
+                            <>
+                              <button
+                                onClick={() => valider(c.id)}
+                                className="rounded-md bg-colimo-rouge px-2.5 py-1 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
+                              >
+                                Valider
+                              </button>
+                              <button
+                                onClick={() => rejeter(c.id)}
+                                className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                              >
+                                Rejeter
+                              </button>
+                            </>
+                          )}
+                          {c.statut === "suspendu" || c.statut === "desactive" ? (
                             <button
-                              onClick={() => valider(c.id)}
-                              className="rounded-md bg-colimo-rouge px-2.5 py-1 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
-                            >
-                              Valider
-                            </button>
-                            <button
-                              onClick={() => rejeter(c.id)}
+                              onClick={() => reactiver(c)}
                               className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                             >
-                              Rejeter
+                              ♻️ Réactiver
                             </button>
-                          </>
-                        )}
-                        {c.statut === "suspendu" || c.statut === "desactive" ? (
-                          <button
-                            onClick={() => reactiver(c)}
-                            className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
-                          >
-                            ♻️ Réactiver
-                          </button>
-                        ) : (
-                          c.statutVerification === "valide" && (
+                          ) : (
+                            c.statutVerification === "valide" && (
+                              <button
+                                onClick={() => suspendre(c)}
+                                disabled={c.aCourseEnCours}
+                                title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de suspendre" : undefined}
+                                className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                ⏸️ Suspendre
+                              </button>
+                            )
+                          )}
+                          {c.statut !== "desactive" && (
                             <button
-                              onClick={() => suspendre(c)}
+                              onClick={() => desactiver(c)}
                               disabled={c.aCourseEnCours}
-                              title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de suspendre" : undefined}
-                              className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:cursor-not-allowed disabled:opacity-40"
+                              title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de désactiver" : undefined}
+                              className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
                             >
-                              ⏸️ Suspendre
+                              🚫 Désactiver
                             </button>
-                          )
-                        )}
-                        {c.statut !== "desactive" && (
+                          )}
                           <button
-                            onClick={() => desactiver(c)}
+                            onClick={() => supprimerCompte(c)}
                             disabled={c.aCourseEnCours}
-                            title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de désactiver" : undefined}
-                            className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
+                            title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de supprimer" : undefined}
+                            className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
                           >
-                            🚫 Désactiver
+                            🗑️ Supprimer
                           </button>
-                        )}
-                        <button
-                          onClick={() => supprimerCompte(c)}
-                          disabled={c.aCourseEnCours}
-                          title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de supprimer" : undefined}
-                          className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          🗑️ Supprimer
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -530,7 +558,7 @@ export default function CoursiersPage() {
               </tr>
             </thead>
             <tbody>
-              {coursiers.map((c) => {
+              {coursiersVisibles.map((c) => {
                 const stats = calculerStatistiquesCoursier(c, c.utilisateur);
                 return (
                   <tr key={c.id} className="border-b border-colimo-neutre-clair last:border-0">
@@ -565,7 +593,7 @@ export default function CoursiersPage() {
                 className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
               >
                 <option value="tous">Tous les coursiers</option>
-                {coursiers.map((c) => (
+                {coursiersVisibles.map((c) => (
                   <option key={c.id} value={c.id}>
                     {nomCoursier(c)}
                   </option>

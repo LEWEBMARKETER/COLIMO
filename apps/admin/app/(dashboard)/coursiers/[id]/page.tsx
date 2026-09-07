@@ -32,6 +32,7 @@ import {
   ZONE_LABELS,
   calculerStatistiquesCoursier,
   calculerStatutEffectif,
+  estCompteSupprime,
   type BadgeCoursier,
   type BadgeCoursierAttribue,
   type CoursierAvecUtilisateur,
@@ -223,6 +224,10 @@ export default function FicheCoursierPage() {
   }
 
   const nom = coursier.utilisateur.prenom ? `${coursier.utilisateur.prenom} ${coursier.utilisateur.nom}` : coursier.utilisateur.nom;
+  // Un compte supprimé (anonymisé) n'a plus rien à modifier — son identité,
+  // ses documents et sa disponibilité ont déjà été effacés côté serveur ;
+  // seuls les stats/historique restent affichés à titre d'audit.
+  const estSupprime = estCompteSupprime(coursier.utilisateur.telephone);
 
   return (
     <div>
@@ -249,12 +254,14 @@ export default function FicheCoursierPage() {
             </div>
           </div>
         </div>
-        <button
-          onClick={recalculer}
-          className="shrink-0 rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
-        >
-          Recalculer badges/niveau
-        </button>
+        {!estSupprime && (
+          <button
+            onClick={recalculer}
+            className="shrink-0 rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+          >
+            Recalculer badges/niveau
+          </button>
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-1.5">
@@ -286,6 +293,19 @@ export default function FicheCoursierPage() {
         />
       </div>
 
+      {estSupprime && (
+        <div className="mt-8 rounded-2xl border border-colimo-neutre-clair bg-white p-5">
+          <p className="font-medium text-colimo-neutre-fonce">🗑️ Compte supprimé</p>
+          <p className="mt-1 text-sm text-colimo-neutre-fonce/70">
+            Ce compte a été supprimé depuis le back-office. Ses données personnelles (nom, téléphone, documents) ont
+            été anonymisées et sa connexion bloquée définitivement — aucune action supplémentaire n&apos;est possible.
+            Son historique de courses, paiements et évaluations reste conservé ci-dessous, et il pourra recréer un
+            nouveau compte 24h après la suppression.
+          </p>
+        </div>
+      )}
+
+      {!estSupprime && (
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-colimo-neutre-clair bg-white p-5">
           <p className="mb-3 font-medium text-colimo-neutre-fonce">Statut</p>
@@ -420,6 +440,7 @@ export default function FicheCoursierPage() {
           </button>
         </div>
       </div>
+      )}
 
       <div className="mt-8">
         <p className="mb-3 font-titre text-base font-semibold text-colimo-neutre-fonce">Historique</p>

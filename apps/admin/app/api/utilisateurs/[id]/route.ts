@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { utilisateurFromRow, type UtilisateurRow } from "@colimo/shared";
+import { PREFIXE_TELEPHONE_COMPTE_SUPPRIME, utilisateurFromRow, type UtilisateurRow } from "@colimo/shared";
 
 // Suppression d'un compte utilisateur — première route serveur de ce projet
 // (jusqu'ici tout passait par des RPC Postgres "security definer", sans
@@ -149,7 +149,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     .update({
       nom: "Utilisateur supprimé",
       prenom: null,
-      telephone: `supprime-${cibleId}`,
+      telephone: `${PREFIXE_TELEPHONE_COMPTE_SUPPRIME}${cibleId}`,
       photo_url: null,
       zone: null,
       statut: "desactive",

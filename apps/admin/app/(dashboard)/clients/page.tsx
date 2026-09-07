@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import StatutBadge from "@/components/StatutBadge";
 import { getUtilisateurs, getCourses, updateUtilisateur, supprimerCompteUtilisateur } from "@/lib/api";
-import { ZONE_LABELS, type Course, type Utilisateur, type Zone } from "@colimo/shared";
+import { ZONE_LABELS, estCompteSupprime, type Course, type Utilisateur, type Zone } from "@colimo/shared";
 
 type FiltreType = "tous" | "particulier" | "commerce";
 
@@ -38,14 +38,14 @@ export default function ClientsPage() {
   }, []);
 
   const nombreSupprimes = useMemo(
-    () => utilisateurs.filter((u) => u.type === "client" && u.statut === "desactive").length,
+    () => utilisateurs.filter((u) => u.type === "client" && estCompteSupprime(u.telephone)).length,
     [utilisateurs]
   );
 
   const clients = useMemo(() => {
     return utilisateurs
       .filter((u) => u.type === "client")
-      .filter((u) => afficherSupprimes || u.statut !== "desactive")
+      .filter((u) => afficherSupprimes || !estCompteSupprime(u.telephone))
       .filter((u) => filtreType === "tous" || u.typeClient === filtreType)
       .filter((u) => {
         const q = recherche.trim().toLowerCase();
@@ -212,7 +212,7 @@ export default function ClientsPage() {
                     <StatutBadge statut={client.statut} label={STATUT_CLIENT_LABELS[client.statut] ?? "Actif"} />
                   </td>
                   <td className="px-4 py-3">
-                    {client.statut === "desactive" ? (
+                    {estCompteSupprime(client.telephone) ? (
                       <span className="text-xs text-colimo-neutre-fonce/40">Compte supprimé — aucune action possible</span>
                     ) : enCours ? (
                       <div className="flex gap-2">
