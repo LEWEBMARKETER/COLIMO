@@ -10,6 +10,7 @@ import {
   calculatePrice,
   calculerReductionPromo,
   codePromoValide,
+  construireDateProgrammee,
   distanceKm,
   formatFCFA,
   isRouteDesservie,
@@ -22,6 +23,7 @@ import {
   type Zone,
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
+import SelecteurCreneauProgramme from "@/components/SelecteurCreneauProgramme";
 import SelecteurPointCarte from "@/components/SelecteurPointCarte";
 import PriceSummary from "@/components/PriceSummary";
 import Bouton from "@/components/ui/Bouton";
@@ -88,7 +90,8 @@ export default function PublishScreen() {
 
   // Étape 4 — options
   const [typeLivraison, setTypeLivraison] = useState<TypeLivraison>("standard");
-  const [datePreference, setDatePreference] = useState("");
+  const [jourProgramme, setJourProgramme] = useState<string | null>(null);
+  const [heureProgrammee, setHeureProgrammee] = useState<string | null>(null);
 
   // Étape 5 — paiement
   const [quiPaie, setQuiPaie] = useState<QuiPaie>("expediteur");
@@ -137,7 +140,7 @@ export default function PublishScreen() {
     Boolean(depart && adresseDepart.trim() && telephoneExpediteur.trim()),
     Boolean(arrivee && adresseArrivee.trim() && telephoneDestinataire.trim()),
     Boolean(categorieColis),
-    typeLivraison !== "programmee" || Boolean(datePreference.trim()),
+    typeLivraison !== "programmee" || Boolean(jourProgramme && heureProgrammee),
     true,
     true,
   ];
@@ -156,12 +159,11 @@ export default function PublishScreen() {
 
     let programmeePour: string | undefined;
     if (typeLivraison === "programmee") {
-      const date = new Date(datePreference);
-      if (Number.isNaN(date.getTime())) {
-        setErreur("Format de date invalide. Exemple : 2026-08-01 14:30");
+      if (!jourProgramme || !heureProgrammee) {
+        setErreur("Choisissez un jour et une heure pour la livraison programmée.");
         return;
       }
-      programmeePour = date.toISOString();
+      programmeePour = construireDateProgrammee(jourProgramme, heureProgrammee);
     }
 
     setEnvoiEnCours(true);
@@ -342,11 +344,11 @@ export default function PublishScreen() {
               onChange={setTypeLivraison}
             />
             {typeLivraison === "programmee" && (
-              <ChampTexte
-                label="Date et heure souhaitées"
-                value={datePreference}
-                onChangeText={setDatePreference}
-                placeholder="Ex : 2026-08-01 14:30"
+              <SelecteurCreneauProgramme
+                jour={jourProgramme}
+                heure={heureProgrammee}
+                onChangeJour={setJourProgramme}
+                onChangeHeure={setHeureProgrammee}
               />
             )}
             {typeLivraison === "express" && (

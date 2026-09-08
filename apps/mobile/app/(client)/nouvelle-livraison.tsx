@@ -9,6 +9,7 @@ import {
   calculerPlanEffectif,
   calculerReductionPromo,
   codePromoValide,
+  construireDateProgrammee,
   formatFCFA,
   isRouteDesservie,
   type CategorieColis,
@@ -19,6 +20,7 @@ import {
   type Zone,
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
+import SelecteurCreneauProgramme from "@/components/SelecteurCreneauProgramme";
 import SelecteurPointCarte from "@/components/SelecteurPointCarte";
 import PriceSummary from "@/components/PriceSummary";
 import Bouton from "@/components/ui/Bouton";
@@ -83,7 +85,8 @@ export default function NouvelleLivraisonScreen() {
   const [montant, setMontant] = useState("");
   const [poidsEstime, setPoidsEstime] = useState("");
   const [typeLivraison, setTypeLivraison] = useState<TypeLivraison>("standard");
-  const [datePreference, setDatePreference] = useState("");
+  const [jourProgramme, setJourProgramme] = useState<string | null>(null);
+  const [heureProgrammee, setHeureProgrammee] = useState<string | null>(null);
   const [modePaiement, setModePaiement] = useState<ModePaiementCommerce>("especes");
   const [codePromoTexte, setCodePromoTexte] = useState("");
   const [codePromoApplique, setCodePromoApplique] = useState<CodePromo | null>(null);
@@ -166,7 +169,12 @@ export default function NouvelleLivraisonScreen() {
   const reduction = pricing && codePromoApplique ? calculerReductionPromo(pricing.total, codePromoApplique) : 0;
 
   const peutPublier = Boolean(
-    pricing && telephoneDestinataire.trim() && adresseArrivee.trim() && natureCommande.trim() && !envoiEnCours
+    pricing &&
+      telephoneDestinataire.trim() &&
+      adresseArrivee.trim() &&
+      natureCommande.trim() &&
+      (typeLivraison !== "programmee" || Boolean(jourProgramme && heureProgrammee)) &&
+      !envoiEnCours
   );
 
   async function appliquerCodePromo() {
@@ -193,12 +201,11 @@ export default function NouvelleLivraisonScreen() {
 
     let programmeePour: string | undefined;
     if (typeLivraison === "programmee") {
-      const date = new Date(datePreference);
-      if (Number.isNaN(date.getTime())) {
-        setErreur("Format de date invalide. Exemple : 2026-08-01 14:30");
+      if (!jourProgramme || !heureProgrammee) {
+        setErreur("Choisissez un jour et une heure pour la livraison programmée.");
         return;
       }
-      programmeePour = date.toISOString();
+      programmeePour = construireDateProgrammee(jourProgramme, heureProgrammee);
     }
 
     setEnvoiEnCours(true);
@@ -389,11 +396,11 @@ export default function NouvelleLivraisonScreen() {
           onChange={setTypeLivraison}
         />
         {typeLivraison === "programmee" && (
-          <ChampTexte
-            label="Date et heure souhaitées"
-            value={datePreference}
-            onChangeText={setDatePreference}
-            placeholder="Ex : 2026-08-01 14:30"
+          <SelecteurCreneauProgramme
+            jour={jourProgramme}
+            heure={heureProgrammee}
+            onChangeJour={setJourProgramme}
+            onChangeHeure={setHeureProgrammee}
           />
         )}
 
