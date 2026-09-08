@@ -95,12 +95,18 @@ Aucune autre variable nouvelle : `SUPABASE_SERVICE_ROLE_KEY` et
 précédentes). Le cron lui-même (`vercel.json`) est déployé automatiquement
 avec le code, aucune configuration manuelle sur le dashboard Vercel.
 
-⚠️ **Plan Vercel Hobby** : les cron jobs y sont limités (souvent une seule
-exécution par jour). L'horaire actuel (`0 * * * *`, toutes les heures) peut
-nécessiter un plan Pro. Sur Hobby, Vercel ajuste ou rejette silencieusement
-l'horaire — vérifiez l'onglet **Cron Jobs** du projet après déploiement, et
-ajustez `configuration_confirmation_livraison.delai_auto_finalisation_minutes`
-en conséquence si la fréquence réelle est plus faible qu'attendu.
+⚠️ **Correctif (8 sept.)** : le plan Vercel Hobby limite les cron jobs à
+une exécution par jour maximum — l'horaire initial (`0 * * * *`, toutes
+les heures) ne se contente pas d'être ajusté silencieusement comme
+supposé à tort ci-dessous à l'origine : **Vercel refuse purement et
+simplement de déployer tout le projet `colimo-mobile`** tant que le
+`vercel.json` déclare un cron plus fréquent que ce que permet le plan.
+C'est ce qui a bloqué tous les déploiements de `colimo-mobile` pendant
+3 jours (confirmé via les status checks GitHub sur les PR #25 à #32 :
+`Vercel – colimo-mobile` en échec systématique dès l'introduction de ce
+cron). Corrigé en passant l'horaire à une exécution quotidienne
+(`0 3 * * *`, 3h du matin UTC) — sur un plan Pro, cet horaire peut être
+resserré si un délai de finalisation plus court que 24h est nécessaire.
 
 ## 6. Migration à appliquer
 
