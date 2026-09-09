@@ -6,11 +6,13 @@ import { useFonts } from "expo-font";
 import { AuthProvider } from "@/lib/AuthContext";
 import SplashAnimee from "@/components/SplashAnimee";
 import { initialiserFournisseurPush } from "@/lib/pushProvider";
+import { initialiserFournisseurEmail } from "@/lib/emailProvider";
 
-// Ne concerne que le web (fetch relatif vers /api/push/envoyer) — sans
-// effet en natif, où ce fournisseur resterait de toute façon inutilisable.
+// Ne concerne que le web (fetch relatif vers /api/push/envoyer, /api/email/envoyer)
+// — sans effet en natif, où ces fournisseurs resteraient de toute façon inutilisables.
 if (Platform.OS === "web") {
   initialiserFournisseurPush();
+  initialiserFournisseurEmail();
 }
 
 // Pages vitrine : elles gèrent elles-mêmes leur mise en page desktop (nav large,
