@@ -1,5 +1,12 @@
 import { EVENEMENT_CANAL, EVENEMENT_MODELE_CODE, envoyerCommunication, type EvenementCommunication } from "@colimo/shared";
 import { createClient } from "./supabaseClient";
+import { initialiserFournisseurEmail } from "./emailProvider";
+
+// Exécuté une seule fois, au premier import de ce module (toute page qui
+// envoie une notification importe déjà ce fichier) — même principe que
+// apps/mobile/app/_layout.tsx, adapté à l'absence de point d'entrée unique
+// côté Next.js App Router.
+initialiserFournisseurEmail();
 
 // Équivalent admin de apps/mobile/lib/communication.ts — même contrat : ne
 // jamais bloquer l'action admin (résolution de litige, annulation, validation
