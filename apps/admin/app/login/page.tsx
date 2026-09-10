@@ -29,7 +29,7 @@ function LoginForm() {
     setErreur(null);
     setEnvoiEnCours(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     setEnvoiEnCours(false);
     if (error) {
       setErreur(error.message);
@@ -55,6 +55,10 @@ function LoginForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="email"
               className="mt-1 w-full rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none focus:ring-1 focus:ring-colimo-rouge"
               placeholder="admin@colimo.ga"
             />
@@ -68,6 +72,7 @@ function LoginForm() {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               className="mt-1 w-full rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none focus:ring-1 focus:ring-colimo-rouge"
               placeholder="••••••••"
             />

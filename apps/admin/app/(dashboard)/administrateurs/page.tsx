@@ -54,7 +54,7 @@ export default function AdministrateursPage() {
     setEnvoiEnCours(true);
     setErreur(null);
     try {
-      await inviterAdministrateur({ nom: nom.trim(), email: email.trim(), telephone: telephone.trim() });
+      await inviterAdministrateur({ nom: nom.trim(), email: email.trim().toLowerCase(), telephone: telephone.trim() });
       setNom("");
       setEmail("");
       setTelephone("");
@@ -102,6 +102,9 @@ export default function AdministrateursPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder="Adresse email"
             className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
           />
