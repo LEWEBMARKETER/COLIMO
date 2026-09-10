@@ -23,6 +23,7 @@ const GROUPES = [
       { href: "/clients", label: "Clients" },
       { href: "/commercants", label: "Commerçants" },
       { href: "/coursiers", label: "Coursiers" },
+      { href: "/administrateurs", label: "Administrateurs" },
     ],
   },
   {
@@ -82,12 +83,24 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-      <button
-        onClick={seDeconnecter}
-        className="mx-3 mb-5 rounded-lg px-3 py-2 text-left text-sm font-medium text-colimo-neutre-fonce/60 hover:bg-colimo-neutre-clair"
-      >
-        Se déconnecter
-      </button>
+      <div className="mx-3 mb-5 flex flex-col gap-1">
+        <Link
+          href="/mon-compte"
+          className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+            pathname === "/mon-compte"
+              ? "bg-colimo-rouge-clair text-colimo-rouge"
+              : "text-colimo-neutre-fonce/60 hover:bg-colimo-neutre-clair"
+          }`}
+        >
+          Mon compte
+        </Link>
+        <button
+          onClick={seDeconnecter}
+          className="rounded-lg px-3 py-2 text-left text-sm font-medium text-colimo-neutre-fonce/60 hover:bg-colimo-neutre-clair"
+        >
+          Se déconnecter
+        </button>
+      </div>
     </aside>
   );
 }

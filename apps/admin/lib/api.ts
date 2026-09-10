@@ -24,6 +24,7 @@ import {
   patchConfigurationPaiementAutomatique as patchConfigurationPaiementAutomatiqueQuery,
   getWebhooksPaiement as getWebhooksPaiementQuery,
   getUtilisateurs as getUtilisateursQuery,
+  getUtilisateur as getUtilisateurQuery,
   getCoursiers as getCoursiersQuery,
   patchCatalogueBadge as patchCatalogueBadgeQuery,
   patchCatalogueNiveau as patchCatalogueNiveauQuery,
@@ -55,9 +56,11 @@ import {
   getConfigurationPaiementAbonnement as getConfigurationPaiementAbonnementQuery,
   patchConfigurationPaiementAbonnement as patchConfigurationPaiementAbonnementQuery,
   getHistoriqueSuppressionsComptes as getHistoriqueSuppressionsComptesQuery,
+  getHistoriqueInvitationsAdmin as getHistoriqueInvitationsAdminQuery,
   getPositionsCoursiers as getPositionsCoursiersQuery,
   type PositionCoursier,
   type HistoriqueSuppressionCompte,
+  type HistoriqueInvitationAdmin,
   type ResultatSuppressionCompte,
   type ActionHistoriqueAbonnement,
   type ActionHistoriqueCoursier,
@@ -111,6 +114,10 @@ async function idAdminCourant(): Promise<{ client: ReturnType<typeof createClien
 
 export function getUtilisateurs(): Promise<Utilisateur[]> {
   return getUtilisateursQuery(createClient());
+}
+
+export function getUtilisateur(id: string): Promise<Utilisateur | null> {
+  return getUtilisateurQuery(createClient(), id);
 }
 
 export function getCoursiers() {
@@ -499,4 +506,37 @@ export async function supprimerCompteUtilisateur(
 
 export function getHistoriqueSuppressionsComptes(): Promise<HistoriqueSuppressionCompte[]> {
   return getHistoriqueSuppressionsComptesQuery(createClient());
+}
+
+// Invitation d'un administrateur — passe par une route serveur
+// (app/api/administrateurs/route.ts) : créer un compte Supabase Auth pour
+// un tiers nécessite la clé service-role, qui ne doit jamais atteindre le
+// navigateur.
+export async function inviterAdministrateur(body: {
+  nom: string;
+  email: string;
+  telephone: string;
+}): Promise<Utilisateur> {
+  const reponse = await fetch("/api/administrateurs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const corps = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) {
+    throw new Error(corps?.erreur || "Impossible d'inviter cet administrateur.");
+  }
+  return corps.utilisateur as Utilisateur;
+}
+
+export function getHistoriqueInvitationsAdmin(): Promise<HistoriqueInvitationAdmin[]> {
+  return getHistoriqueInvitationsAdminQuery(createClient());
+}
+
+export async function getIdAdminConnecte(): Promise<string | null> {
+  const client = createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  return user?.id ?? null;
 }
