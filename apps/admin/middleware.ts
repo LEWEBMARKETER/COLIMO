@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { poleADroitSurPage, type PoleAdmin } from "@colimo/shared";
 
 interface CookieToSet {
   name: string;
@@ -56,8 +57,20 @@ export async function middleware(request: NextRequest) {
   // (invitations/administrateurs) est bloqué de la même façon qu'un compte
   // d'un autre type.
   if (user) {
-    const { data: profil } = await supabase.from("utilisateurs").select("type, statut").eq("id", user.id).single();
-    const accesRefuse = profil?.type !== "admin" || profil?.statut === "suspendu" || profil?.statut === "desactive";
+    const { data: profil } = await supabase
+      .from("utilisateurs")
+      .select("type, statut, pole_admin, statut_invitation")
+      .eq("id", user.id)
+      .single();
+    // Tant que l'invitation n'est pas confirmée (en_cours) ou a été refusée
+    // (refuse), aucun accès au Back Office n'est accordé — même avec un
+    // mot de passe valide (ex. reset manuel), conformément au workflow
+    // d'invitation à 3 statuts.
+    const accesRefuse =
+      profil?.type !== "admin" ||
+      profil?.statut === "suspendu" ||
+      profil?.statut === "desactive" ||
+      profil?.statut_invitation !== "confirme";
     if (accesRefuse) {
       await supabase.auth.signOut();
       if (!estRoutePublique) {
@@ -70,6 +83,18 @@ export async function middleware(request: NextRequest) {
     }
 
     if (estRoutePublique) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+
+    // Restriction de navigation par pôle — API routes exclues (chaque
+    // route serveur sensible vérifie elle-même le pôle de l'appelant,
+    // cf. api/administrateurs/**), uniquement les pages du back-office.
+    if (
+      !request.nextUrl.pathname.startsWith("/api/") &&
+      !poleADroitSurPage(profil?.pole_admin as PoleAdmin | null, request.nextUrl.pathname)
+    ) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);

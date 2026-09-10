@@ -140,7 +140,71 @@ export interface Utilisateur {
   photoUrl: string | null;
   zone: Zone | null;
   statut: string;
+  poleAdmin: PoleAdmin | null;
+  statutInvitation: StatutInvitationAdmin | null;
   createdAt: string;
+}
+
+// Pôles d'administration (back-office COLIMO uniquement, type='admin').
+export type PoleAdmin = "super_admin" | "operations" | "support_commerces" | "finance_analytics";
+
+export const POLES_ADMIN: { valeur: PoleAdmin; libelle: string; description: string }[] = [
+  {
+    valeur: "super_admin",
+    libelle: "Super Admin / Direction",
+    description: "Accès complet à la plateforme, gestion des administrateurs et des permissions.",
+  },
+  {
+    valeur: "operations",
+    libelle: "Admin Opérations",
+    description: "Courses, attribution, coursiers, tracking, incidents, preuves de livraison.",
+  },
+  {
+    valeur: "support_commerces",
+    libelle: "Admin Support & Commerces",
+    description: "Support utilisateurs, réclamations, particuliers, commerces, COLIMO PRO, communications.",
+  },
+  {
+    valeur: "finance_analytics",
+    libelle: "Admin Finance & Analytics",
+    description: "Paiements, commissions, remboursements, revenus, abonnements, statistiques.",
+  },
+];
+
+export const POLE_ADMIN_LABELS: Record<PoleAdmin, string> = Object.fromEntries(
+  POLES_ADMIN.map((p) => [p.valeur, p.libelle])
+) as Record<PoleAdmin, string>;
+
+// Statut du processus d'invitation d'un administrateur (distinct de
+// `statut` actif/suspendu, qui reste utilisé une fois l'invitation confirmée).
+export type StatutInvitationAdmin = "en_cours" | "confirme" | "refuse";
+
+export const STATUT_INVITATION_ADMIN_LABELS: Record<StatutInvitationAdmin, string> = {
+  en_cours: "En cours",
+  confirme: "Confirmé",
+  refuse: "Non confirmé / Refusé",
+};
+
+// Chemins de pages back-office accessibles par pôle ("*" = accès total).
+// Utilisé à la fois par le middleware (contrôle serveur) et la barre latérale
+// (affichage) — source unique pour éviter toute divergence UI / serveur.
+export const PAGES_PAR_POLE: Record<PoleAdmin, string[] | "*"> = {
+  super_admin: "*",
+  operations: ["/carte", "/courses", "/coursiers", "/annulations"],
+  support_commerces: ["/clients", "/commercants", "/communication", "/litiges"],
+  finance_analytics: ["/paiements", "/promotions", "/statistiques"],
+};
+
+// Pages toujours accessibles à tout administrateur confirmé, quel que soit
+// son pôle.
+export const PAGES_COMMUNES_ADMIN = ["/", "/mon-compte"];
+
+export function poleADroitSurPage(pole: PoleAdmin | null, pathname: string): boolean {
+  if (PAGES_COMMUNES_ADMIN.includes(pathname)) return true;
+  if (!pole) return false;
+  const pages = PAGES_PAR_POLE[pole];
+  if (pages === "*") return true;
+  return pages.some((prefixe) => pathname === prefixe || pathname.startsWith(`${prefixe}/`));
 }
 
 export interface Coursier {

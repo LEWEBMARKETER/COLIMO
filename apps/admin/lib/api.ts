@@ -57,10 +57,13 @@ import {
   patchConfigurationPaiementAbonnement as patchConfigurationPaiementAbonnementQuery,
   getHistoriqueSuppressionsComptes as getHistoriqueSuppressionsComptesQuery,
   getHistoriqueInvitationsAdmin as getHistoriqueInvitationsAdminQuery,
+  getHistoriqueActionsAdmin as getHistoriqueActionsAdminQuery,
   getPositionsCoursiers as getPositionsCoursiersQuery,
   type PositionCoursier,
   type HistoriqueSuppressionCompte,
   type HistoriqueInvitationAdmin,
+  type HistoriqueActionAdmin,
+  type PoleAdmin,
   type ResultatSuppressionCompte,
   type ActionHistoriqueAbonnement,
   type ActionHistoriqueCoursier,
@@ -516,6 +519,7 @@ export async function inviterAdministrateur(body: {
   nom: string;
   email: string;
   telephone: string;
+  pole: PoleAdmin;
 }): Promise<Utilisateur> {
   const reponse = await fetch("/api/administrateurs", {
     method: "POST",
@@ -529,8 +533,33 @@ export async function inviterAdministrateur(body: {
   return corps.utilisateur as Utilisateur;
 }
 
+// Actions sur un administrateur existant (rôle, accès, invitation) — passent
+// par une route serveur (app/api/administrateurs/[id]/route.ts) qui vérifie
+// que l'appelant est bien Super Admin et journalise l'action, plutôt qu'un
+// simple updateUtilisateur() client comme pour un client/coursier.
+export async function modifierAdministrateur(
+  id: string,
+  action: "modifier_role" | "suspendre" | "reactiver" | "renvoyer_invitation" | "annuler_invitation",
+  pole?: PoleAdmin
+): Promise<Utilisateur> {
+  const reponse = await fetch(`/api/administrateurs/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, pole }),
+  });
+  const corps = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) {
+    throw new Error(corps?.erreur || "Impossible d'effectuer cette action.");
+  }
+  return corps.utilisateur as Utilisateur;
+}
+
 export function getHistoriqueInvitationsAdmin(): Promise<HistoriqueInvitationAdmin[]> {
   return getHistoriqueInvitationsAdminQuery(createClient());
+}
+
+export function getHistoriqueActionsAdmin(): Promise<HistoriqueActionAdmin[]> {
+  return getHistoriqueActionsAdminQuery(createClient());
 }
 
 export async function getIdAdminConnecte(): Promise<string | null> {
@@ -539,4 +568,18 @@ export async function getIdAdminConnecte(): Promise<string | null> {
     data: { user },
   } = await client.auth.getUser();
   return user?.id ?? null;
+}
+
+// Profil (id + pôle) de l'administrateur actuellement connecté — utilisé par
+// la Sidebar et les pages pour adapter la navigation à son pôle. Le vrai
+// contrôle d'accès reste le middleware (server-side) ; ceci n'est que
+// cosmétique côté client.
+export async function getMonPoleAdmin(): Promise<{ id: string; pole: PoleAdmin | null } | null> {
+  const client = createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return null;
+  const { data } = await client.from("utilisateurs").select("pole_admin").eq("id", user.id).single();
+  return { id: user.id, pole: (data?.pole_admin as PoleAdmin | null) ?? null };
 }

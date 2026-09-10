@@ -63,12 +63,21 @@ export default function InvitationPage() {
     }
     setEnvoiEnCours(true);
     const client = createClient();
-    const { error } = await client.auth.updateUser({ password: motDePasse });
-    setEnvoiEnCours(false);
+    const { data, error } = await client.auth.updateUser({ password: motDePasse });
     if (error) {
+      setEnvoiEnCours(false);
       setErreur("Impossible de définir le mot de passe pour le moment. Réessayez.");
       return;
     }
+    // Confirme l'invitation (en_cours -> confirme) — seule transition que
+    // le titulaire de la ligne peut faire lui-même (trigger
+    // proteger_pole_et_invitation_admin, 0046). Sans ce statut, le
+    // middleware bloque toujours l'accès au Back Office même mot de passe
+    // défini.
+    if (data.user) {
+      await client.from("utilisateurs").update({ statut_invitation: "confirme" }).eq("id", data.user.id);
+    }
+    setEnvoiEnCours(false);
     setReussi(true);
   }
 

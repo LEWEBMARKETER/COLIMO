@@ -12,6 +12,8 @@ import type {
   ModePaiement,
   Notation,
   PaymentOperator,
+  PoleAdmin,
+  StatutInvitationAdmin,
   PositionCoursier,
   PieceIdentiteType,
   QuiPaie,
@@ -38,7 +40,7 @@ import type { NiveauCoursier } from "../coursiers/niveaux/types";
 import type { ActionHistoriqueCoursier, HistoriqueCoursier } from "../coursiers/historique/types";
 import type { HistoriqueAnnulation, RoleAnnulation } from "../annulations/types";
 import type { HistoriqueSuppressionCompte } from "../comptes/types";
-import type { HistoriqueInvitationAdmin } from "../administrateurs/types";
+import type { ActionAdmin, HistoriqueActionAdmin, HistoriqueInvitationAdmin } from "../administrateurs/types";
 import type { PackPayant } from "../abonnements/types";
 import type { StatutDemandeAbonnement, DemandeAbonnement } from "../abonnements/demandes/types";
 import type { ActionHistoriqueAbonnement, HistoriqueAbonnement } from "../abonnements/historique/types";
@@ -58,6 +60,8 @@ export interface UtilisateurRow {
   photo_url: string | null;
   zone: Zone | null;
   statut: string;
+  pole_admin: PoleAdmin | null;
+  statut_invitation: StatutInvitationAdmin | null;
   created_at: string;
 }
 
@@ -245,6 +249,8 @@ export function utilisateurFromRow(row: UtilisateurRow): Utilisateur {
     photoUrl: row.photo_url,
     zone: row.zone,
     statut: row.statut,
+    poleAdmin: row.pole_admin,
+    statutInvitation: row.statut_invitation,
     createdAt: row.created_at,
   };
 }
@@ -402,6 +408,28 @@ export function historiqueInvitationAdminFromRow(row: HistoriqueInvitationAdminR
     nom: row.nom,
     email: row.email,
     invitePar: row.invite_par,
+    createdAt: row.created_at,
+  };
+}
+
+export interface HistoriqueActionAdminRow {
+  id: string;
+  administrateur_id: string;
+  action: ActionAdmin;
+  cible_id: string | null;
+  details: Record<string, unknown> | null;
+  resultat: "succes" | "echec";
+  created_at: string;
+}
+
+export function historiqueActionAdminFromRow(row: HistoriqueActionAdminRow): HistoriqueActionAdmin {
+  return {
+    id: row.id,
+    administrateurId: row.administrateur_id,
+    action: row.action,
+    cibleId: row.cible_id,
+    details: row.details,
+    resultat: row.resultat,
     createdAt: row.created_at,
   };
 }

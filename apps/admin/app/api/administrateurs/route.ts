@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { utilisateurFromRow, type UtilisateurRow } from "@colimo/shared";
+import { utilisateurFromRow, type PoleAdmin, type UtilisateurRow } from "@colimo/shared";
+
+const POLES_VALIDES: PoleAdmin[] = ["super_admin", "operations", "support_commerces", "finance_analytics"];
 
 // Invitation d'un nouvel administrateur par l'administrateur principal.
 //
@@ -46,17 +48,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erreur: "Non authentifié." }, { status: 401 });
   }
 
-  const { data: profilAppelant } = await supabaseAuth.from("utilisateurs").select("type").eq("id", user.id).single();
-  if (profilAppelant?.type !== "admin") {
-    return NextResponse.json({ erreur: "Action réservée aux administrateurs." }, { status: 403 });
+  const { data: profilAppelant } = await supabaseAuth
+    .from("utilisateurs")
+    .select("type, pole_admin")
+    .eq("id", user.id)
+    .single();
+  if (profilAppelant?.type !== "admin" || profilAppelant?.pole_admin !== "super_admin") {
+    return NextResponse.json(
+      { erreur: "Action réservée au Super Admin." },
+      { status: 403 }
+    );
   }
 
   const corps = await request.json().catch(() => ({}));
   const nom: string = typeof corps?.nom === "string" ? corps.nom.trim() : "";
   const email: string = typeof corps?.email === "string" ? corps.email.trim().toLowerCase() : "";
   const telephone: string = typeof corps?.telephone === "string" ? corps.telephone.trim() : "";
-  if (!nom || !email || !telephone) {
-    return NextResponse.json({ erreur: "Nom, email et téléphone requis." }, { status: 400 });
+  const pole: PoleAdmin | null = POLES_VALIDES.includes(corps?.pole) ? (corps.pole as PoleAdmin) : null;
+  if (!nom || !email || !telephone || !pole) {
+    return NextResponse.json({ erreur: "Nom, email, téléphone et pôle requis." }, { status: 400 });
   }
 
   const serviceClient = createServiceClient(supabaseUrl, serviceRoleKey, {
@@ -76,7 +86,7 @@ export async function POST(request: NextRequest) {
 
   const { data: nouvelUtilisateur, error: erreurInsertion } = await serviceClient
     .from("utilisateurs")
-    .insert({ id: invitation.user.id, nom, telephone, type: "admin" })
+    .insert({ id: invitation.user.id, nom, telephone, type: "admin", pole_admin: pole, statut_invitation: "en_cours" })
     .select()
     .single();
 
@@ -97,6 +107,13 @@ export async function POST(request: NextRequest) {
     nom,
     email,
     invite_par: user.id,
+  });
+
+  await serviceClient.from("historique_actions_admin").insert({
+    administrateur_id: user.id,
+    action: "invitation_creee",
+    cible_id: invitation.user.id,
+    details: { nom, email, pole },
   });
 
   return NextResponse.json({ utilisateur: utilisateurFromRow(nouvelUtilisateur as UtilisateurRow) });
