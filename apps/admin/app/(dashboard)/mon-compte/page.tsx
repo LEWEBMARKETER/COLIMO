@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { validerMotDePasse } from "@colimo/shared";
 import { createClient } from "@/lib/supabaseClient";
+import ChampMotDePasse from "@/components/ChampMotDePasse";
 
 export default function MonComptePage() {
   const [emailActuel, setEmailActuel] = useState<string | null>(null);
@@ -130,10 +131,9 @@ export default function MonComptePage() {
               placeholder="Nouvelle adresse email"
               className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
             />
-            <input
+            <ChampMotDePasse
               value={motDePasseEmail}
               onChange={(e) => setMotDePasseEmail(e.target.value)}
-              type="password"
               placeholder="Mot de passe actuel"
               className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
             />
@@ -157,24 +157,21 @@ export default function MonComptePage() {
           <h2 className="font-titre text-base font-semibold text-colimo-neutre-fonce">Changer de mot de passe</h2>
           <p className="mt-1 text-xs text-colimo-neutre-fonce/60">Au moins 8 caractères, avec une lettre et un chiffre.</p>
           <div className="mt-4 flex flex-col gap-3">
-            <input
+            <ChampMotDePasse
               value={motDePasseActuel}
               onChange={(e) => setMotDePasseActuel(e.target.value)}
-              type="password"
               placeholder="Mot de passe actuel"
               className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
             />
-            <input
+            <ChampMotDePasse
               value={nouveauMotDePasse}
               onChange={(e) => setNouveauMotDePasse(e.target.value)}
-              type="password"
               placeholder="Nouveau mot de passe"
               className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
             />
-            <input
+            <ChampMotDePasse
               value={confirmationMotDePasse}
               onChange={(e) => setConfirmationMotDePasse(e.target.value)}
-              type="password"
               placeholder="Confirmer le nouveau mot de passe"
               className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
             />
