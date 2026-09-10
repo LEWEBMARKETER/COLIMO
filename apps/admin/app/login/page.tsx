@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { createClient } from "@/lib/supabaseClient";
+import ChampMotDePasse from "@/components/ChampMotDePasse";
 
 export default function LoginPage() {
   return (
@@ -63,9 +64,8 @@ function LoginForm() {
             <label htmlFor="password" className="block text-sm font-medium text-colimo-neutre-fonce">
               Mot de passe
             </label>
-            <input
+            <ChampMotDePasse
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none focus:ring-1 focus:ring-colimo-rouge"

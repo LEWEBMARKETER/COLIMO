@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { validerMotDePasse } from "@colimo/shared";
 import { createClient } from "@/lib/supabaseClient";
+import ChampMotDePasse from "@/components/ChampMotDePasse";
 
 type EtatLien = "verification" | "pret" | "invalide";
 
@@ -108,8 +109,7 @@ export default function InvitationPage() {
             </p>
             <div>
               <label className="block text-sm font-medium text-colimo-neutre-fonce">Mot de passe</label>
-              <input
-                type="password"
+              <ChampMotDePasse
                 value={motDePasse}
                 onChange={(e) => setMotDePasse(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none focus:ring-1 focus:ring-colimo-rouge"
@@ -119,8 +119,7 @@ export default function InvitationPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-colimo-neutre-fonce">Confirmer le mot de passe</label>
-              <input
-                type="password"
+              <ChampMotDePasse
                 value={confirmation}
                 onChange={(e) => setConfirmation(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none focus:ring-1 focus:ring-colimo-rouge"
