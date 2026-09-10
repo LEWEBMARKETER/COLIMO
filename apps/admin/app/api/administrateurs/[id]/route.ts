@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { utilisateurFromRow, type PoleAdmin, type UtilisateurRow } from "@colimo/shared";
+import { resoudreUrlSite } from "@/lib/urlSite";
 
 const POLES_VALIDES: PoleAdmin[] = ["super_admin", "operations", "support_commerces", "finance_analytics"];
 type ActionAutorisee = "modifier_role" | "suspendre" | "reactiver" | "renvoyer_invitation" | "annuler_invitation";
@@ -171,9 +172,21 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     await journaliser("echec");
     return NextResponse.json({ erreur: "Impossible de retrouver l'email de cet administrateur." }, { status: 400 });
   }
-  const origine = request.headers.get("origin") ?? supabaseUrl;
+  // Cf. urlSite.ts : refuse plutôt que de renvoyer un lien pointant vers
+  // localhost (poste de dev du Super Admin), inutilisable par l'invité.
+  const urlSite = resoudreUrlSite(request);
+  if (!urlSite) {
+    await journaliser("echec");
+    return NextResponse.json(
+      {
+        erreur:
+          "Impossible de déterminer l'URL du back-office pour le lien d'invitation (envoi depuis localhost ?). Renvoyez l'invitation depuis le site déployé, ou configurez NEXT_PUBLIC_SITE_URL sur Vercel.",
+      },
+      { status: 400 }
+    );
+  }
   const { error: erreurInvitation } = await serviceClient.auth.admin.inviteUserByEmail(compteAuth.user.email, {
-    redirectTo: `${origine}/invitation`,
+    redirectTo: `${urlSite}/invitation`,
   });
   if (erreurInvitation) {
     await journaliser("echec");
