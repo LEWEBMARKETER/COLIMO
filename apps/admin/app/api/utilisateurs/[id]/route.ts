@@ -62,7 +62,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ erreur: "Non authentifié." }, { status: 401 });
   }
 
-  const { data: profilAppelant } = await supabaseAuth.from("utilisateurs").select("type").eq("id", user.id).single();
+  const { data: profilAppelant } = await supabaseAuth
+    .from("utilisateurs")
+    .select("type, pole_admin")
+    .eq("id", user.id)
+    .single();
   if (profilAppelant?.type !== "admin") {
     return NextResponse.json({ erreur: "Action réservée aux administrateurs." }, { status: 403 });
   }
@@ -83,8 +87,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   if (erreurCible || !cible) {
     return NextResponse.json({ erreur: "Compte introuvable." }, { status: 404 });
   }
-  if (cible.type === "admin") {
-    return NextResponse.json({ erreur: "Impossible de supprimer un compte administrateur." }, { status: 400 });
+  // Un compte administrateur ne peut être supprimé que par le Super Admin
+  // (la gestion des administrateurs — rôles, suspension, suppression — lui
+  // est réservée, cf. migration 0046).
+  if (cible.type === "admin" && profilAppelant?.pole_admin !== "super_admin") {
+    return NextResponse.json({ erreur: "Seul le Super Admin peut supprimer un compte administrateur." }, { status: 403 });
   }
 
   // Récupéré avant toute suppression/anonymisation : sert à la fois pour
@@ -138,6 +145,17 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       administrateur_id: user.id,
       motif,
     });
+    if (cible.type === "admin") {
+      // cible_id volontairement omis (null) : le compte n'existe déjà plus
+      // au moment de cet insert (FK utilisateurs(id) sur cible_id sinon
+      // violée) — l'identité reste tracée via `details`.
+      await serviceClient.from("historique_actions_admin").insert({
+        administrateur_id: user.id,
+        action: "compte_supprime",
+        cible_id: null,
+        details: { id: cible.id, nom: cible.nom, mode: "suppression_definitive", motif },
+      });
+    }
     return NextResponse.json({ mode: "suppression_definitive" });
   }
 
@@ -205,6 +223,15 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     administrateur_id: user.id,
     motif,
   });
+
+  if (cible.type === "admin") {
+    await serviceClient.from("historique_actions_admin").insert({
+      administrateur_id: user.id,
+      action: "compte_supprime",
+      cible_id: cibleId,
+      details: { nom: cible.nom, mode: "anonymisation", motif },
+    });
+  }
 
   return NextResponse.json({
     mode: "anonymisation",
