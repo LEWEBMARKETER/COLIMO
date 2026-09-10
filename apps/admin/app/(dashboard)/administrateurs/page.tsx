@@ -10,9 +10,24 @@ import {
   modifierAdministrateur,
   supprimerCompteUtilisateur,
 } from "@/lib/api";
-import { POLES_ADMIN, POLE_ADMIN_LABELS, type HistoriqueInvitationAdmin, type PoleAdmin, type Utilisateur } from "@colimo/shared";
+import {
+  estCompteSupprime,
+  POLES_ADMIN,
+  POLE_ADMIN_LABELS,
+  type HistoriqueInvitationAdmin,
+  type PoleAdmin,
+  type Utilisateur,
+} from "@colimo/shared";
 
+// Un compte admin "supprimé" sans historique disparaît réellement (plus de
+// ligne utilisateurs) ; s'il avait de l'historique, il est anonymisé
+// (nom="Utilisateur supprimé", statut='desactive') et reste dans la liste —
+// vérifié en premier, sinon ce badge retombait sur "Confirmé" par défaut
+// (statutInvitation reste 'confirme', l'anonymisation ne le touche pas) et
+// les boutons Suspendre/Modifier le rôle/Supprimer restaient affichés pour
+// un compte déjà mort.
 function badgeStatutAdmin(administrateur: Utilisateur) {
+  if (estCompteSupprime(administrateur.telephone)) return { statut: "desactive", label: "Supprimé" };
   if (administrateur.statutInvitation === "en_cours") return { statut: "invitation_en_cours", label: "En cours" };
   if (administrateur.statutInvitation === "refuse") return { statut: "invitation_refuse", label: "Non confirmé / Refusé" };
   if (administrateur.statut === "suspendu") return { statut: "suspendu", label: "Suspendu" };
@@ -27,6 +42,7 @@ export default function AdministrateursPage() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [actionEnCoursId, setActionEnCoursId] = useState<string | null>(null);
+  const [afficherSupprimes, setAfficherSupprimes] = useState(false);
 
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
@@ -58,6 +74,16 @@ export default function AdministrateursPage() {
   }, [historique]);
 
   const nomParId = useMemo(() => new Map(administrateurs.map((a) => [a.id, a.nom])), [administrateurs]);
+
+  const nombreSupprimes = useMemo(
+    () => administrateurs.filter((a) => estCompteSupprime(a.telephone)).length,
+    [administrateurs]
+  );
+
+  const administrateursAffiches = useMemo(
+    () => administrateurs.filter((a) => afficherSupprimes || !estCompteSupprime(a.telephone)),
+    [administrateurs, afficherSupprimes]
+  );
 
   async function envoyerInvitation() {
     if (!nom.trim() || !email.trim() || !telephone.trim()) return;
@@ -205,6 +231,13 @@ export default function AdministrateursPage() {
         </button>
       </div>
 
+      {nombreSupprimes > 0 && (
+        <label className="mt-4 flex items-center gap-2 text-xs text-colimo-neutre-fonce/60">
+          <input type="checkbox" checked={afficherSupprimes} onChange={(e) => setAfficherSupprimes(e.target.checked)} />
+          Afficher les comptes supprimés ({nombreSupprimes})
+        </label>
+      )}
+
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
@@ -219,9 +252,10 @@ export default function AdministrateursPage() {
             </tr>
           </thead>
           <tbody>
-            {administrateurs.map((admin) => {
+            {administrateursAffiches.map((admin) => {
               const invitation = invitationParUtilisateur.get(admin.id);
               const estMoi = admin.id === monId;
+              const supprime = estCompteSupprime(admin.telephone);
               const badge = badgeStatutAdmin(admin);
               const enCours = admin.statutInvitation === "en_cours";
               const confirme = admin.statutInvitation === "confirme";
@@ -245,7 +279,10 @@ export default function AdministrateursPage() {
                     {invitation ? new Date(invitation.createdAt).toLocaleDateString("fr-FR") : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    {!estMoi && (
+                    {supprime ? (
+                      <span className="text-xs text-colimo-neutre-fonce/40">Compte supprimé — aucune action possible</span>
+                    ) : (
+                      !estMoi && (
                       <div className="flex flex-wrap gap-2">
                         {enCours && (
                           <>
@@ -309,12 +346,13 @@ export default function AdministrateursPage() {
                           Supprimer
                         </button>
                       </div>
+                      )
                     )}
                   </td>
                 </tr>
               );
             })}
-            {!chargement && administrateurs.length === 0 && (
+            {!chargement && administrateursAffiches.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
                   Aucun administrateur
