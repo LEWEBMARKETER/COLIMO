@@ -38,6 +38,7 @@ import type { NiveauCoursier } from "../coursiers/niveaux/types";
 import type { ActionHistoriqueCoursier, HistoriqueCoursier } from "../coursiers/historique/types";
 import type { HistoriqueAnnulation, RoleAnnulation } from "../annulations/types";
 import type { HistoriqueSuppressionCompte } from "../comptes/types";
+import type { HistoriqueInvitationAdmin } from "../administrateurs/types";
 import type { PackPayant } from "../abonnements/types";
 import type { StatutDemandeAbonnement, DemandeAbonnement } from "../abonnements/demandes/types";
 import type { ActionHistoriqueAbonnement, HistoriqueAbonnement } from "../abonnements/historique/types";
@@ -381,6 +382,26 @@ export function historiqueSuppressionCompteFromRow(row: HistoriqueSuppressionCom
     mode: row.mode,
     administrateurId: row.administrateur_id,
     motif: row.motif,
+    createdAt: row.created_at,
+  };
+}
+
+export interface HistoriqueInvitationAdminRow {
+  id: string;
+  utilisateur_id: string;
+  nom: string;
+  email: string;
+  invite_par: string;
+  created_at: string;
+}
+
+export function historiqueInvitationAdminFromRow(row: HistoriqueInvitationAdminRow): HistoriqueInvitationAdmin {
+  return {
+    id: row.id,
+    utilisateurId: row.utilisateur_id,
+    nom: row.nom,
+    email: row.email,
+    invitePar: row.invite_par,
     createdAt: row.created_at,
   };
 }

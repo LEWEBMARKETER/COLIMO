@@ -9,6 +9,13 @@ interface CookieToSet {
 
 const ROUTES_PUBLIQUES = ["/login"];
 
+// /invitation : la session y est temporaire (créée par le jeton du lien
+// d'invitation, avant que le mot de passe ne soit défini) — ni redirigée
+// vers /login si absente, ni vers / si présente (contrairement à /login),
+// sinon un admin fraîchement invité serait renvoyé au dashboard sans avoir
+// pu définir son mot de passe.
+const ROUTES_EXEMPTEES = ["/invitation"];
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -27,6 +34,10 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  if (ROUTES_EXEMPTEES.includes(request.nextUrl.pathname)) {
+    return response;
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -41,10 +52,13 @@ export async function middleware(request: NextRequest) {
 
   // La session prouve seulement qu'un compte COLIMO existe (client, coursier
   // ou admin) — sans ce contrôle, n'importe quel compte mobile authentifié
-  // pouvait charger l'intégralité du back-office admin.
+  // pouvait charger l'intégralité du back-office admin. Un admin suspendu
+  // (invitations/administrateurs) est bloqué de la même façon qu'un compte
+  // d'un autre type.
   if (user) {
-    const { data: profil } = await supabase.from("utilisateurs").select("type").eq("id", user.id).single();
-    if (profil?.type !== "admin") {
+    const { data: profil } = await supabase.from("utilisateurs").select("type, statut").eq("id", user.id).single();
+    const accesRefuse = profil?.type !== "admin" || profil?.statut === "suspendu" || profil?.statut === "desactive";
+    if (accesRefuse) {
       await supabase.auth.signOut();
       if (!estRoutePublique) {
         const url = request.nextUrl.clone();

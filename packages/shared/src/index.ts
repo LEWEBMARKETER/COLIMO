@@ -10,6 +10,7 @@ export * from "./coursiers";
 export * from "./annulations";
 export * from "./abonnements";
 export * from "./comptes";
+export * from "./administrateurs";
 export * from "./motDePasse";
 export * from "./suivi";
 export * from "./positions";
