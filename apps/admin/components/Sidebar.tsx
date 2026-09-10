@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
+import { getMonPoleAdmin } from "@/lib/api";
+import { poleADroitSurPage, type PoleAdmin } from "@colimo/shared";
 
 const GROUPES = [
   {
@@ -35,13 +38,30 @@ const GROUPES = [
   },
   {
     label: "Pilotage",
-    liens: [{ href: "/statistiques", label: "Statistiques" }],
+    liens: [
+      { href: "/statistiques", label: "Statistiques" },
+      { href: "/journal-activite", label: "Journal d'activité" },
+    ],
   },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [pole, setPole] = useState<PoleAdmin | null>(null);
+
+  useEffect(() => {
+    getMonPoleAdmin().then((profil) => setPole(profil?.pole ?? null));
+  }, []);
+
+  // Filtrage cosmétique par pôle — le vrai contrôle d'accès est le
+  // middleware (server-side). Tant que le pôle n'est pas encore chargé,
+  // n'affiche que "Dashboard"/"Mon compte" pour éviter un flash de liens
+  // inaccessibles.
+  const groupesVisibles = GROUPES.map((groupe) => ({
+    ...groupe,
+    liens: groupe.liens.filter((lien) => poleADroitSurPage(pole, lien.href)),
+  })).filter((groupe) => groupe.liens.length > 0);
 
   async function seDeconnecter() {
     const supabase = createClient();
@@ -57,7 +77,7 @@ export default function Sidebar() {
         <span className="font-titre text-xl font-bold text-colimo-rouge">COLIMO</span>
       </div>
       <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3">
-        {GROUPES.map((groupe) => (
+        {groupesVisibles.map((groupe) => (
           <div key={groupe.label}>
             <p className="px-3 pb-1.5 font-texte text-[11px] font-medium uppercase tracking-wide text-colimo-neutre-fonce/40">
               {groupe.label}
