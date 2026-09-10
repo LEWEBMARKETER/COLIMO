@@ -52,7 +52,7 @@ export default function MonComptePage() {
         setErreurEmail("Mot de passe actuel incorrect.");
         return;
       }
-      const { error } = await client.auth.updateUser({ email: nouvelEmail.trim() });
+      const { error } = await client.auth.updateUser({ email: nouvelEmail.trim().toLowerCase() });
       if (error) {
         setErreurEmail(error.message);
         return;
@@ -128,6 +128,9 @@ export default function MonComptePage() {
               value={nouvelEmail}
               onChange={(e) => setNouvelEmail(e.target.value)}
               type="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="Nouvelle adresse email"
               className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
             />

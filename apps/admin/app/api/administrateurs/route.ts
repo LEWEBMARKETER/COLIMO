@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
   const corps = await request.json().catch(() => ({}));
   const nom: string = typeof corps?.nom === "string" ? corps.nom.trim() : "";
-  const email: string = typeof corps?.email === "string" ? corps.email.trim() : "";
+  const email: string = typeof corps?.email === "string" ? corps.email.trim().toLowerCase() : "";
   const telephone: string = typeof corps?.telephone === "string" ? corps.telephone.trim() : "";
   if (!nom || !email || !telephone) {
     return NextResponse.json({ erreur: "Nom, email et téléphone requis." }, { status: 400 });
