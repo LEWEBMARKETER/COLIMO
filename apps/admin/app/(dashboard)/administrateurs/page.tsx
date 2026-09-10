@@ -8,6 +8,7 @@ import {
   getUtilisateurs,
   inviterAdministrateur,
   modifierAdministrateur,
+  supprimerCompteUtilisateur,
 } from "@/lib/api";
 import { POLES_ADMIN, POLE_ADMIN_LABELS, type HistoriqueInvitationAdmin, type PoleAdmin, type Utilisateur } from "@colimo/shared";
 
@@ -111,6 +112,39 @@ export default function AdministrateursPage() {
       `Changer le pôle de ${administrateur.nom} en « ${POLE_ADMIN_LABELS[nouveauPole]} » ?`,
       nouveauPole
     );
+  }
+
+  // Réutilise la route de suppression de compte générique (déjà utilisée
+  // pour clients/coursiers) : suppression réelle si aucun historique, sinon
+  // anonymisation + bannissement définitif — le serveur réserve cette action
+  // aux admins ciblant un autre admin au Super Admin (0046 + route
+  // api/utilisateurs/[id]).
+  async function supprimerAdministrateur(administrateur: Utilisateur) {
+    if (
+      !window.confirm(
+        `Supprimer définitivement le compte de ${administrateur.nom} ?\n\nSi ce compte n'a aucun historique d'actions, il sera supprimé définitivement. S'il a de l'historique (invitations envoyées, actions journalisées...), ses données personnelles seront anonymisées et sa connexion bloquée définitivement.\n\nCette action est irréversible.`
+      )
+    ) {
+      return;
+    }
+    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
+    setActionEnCoursId(administrateur.id);
+    try {
+      const resultat = await supprimerCompteUtilisateur(administrateur.id, motif || undefined);
+      if (resultat.mode === "suppression_definitive") {
+        setAdministrateurs((prev) => prev.filter((a) => a.id !== administrateur.id));
+        window.alert(`Compte de ${administrateur.nom} supprimé définitivement.`);
+      } else if (resultat.utilisateur) {
+        setAdministrateurs((prev) => prev.map((a) => (a.id === administrateur.id ? resultat.utilisateur! : a)));
+        window.alert(
+          `Ce compte avait de l'historique : ses données personnelles ont été anonymisées et sa connexion bloquée définitivement.`
+        );
+      }
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : "Impossible de supprimer ce compte.");
+    } finally {
+      setActionEnCoursId(null);
+    }
   }
 
   return (
@@ -267,6 +301,13 @@ export default function AdministrateursPage() {
                             {admin.statut === "suspendu" ? "Réactiver" : "Suspendre"}
                           </button>
                         )}
+                        <button
+                          disabled={actionEnCours}
+                          onClick={() => supprimerAdministrateur(admin)}
+                          className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:opacity-40"
+                        >
+                          Supprimer
+                        </button>
                       </div>
                     )}
                   </td>
