@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { utilisateurFromRow, type PoleAdmin, type UtilisateurRow } from "@colimo/shared";
+import { resoudreUrlSite } from "@/lib/urlSite";
 
 const POLES_VALIDES: PoleAdmin[] = ["super_admin", "operations", "support_commerces", "finance_analytics"];
 
@@ -69,13 +70,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erreur: "Nom, email, téléphone et pôle requis." }, { status: 400 });
   }
 
+  // Résolu avant tout appel Auth : un lien d'invitation pointant vers
+  // localhost (poste de dev du Super Admin) serait inutilisable par
+  // l'invité — mieux vaut refuser l'envoi que de générer un email cassé.
+  const urlSite = resoudreUrlSite(request);
+  if (!urlSite) {
+    return NextResponse.json(
+      {
+        erreur:
+          "Impossible de déterminer l'URL du back-office pour le lien d'invitation (envoi depuis localhost ?). Envoyez l'invitation depuis le site déployé, ou configurez NEXT_PUBLIC_SITE_URL sur Vercel.",
+      },
+      { status: 400 }
+    );
+  }
+
   const serviceClient = createServiceClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const origine = request.headers.get("origin") ?? supabaseUrl;
   const { data: invitation, error: erreurInvitation } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${origine}/invitation`,
+    redirectTo: `${urlSite}/invitation`,
   });
   if (erreurInvitation || !invitation?.user) {
     return NextResponse.json(
