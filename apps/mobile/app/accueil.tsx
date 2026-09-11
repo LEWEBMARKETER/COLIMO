@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   Animated,
   Easing,
   Image,
+  Pressable,
   ScrollView,
   Text,
   useWindowDimensions,
@@ -12,11 +13,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { ZONE_LABELS, type Zone } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
-import Carte from "@/components/ui/Carte";
 import CarteInfoConfiance from "@/components/ui/CarteInfoConfiance";
-import ZoneSelector from "@/components/ZoneSelector";
 
 const INFORMATIONS_CLES: { icone: keyof typeof Ionicons.glyphMap; titre: string; description: string }[] = [
   { icone: "location-outline", titre: "Grand Libreville", description: "Livraisons dans les zones couvertes par COLIMO" },
@@ -40,13 +38,40 @@ const ETAPES = [
   },
 ];
 
-const CHIFFRES_CLES: { icone: keyof typeof Ionicons.glyphMap; texte: string }[] = [
-  { icone: "location-outline", texte: "6 zones desservies" },
-  { icone: "time-outline", texte: "Suivi en temps réel" },
-  { icone: "shield-checkmark-outline", texte: "Coursiers vérifiés" },
-];
-
 const SEUIL_DESKTOP = 860;
+
+type ProfilHero = "particulier" | "commerce";
+
+// Un seul Hero, deux discours — le profil ne change que le texte et les CTA,
+// jamais la mise en page (cf. brief : "une seule expérience COLIMO avec une
+// interface adaptée au profil", pas deux pages séparées).
+const MESSAGES_HERO: Record<
+  ProfilHero,
+  { titre: string; accent: string; sousTitre: string; ctaPrincipal: string; ctaSecondaire: string }
+> = {
+  particulier: {
+    titre: "Envoyez vos colis partout dans le",
+    accent: "Grand Libreville",
+    sousTitre:
+      "Un coursier vérifié récupère votre colis en quelques minutes. Vous suivez chaque étape sur la carte, jusqu'à la remise en main propre.",
+    ctaPrincipal: "Envoyer un colis",
+    ctaSecondaire: "Devenir coursier",
+  },
+  commerce: {
+    titre: "Livrez vos commandes",
+    accent: "sans effort",
+    sousTitre:
+      "Confiez vos livraisons à des coursiers vérifiés, suivez-les en temps réel et laissez vos clients confirmer la réception — dès votre première commande.",
+    ctaPrincipal: "Créer mon compte commerce",
+    ctaSecondaire: "Se connecter",
+  },
+};
+
+const PILLES_CONFIANCE: { icone: keyof typeof Ionicons.glyphMap; texte: string }[] = [
+  { icone: "location-outline", texte: "Suivi en direct" },
+  { icone: "checkmark-circle-outline", texte: "Preuve de livraison" },
+  { icone: "card-outline", texte: "Espèces & Mobile Money" },
+];
 
 // Respecte la préférence système "réduire les animations" — désactive les
 // boucles Animated ci-dessous plutôt que de les imposer indéfiniment.
@@ -85,106 +110,122 @@ function GlowDecor() {
   );
 }
 
-// Pas d'accès à de vraies photos/vidéos ici (pas de récupération d'images externes) :
-// on simule la vivacité façon Gozem/Yango avec un petit graphique animé sur le thème
-// livraison plutôt qu'un visuel statique.
-function CercleFlottant({ children }: { children: ReactNode }) {
-  const reduireAnimations = useReduireAnimations();
-  const bob = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (reduireAnimations) return;
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(bob, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(bob, { toValue: 0, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [bob, reduireAnimations]);
-  const translateY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
-  return <Animated.View style={{ transform: [{ translateY }] }}>{children}</Animated.View>;
-}
+const APERCU_PAR_PROFIL: Record<ProfilHero, { destination: string; delai: string; nom: string; note: string }> = {
+  particulier: { destination: "Colis vers Bikélé", delai: "Arrivée dans 22 min", nom: "Steevy N.", note: "★ 4,9 · Moto" },
+  commerce: { destination: "Commande vers Akanda", delai: "Arrivée dans 15 min", nom: "Grace O.", note: "★ 4,8 · Scooter" },
+};
 
-function AnneauPing() {
+// Pas d'accès à de vraies photos/vidéos ici (pas de récupération d'images
+// externes) : un mock d'écran de suivi, inspiré du Hero VitGo, plutôt qu'un
+// visuel statique — point de repère qui monte, ETA, coursier, "Suivre".
+function TelephoneApercu({ profil }: { profil: ProfilHero }) {
   const reduireAnimations = useReduireAnimations();
-  const ping = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (reduireAnimations) return;
-    const anim = Animated.loop(
-      Animated.timing(ping, { toValue: 1, duration: 2000, easing: Easing.out(Easing.ease), useNativeDriver: true })
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [ping, reduireAnimations]);
-  if (reduireAnimations) return null;
-  const scale = ping.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] });
-  const opacity = ping.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] });
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={{ transform: [{ scale }], opacity }}
-      className="absolute inset-0 rounded-full bg-colimo-rouge"
-    />
-  );
-}
-
-function LigneLivraisonAnimee() {
-  const reduireAnimations = useReduireAnimations();
-  const [largeur, setLargeur] = useState(0);
+  const [hauteurTrajet, setHauteurTrajet] = useState(0);
   const trajet = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (reduireAnimations) return;
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(trajet, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(trajet, { toValue: 1, duration: 2200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
         Animated.delay(500),
         Animated.timing(trajet, { toValue: 0, duration: 0, useNativeDriver: true }),
-        Animated.delay(200),
+        Animated.delay(300),
       ])
     );
     anim.start();
     return () => anim.stop();
   }, [trajet, reduireAnimations]);
-  const translateX = trajet.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(largeur - 16, 0)] });
+  const translateY = trajet.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(hauteurTrajet - 16, 0)] });
+  const infos = APERCU_PAR_PROFIL[profil];
+
   return (
-    <View className="mt-8 w-full">
-      <View className="flex-row items-center justify-between">
-        <Ionicons name="storefront-outline" size={18} color="white" />
-        <Ionicons name="home-outline" size={18} color="white" />
+    <View className="w-full max-w-[280px] overflow-hidden rounded-[36px] border-[6px] border-colimo-noir-clair bg-white shadow-2xl">
+      <View className="bg-colimo-rouge px-5 pb-6 pt-5">
+        <Text className="font-texte text-xs text-white/75">{infos.destination}</Text>
+        <Text className="mt-1 font-titre text-lg text-white">{infos.delai}</Text>
       </View>
-      <View
-        onLayout={(e) => setLargeur(e.nativeEvent.layout.width)}
-        className="relative mt-2 h-1 w-full rounded-full bg-white/15"
-      >
-        <Animated.View
-          style={{ transform: [{ translateX }] }}
-          className="absolute -top-1.5 h-4 w-4 rounded-full bg-colimo-rouge"
+      <View className="relative h-36 bg-colimo-fond px-5 py-4">
+        <View
+          onLayout={(e) => setHauteurTrajet(e.nativeEvent.layout.height)}
+          className="absolute bottom-4 left-8 top-4 w-0.5 bg-colimo-neutre-clair"
         />
+        <View className="absolute left-[27px] top-4 h-3 w-3 rounded-full bg-colimo-neutre-fonce/30" />
+        <View className="absolute bottom-4 left-[27px] h-3 w-3 rounded-full bg-colimo-rouge" />
+        {!reduireAnimations && (
+          <Animated.View
+            style={{ transform: [{ translateY }] }}
+            className="absolute left-6 top-4 h-4 w-4 rounded-full border-2 border-white bg-colimo-rouge"
+          />
+        )}
+      </View>
+      <View className="flex-row items-center justify-between border-t border-colimo-neutre-clair px-5 py-3">
+        <View className="flex-row items-center gap-2">
+          <View className="h-8 w-8 items-center justify-center rounded-full bg-colimo-rouge-clair">
+            <Ionicons name="bicycle-outline" size={16} color="#C41E24" />
+          </View>
+          <View>
+            <Text className="font-texte-medium text-xs text-colimo-neutre-fonce">{infos.nom}</Text>
+            <Text className="font-texte text-[10px] text-colimo-neutre-fonce/50">{infos.note}</Text>
+          </View>
+        </View>
+        <Text className="font-texte-medium text-xs text-colimo-rouge">Suivre</Text>
+      </View>
+      <View className="bg-colimo-noir px-5 py-3">
+        <Text className="text-center font-texte-medium text-xs text-white">Partager le lien de suivi</Text>
       </View>
     </View>
   );
 }
 
+function SelecteurProfil({ profil, onChange }: { profil: ProfilHero; onChange: (p: ProfilHero) => void }) {
+  return (
+    <View className="flex-row self-start rounded-full bg-white/10 p-1">
+      {(["particulier", "commerce"] as ProfilHero[]).map((valeur) => (
+        <Pressable key={valeur} onPress={() => onChange(valeur)} hitSlop={4}>
+          <View className={`rounded-full px-4 py-1.5 ${profil === valeur ? "bg-white" : ""}`}>
+            <Text
+              className={`font-texte-medium text-xs ${profil === valeur ? "text-colimo-noir" : "text-white/70"}`}
+            >
+              {valeur === "particulier" ? "Particulier" : "Commerce"}
+            </Text>
+          </View>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function PilleConfiance({ icone, texte }: { icone: keyof typeof Ionicons.glyphMap; texte: string }) {
+  return (
+    <View className="flex-row items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5">
+      <Ionicons name={icone} size={13} color="#fff" />
+      <Text className="font-texte-medium text-xs text-white/90">{texte}</Text>
+    </View>
+  );
+}
+
 export default function AccueilScreen() {
-  const [zone, setZone] = useState<Zone | null>(null);
   const [yEtapes, setYEtapes] = useState(0);
+  const [profil, setProfil] = useState<ProfilHero>("particulier");
   const scrollRef = useRef<ScrollView>(null);
   const { width } = useWindowDimensions();
   const desktop = width >= SEUIL_DESKTOP;
+  const msg = MESSAGES_HERO[profil];
 
-  const formulaire = (
-    <>
-      <Text className="font-titre text-base text-colimo-neutre-fonce">Envoyer un colis maintenant</Text>
-      <ZoneSelector label="Votre zone" value={zone} onChange={setZone} />
-      <Bouton label="Publier une course" onPress={() => router.push("/(auth)/register-client")} className="mt-1" />
-      {zone && (
-        <Text className="mt-3 text-center font-texte text-xs text-colimo-neutre-fonce/50">
-          Zone sélectionnée : {ZONE_LABELS[zone]}
-        </Text>
-      )}
-    </>
-  );
+  // Commerce préremplit directement le bon type sur l'inscription (cf.
+  // register-client.tsx#type) plutôt que d'obliger à rebasculer le
+  // sélecteur une seconde fois.
+  function allerCtaPrincipal() {
+    if (profil === "commerce") {
+      router.push({ pathname: "/(auth)/register-client", params: { type: "commerce" } });
+    } else {
+      router.push("/(auth)/register-client");
+    }
+  }
+
+  function allerCtaSecondaire() {
+    router.push(profil === "commerce" ? "/(auth)/login" : "/(auth)/register-coursier");
+  }
 
   if (desktop) {
     return (
@@ -218,38 +259,30 @@ export default function AccueilScreen() {
             <View className="mx-auto w-full max-w-6xl flex-row items-center gap-16 px-12 py-24">
               <View className="flex-1">
                 <Text className="font-texte-medium text-xs uppercase tracking-widest text-colimo-rouge">
-                  Livraison à Libreville et environs
+                  Livraison à Libreville et environs · à partir de 2 000 FCFA
                 </Text>
-                <Text className="mt-3 font-titre-bold text-6xl leading-[1.05] text-white">
-                  Vos envois de colis partout dans le <Text className="text-colimo-rouge">Grand Libreville</Text>
+                <View className="mt-4">
+                  <SelecteurProfil profil={profil} onChange={setProfil} />
+                </View>
+                <Text className="mt-5 font-titre-bold text-6xl leading-[1.05] text-white">
+                  {msg.titre} <Text className="text-colimo-rouge">{msg.accent}</Text>
                 </Text>
-                <Text className="mt-5 max-w-md font-texte text-lg text-white/60">
-                  Suivez vos courses du lieu de retrait au lieu de livraison depuis l&apos;application COLIMO.
-                </Text>
+                <Text className="mt-5 max-w-md font-texte text-lg text-white/60">{msg.sousTitre}</Text>
 
-                <Carte className="mt-8 w-full max-w-md">{formulaire}</Carte>
+                <View className="mt-8 flex-row flex-wrap gap-3">
+                  <Bouton label={`${msg.ctaPrincipal} →`} onPress={allerCtaPrincipal} className="px-6 py-4" />
+                  <Bouton label={msg.ctaSecondaire} variante="contour" onPress={allerCtaSecondaire} className="px-6 py-4" />
+                </View>
+
+                <View className="mt-6 flex-row flex-wrap gap-2">
+                  {PILLES_CONFIANCE.map((pille) => (
+                    <PilleConfiance key={pille.texte} icone={pille.icone} texte={pille.texte} />
+                  ))}
+                </View>
               </View>
 
               <View className="flex-1 items-center justify-center">
-                <View className="aspect-square w-full items-center justify-center rounded-[32px] bg-colimo-noir-clair p-10">
-                  <View className="relative h-36 w-36 items-center justify-center">
-                    <AnneauPing />
-                    <CercleFlottant>
-                      <View className="h-36 w-36 items-center justify-center rounded-full bg-colimo-rouge">
-                        <Ionicons name="cube-outline" size={64} color="white" />
-                      </View>
-                    </CercleFlottant>
-                  </View>
-                  <View className="mt-10 w-full gap-3">
-                    {CHIFFRES_CLES.map((chiffre) => (
-                      <View key={chiffre.texte} className="flex-row items-center gap-3 rounded-full bg-white/10 px-4 py-3">
-                        <Ionicons name={chiffre.icone} size={18} color="white" />
-                        <Text className="font-texte-medium text-sm text-white">{chiffre.texte}</Text>
-                      </View>
-                    ))}
-                  </View>
-                  <LigneLivraisonAnimee />
-                </View>
+                <TelephoneApercu profil={profil} />
               </View>
             </View>
           </View>
@@ -340,38 +373,33 @@ export default function AccueilScreen() {
           </Text>
         </View>
 
-        <View className="relative mt-4 overflow-hidden rounded-b-[32px] bg-colimo-noir px-6 pb-20 pt-8">
+        <View className="relative mt-4 overflow-hidden rounded-b-[32px] bg-colimo-noir px-6 pb-10 pt-8">
           <GlowDecor />
-          <Text className="font-titre-bold text-4xl leading-tight text-white">
-            Vos envois de colis partout dans le <Text className="text-colimo-rouge">Grand Libreville</Text>
+          <Text className="font-texte-medium text-xs uppercase tracking-widest text-colimo-rouge">
+            Livraison à Libreville · à partir de 2 000 FCFA
           </Text>
-          <Text className="mt-3 font-texte text-base text-white/60">
-            Suivez vos courses du lieu de retrait au lieu de livraison depuis l&apos;application COLIMO.
-          </Text>
-        </View>
-
-        <Carte className="-mt-12 mx-6" style={STYLE_OMBRE}>
-          {formulaire}
-        </Carte>
-
-        <View className="mx-6 mt-6 overflow-hidden rounded-3xl bg-colimo-noir p-6">
-          <View className="flex-row items-center gap-4">
-            <View className="relative h-14 w-14 items-center justify-center">
-              <AnneauPing />
-              <CercleFlottant>
-                <View className="h-14 w-14 items-center justify-center rounded-full bg-colimo-rouge">
-                  <Ionicons name="cube-outline" size={26} color="white" />
-                </View>
-              </CercleFlottant>
-            </View>
-            <View className="flex-1">
-              <Text className="font-texte-medium text-white">Suivi en temps réel</Text>
-              <Text className="mt-1 font-texte text-xs text-white/60">
-                Votre coursier, du départ jusqu'à la livraison
-              </Text>
-            </View>
+          <View className="mt-3">
+            <SelecteurProfil profil={profil} onChange={setProfil} />
           </View>
-          <LigneLivraisonAnimee />
+          <Text className="mt-4 font-titre-bold text-4xl leading-tight text-white">
+            {msg.titre} <Text className="text-colimo-rouge">{msg.accent}</Text>
+          </Text>
+          <Text className="mt-3 font-texte text-base text-white/60">{msg.sousTitre}</Text>
+
+          <View className="mt-6 gap-3">
+            <Bouton label={`${msg.ctaPrincipal} →`} onPress={allerCtaPrincipal} />
+            <Bouton label={msg.ctaSecondaire} variante="contour" onPress={allerCtaSecondaire} />
+          </View>
+
+          <View className="mt-4 flex-row flex-wrap gap-2">
+            {PILLES_CONFIANCE.map((pille) => (
+              <PilleConfiance key={pille.texte} icone={pille.icone} texte={pille.texte} />
+            ))}
+          </View>
+
+          <View className="mt-6 items-center">
+            <TelephoneApercu profil={profil} />
+          </View>
         </View>
 
         <View className="mt-10 px-6">
@@ -444,11 +472,3 @@ export default function AccueilScreen() {
     </SafeAreaView>
   );
 }
-
-const STYLE_OMBRE = {
-  shadowColor: "#18140F",
-  shadowOffset: { width: 0, height: 8 },
-  shadowOpacity: 0.15,
-  shadowRadius: 20,
-  elevation: 6,
-};
