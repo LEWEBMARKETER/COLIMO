@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import ZoneSelector from "@/components/ZoneSelector";
 import PhotoPicker from "@/components/PhotoPicker";
 import Bouton from "@/components/ui/Bouton";
@@ -32,7 +32,11 @@ const VOLUMES: { valeur: VolumeLivraisons; label: string }[] = (
 ).map((valeur) => ({ valeur, label: VOLUME_LIVRAISONS_LABELS[valeur] }));
 
 export default function RegisterClientScreen() {
-  const [typeClient, setTypeClient] = useState<TypeClient>("particulier");
+  // Permet à la Home publique de préremplir le bon profil selon le CTA
+  // cliqué ("Envoyer un colis" vs "Créer mon compte commerce") sans obliger
+  // à rebasculer le sélecteur ci-dessous.
+  const { type } = useLocalSearchParams<{ type?: string }>();
+  const [typeClient, setTypeClient] = useState<TypeClient>(type === "commerce" ? "commerce" : "particulier");
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [email, setEmail] = useState("");
