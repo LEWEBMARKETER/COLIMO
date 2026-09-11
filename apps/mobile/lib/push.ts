@@ -2,7 +2,7 @@
 // VAPID), pas de service tiers propriétaire. S'ajoute au canal "push" déjà
 // utilisé par le Communication Center (in-app), sans le remplacer : cf.
 // docs/NOTIFICATIONS_PUSH.md.
-import { enregistrerAbonnementPush } from "@colimo/shared";
+import { enregistrerAbonnementPush, supprimerAbonnementPush } from "@colimo/shared";
 import { supabase } from "./supabaseClient";
 
 export function notificationsPushDisponibles(): boolean {
@@ -59,6 +59,37 @@ export async function activerNotificationsPush(utilisateurId: string): Promise<b
       auth: json.keys.auth,
       userAgent: navigator.userAgent,
     });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Un abonnement actif existe déjà pour cet appareil/navigateur — utilisé par
+// les Paramètres du compte pour afficher l'état correct du bouton
+// (Activer/Désactiver) sans redemander la permission.
+export async function notificationsPushActives(): Promise<boolean> {
+  if (!notificationsPushDisponibles() || Notification.permission !== "granted") return false;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+    const subscription = await registration?.pushManager.getSubscription();
+    return Boolean(subscription);
+  } catch {
+    return false;
+  }
+}
+
+// Désabonne l'appareil courant du push (côté navigateur ET base) — jusqu'ici
+// il n'existait aucun moyen de revenir en arrière une fois activé.
+export async function desactiverNotificationsPush(): Promise<boolean> {
+  if (!notificationsPushDisponibles()) return false;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+    const subscription = await registration?.pushManager.getSubscription();
+    if (!subscription) return true;
+    const endpoint = subscription.endpoint;
+    await subscription.unsubscribe();
+    await supprimerAbonnementPush(supabase, endpoint);
     return true;
   } catch {
     return false;

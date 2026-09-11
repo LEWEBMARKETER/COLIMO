@@ -588,6 +588,46 @@ export async function mettreAJourMotDePasse(nouveauMotDePasse: string): Promise<
   if (error) throw error;
 }
 
+// Changement de mot de passe depuis une session normale (Paramètres du
+// compte) — exige de reconnaître le mot de passe actuel avant d'appliquer
+// le nouveau, même principe que apps/admin/app/(dashboard)/mon-compte
+// (empêche qu'une session laissée ouverte sur un appareil partagé permette
+// de changer le mot de passe sans le connaître).
+export async function changerMotDePasse(motDePasseActuel: string, nouveauMotDePasse: string): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) throw new Error("Session invalide.");
+  const { error: erreurReauth } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: motDePasseActuel,
+  });
+  if (erreurReauth) throw new Error("Mot de passe actuel incorrect.");
+  await mettreAJourMotDePasse(nouveauMotDePasse);
+}
+
+// Suppression du compte par son propre titulaire — passe par une route
+// serveur (api/compte/supprimer.ts) car révoquer l'accès Supabase Auth
+// (suppression réelle ou bannissement) nécessite la clé service-role, qui
+// ne doit jamais atteindre le navigateur. Réservé aux comptes client
+// (particulier/commerce) — cf. la route pour le détail.
+export async function supprimerMonCompte(motif?: string): Promise<{ mode: "anonymisation" | "suppression_definitive" }> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const jeton = sessionData.session?.access_token;
+  if (!jeton) throw new Error("Session expirée.");
+
+  const reponse = await fetch("/api/compte/supprimer", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${jeton}` },
+    body: JSON.stringify({ motif: motif ?? null }),
+  });
+  const corps = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) {
+    throw new Error(corps?.erreur || "Impossible de supprimer votre compte.");
+  }
+  return corps as { mode: "anonymisation" | "suppression_definitive" };
+}
+
 export async function inscrireClient(input: {
   email: string;
   password: string;

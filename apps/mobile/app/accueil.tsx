@@ -1,19 +1,28 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Animated, Easing, Image, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  Image,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { ZONE_LABELS, type Zone } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
+import CarteInfoConfiance from "@/components/ui/CarteInfoConfiance";
 import ZoneSelector from "@/components/ZoneSelector";
 
-const POINTS_CONFIANCE = [
-  "Coursiers vérifiés avant activation de leur compte",
-  "Prix affiché avant de valider votre commande",
-  "Suivi du statut de votre course en temps réel",
-  "Chat intégré avec votre coursier pendant la livraison",
-  "Notation dans les deux sens après chaque course",
+const INFORMATIONS_CLES: { icone: keyof typeof Ionicons.glyphMap; titre: string; description: string }[] = [
+  { icone: "location-outline", titre: "Grand Libreville", description: "Livraisons dans les zones couvertes par COLIMO" },
+  { icone: "bicycle-outline", titre: "Coursiers partenaires", description: "Un réseau de coursiers pour vos livraisons" },
+  { icone: "navigate-outline", titre: "Suivi de course", description: "Suivez votre colis pendant son acheminement" },
+  { icone: "shield-checkmark-outline", titre: "Livraison sécurisée", description: "Confirmation de livraison et preuve de remise" },
 ];
 
 const ETAPES = [
@@ -37,9 +46,29 @@ const CHIFFRES_CLES: { icone: keyof typeof Ionicons.glyphMap; texte: string }[] 
   { icone: "shield-checkmark-outline", texte: "Coursiers vérifiés" },
 ];
 
-const MOTS_ROTATIFS = ["colis", "repas", "documents", "courses du quotidien"];
-
 const SEUIL_DESKTOP = 860;
+
+// Respecte la préférence système "réduire les animations" — désactive les
+// boucles Animated ci-dessous plutôt que de les imposer indéfiniment.
+function useReduireAnimations(): boolean {
+  const [reduit, setReduit] = useState(false);
+  useEffect(() => {
+    let actif = true;
+    AccessibilityInfo.isReduceMotionEnabled?.()
+      .then((valeur) => {
+        if (actif) setReduit(valeur);
+      })
+      .catch(() => {});
+    const abonnement = AccessibilityInfo.addEventListener?.("reduceMotionChanged", (valeur: boolean) => {
+      if (actif) setReduit(valeur);
+    });
+    return () => {
+      actif = false;
+      abonnement?.remove?.();
+    };
+  }, []);
+  return reduit;
+}
 
 function GlowDecor() {
   return (
@@ -60,8 +89,10 @@ function GlowDecor() {
 // on simule la vivacité façon Gozem/Yango avec un petit graphique animé sur le thème
 // livraison plutôt qu'un visuel statique.
 function CercleFlottant({ children }: { children: ReactNode }) {
+  const reduireAnimations = useReduireAnimations();
   const bob = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (reduireAnimations) return;
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(bob, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
@@ -70,20 +101,23 @@ function CercleFlottant({ children }: { children: ReactNode }) {
     );
     anim.start();
     return () => anim.stop();
-  }, [bob]);
+  }, [bob, reduireAnimations]);
   const translateY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
   return <Animated.View style={{ transform: [{ translateY }] }}>{children}</Animated.View>;
 }
 
 function AnneauPing() {
+  const reduireAnimations = useReduireAnimations();
   const ping = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (reduireAnimations) return;
     const anim = Animated.loop(
       Animated.timing(ping, { toValue: 1, duration: 2000, easing: Easing.out(Easing.ease), useNativeDriver: true })
     );
     anim.start();
     return () => anim.stop();
-  }, [ping]);
+  }, [ping, reduireAnimations]);
+  if (reduireAnimations) return null;
   const scale = ping.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] });
   const opacity = ping.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] });
   return (
@@ -96,9 +130,11 @@ function AnneauPing() {
 }
 
 function LigneLivraisonAnimee() {
+  const reduireAnimations = useReduireAnimations();
   const [largeur, setLargeur] = useState(0);
   const trajet = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (reduireAnimations) return;
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(trajet, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
@@ -109,7 +145,7 @@ function LigneLivraisonAnimee() {
     );
     anim.start();
     return () => anim.stop();
-  }, [trajet]);
+  }, [trajet, reduireAnimations]);
   const translateX = trajet.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(largeur - 16, 0)] });
   return (
     <View className="mt-8 w-full">
@@ -132,26 +168,10 @@ function LigneLivraisonAnimee() {
 
 export default function AccueilScreen() {
   const [zone, setZone] = useState<Zone | null>(null);
-  const [motIndex, setMotIndex] = useState(0);
   const [yEtapes, setYEtapes] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const { width } = useWindowDimensions();
   const desktop = width >= SEUIL_DESKTOP;
-
-  useEffect(() => {
-    const id = setInterval(() => setMotIndex((i) => (i + 1) % MOTS_ROTATIFS.length), 2600);
-    return () => clearInterval(id);
-  }, []);
-
-  const dots = (
-    <View className="mt-5 flex-row gap-2">
-      {MOTS_ROTATIFS.map((mot, i) => (
-        <Pressable key={mot} onPress={() => setMotIndex(i)} hitSlop={8}>
-          <View className={`h-1.5 rounded-full ${i === motIndex ? "w-6 bg-colimo-rouge" : "w-1.5 bg-white/30"}`} />
-        </Pressable>
-      ))}
-    </View>
-  );
 
   const formulaire = (
     <>
@@ -201,13 +221,10 @@ export default function AccueilScreen() {
                   Livraison à Libreville et environs
                 </Text>
                 <Text className="mt-3 font-titre-bold text-6xl leading-[1.05] text-white">
-                  COLIMO, livrez vos{" "}
-                  <Text className="text-colimo-rouge">{MOTS_ROTATIFS[motIndex]}</Text> en toute confiance
+                  Vos envois de colis partout dans le <Text className="text-colimo-rouge">Grand Libreville</Text>
                 </Text>
-                {dots}
                 <Text className="mt-5 max-w-md font-texte text-lg text-white/60">
-                  COLIMO connecte particuliers, commerces et coursiers vérifiés à Libreville et ses
-                  environs.
+                  Suivez vos courses du lieu de retrait au lieu de livraison depuis l&apos;application COLIMO.
                 </Text>
 
                 <Carte className="mt-8 w-full max-w-md">{formulaire}</Carte>
@@ -241,12 +258,9 @@ export default function AccueilScreen() {
             <View className="flex-row gap-16">
               <View className="flex-1">
                 <Text className="font-titre text-2xl text-colimo-neutre-fonce">Ce qui est inclus</Text>
-                <View className="mt-6 flex-row flex-wrap gap-x-8 gap-y-4">
-                  {POINTS_CONFIANCE.map((point) => (
-                    <View key={point} className="w-[45%] flex-row items-start gap-3">
-                      <Text className="font-texte-medium text-colimo-rouge">✓</Text>
-                      <Text className="flex-1 font-texte text-colimo-neutre-fonce/80">{point}</Text>
-                    </View>
+                <View className="mt-6 flex-row flex-wrap gap-4">
+                  {INFORMATIONS_CLES.map((info) => (
+                    <CarteInfoConfiance key={info.titre} icone={info.icone} titre={info.titre} description={info.description} />
                   ))}
                 </View>
               </View>
@@ -329,13 +343,10 @@ export default function AccueilScreen() {
         <View className="relative mt-4 overflow-hidden rounded-b-[32px] bg-colimo-noir px-6 pb-20 pt-8">
           <GlowDecor />
           <Text className="font-titre-bold text-4xl leading-tight text-white">
-            COLIMO, livrez vos <Text className="text-colimo-rouge">{MOTS_ROTATIFS[motIndex]}</Text> en toute
-            confiance
+            Vos envois de colis partout dans le <Text className="text-colimo-rouge">Grand Libreville</Text>
           </Text>
-          {dots}
           <Text className="mt-3 font-texte text-base text-white/60">
-            COLIMO connecte particuliers, commerces et coursiers vérifiés à
-            Libreville et ses environs.
+            Suivez vos courses du lieu de retrait au lieu de livraison depuis l&apos;application COLIMO.
           </Text>
         </View>
 
@@ -365,12 +376,9 @@ export default function AccueilScreen() {
 
         <View className="mt-10 px-6">
           <Text className="font-titre text-xl text-colimo-neutre-fonce">Ce qui est inclus</Text>
-          <View className="mt-4 gap-3">
-            {POINTS_CONFIANCE.map((point) => (
-              <View key={point} className="flex-row items-start gap-3">
-                <Text className="font-texte-medium text-colimo-rouge">✓</Text>
-                <Text className="flex-1 font-texte text-colimo-neutre-fonce/80">{point}</Text>
-              </View>
+          <View className="mt-4 flex-row flex-wrap gap-3">
+            {INFORMATIONS_CLES.map((info) => (
+              <CarteInfoConfiance key={info.titre} icone={info.icone} titre={info.titre} description={info.description} />
             ))}
           </View>
 

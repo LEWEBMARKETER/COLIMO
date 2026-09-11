@@ -3,8 +3,10 @@ import { Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
-import Bouton from "@/components/ui/Bouton";
 import StatutChip from "@/components/ui/StatutChip";
+import CarteAction from "@/components/ui/CarteAction";
+import CarteInfoConfiance from "@/components/ui/CarteInfoConfiance";
+import CarteCourseRecente from "@/components/ui/CarteCourseRecente";
 import BandeauNotificationsPush from "@/components/BandeauNotificationsPush";
 import ClocheNotifications from "@/components/ClocheNotifications";
 import CommerceDashboard from "@/components/CommerceDashboard";
@@ -15,14 +17,13 @@ const STATUTS_TERMINES = new Set(["confirmee", "annulee"]);
 
 export default function ClientHome() {
   const { session, utilisateur } = useAuth();
-  const [courseActive, setCourseActive] = useState<Course | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
     if (!session) return;
-    getCourses({ clientId: session.user.id }).then((courses) => {
-      const active = courses.find((c) => !STATUTS_TERMINES.has(c.statut));
-      setCourseActive(active ?? null);
-    });
+    // Une seule requête, réutilisée pour la course active et "Vos dernières
+    // livraisons" — évite un second appel réseau pour la même donnée.
+    getCourses({ clientId: session.user.id }).then(setCourses);
   }, [session]);
 
   if (utilisateur?.typeClient === "commerce") {
@@ -41,9 +42,12 @@ export default function ClientHome() {
     );
   }
 
+  const courseActive = courses.find((c) => !STATUTS_TERMINES.has(c.statut)) ?? null;
+  const dernieresCourses = courses.slice(0, 5);
+
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-      <ScrollView className="flex-1 px-6 py-8" contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView className="flex-1 px-6 py-8" contentContainerStyle={{ paddingBottom: 32 }}>
         <View className="flex-row items-center gap-3">
           {utilisateur?.photoUrl ? (
             <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
@@ -57,7 +61,7 @@ export default function ClientHome() {
               Bonjour {utilisateur?.prenom ?? utilisateur?.nom ?? ""} 👋
             </Text>
             <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/70" numberOfLines={2}>
-              Où souhaitez-vous envoyer un colis aujourd&apos;hui ?
+              Vos envois de colis partout dans le Grand Libreville
             </Text>
           </View>
           {session && <ClocheNotifications utilisateurId={session.user.id} route="/(client)/notifications" />}
@@ -84,15 +88,64 @@ export default function ClientHome() {
           </Pressable>
         )}
 
-        <View className="mt-auto pt-8">
-          <Bouton label="Nouvelle course" onPress={() => router.push("/(client)/publish")} />
+        <View className="mt-6">
+          <Text className="font-titre text-base text-colimo-neutre-fonce">Que souhaitez-vous faire ?</Text>
+          <View className="mt-3 flex-row flex-wrap gap-3">
+            <CarteAction icone="cube-outline" titre="Envoyer un colis" onPress={() => router.push("/(client)/publish")} />
+            <CarteAction
+              icone="location-outline"
+              titre="Suivre une course"
+              onPress={() =>
+                courseActive ? router.push(`/(client)/track/${courseActive.id}`) : router.push("/(client)/historique")
+              }
+            />
+            <CarteAction
+              icone="time-outline"
+              titre="Mes dernières courses"
+              onPress={() => router.push("/(client)/historique")}
+            />
+          </View>
+        </View>
 
-          <Bouton
-            label="Mes courses"
-            variante="contour"
-            onPress={() => router.push("/(client)/historique")}
-            className="mt-3"
-          />
+        {dernieresCourses.length > 0 && (
+          <View className="mt-6">
+            <Text className="font-titre text-base text-colimo-neutre-fonce">Vos dernières livraisons</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="mt-3"
+              contentContainerStyle={{ paddingRight: 6 }}
+            >
+              {dernieresCourses.map((course) => (
+                <CarteCourseRecente key={course.id} course={course} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <View className="mt-6">
+          <View className="flex-row flex-wrap gap-3">
+            <CarteInfoConfiance
+              icone="location-outline"
+              titre="Grand Libreville"
+              description="Livraisons dans les zones couvertes par COLIMO"
+            />
+            <CarteInfoConfiance
+              icone="bicycle-outline"
+              titre="Coursiers partenaires"
+              description="Un réseau de coursiers pour vos livraisons"
+            />
+            <CarteInfoConfiance
+              icone="navigate-outline"
+              titre="Suivi de course"
+              description="Suivez votre colis pendant son acheminement"
+            />
+            <CarteInfoConfiance
+              icone="shield-checkmark-outline"
+              titre="Livraison sécurisée"
+              description="Confirmation de livraison et preuve de remise"
+            />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
