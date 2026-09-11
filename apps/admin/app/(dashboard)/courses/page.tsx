@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StatutBadge from "@/components/StatutBadge";
 import CarteCourses from "@/components/CarteCourses";
+import DetailCourseModal from "@/components/DetailCourseModal";
 import {
   annulerCourseAdmin,
   getConfirmationsLivraisonAdmin,
@@ -57,6 +58,7 @@ function CoursesContenu() {
   const [filtreZone, setFiltreZone] = useState<string>("toutes");
   const [chargement, setChargement] = useState(true);
   const [panneauAnnulation, setPanneauAnnulation] = useState<string | null>(null);
+  const [courseDetail, setCourseDetail] = useState<Course | null>(null);
   const [motifAnnulation, setMotifAnnulation] = useState<MotifAnnulationAdmin | "">("");
   const [commentaireAnnulation, setCommentaireAnnulation] = useState("");
   const [annulationEnCours, setAnnulationEnCours] = useState(false);
@@ -163,6 +165,10 @@ function CoursesContenu() {
   }
 
   const clientFiltreNom = clientIdFiltre ? nomUtilisateur(clientIdFiltre) : null;
+
+  // Attribution manuelle réservée aux coursiers en ligne — assigner à un
+  // coursier hors ligne ne mènerait qu'à une course jamais prise en charge.
+  const coursiersEnLigne = useMemo(() => coursiers.filter((c) => c.statut === "en_ligne"), [coursiers]);
 
   return (
     <div>
@@ -293,13 +299,26 @@ function CoursesContenu() {
                       className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs"
                     >
                       <option value="">Sans coursier</option>
-                      {coursiers.map((c) => (
-                        <option key={c.id} value={c.id}>
+                      {/* Attribution manuelle réservée aux coursiers en ligne ;
+                          le coursier déjà assigné reste visible même hors ligne,
+                          pour ne pas fausser l'état affiché du select. */}
+                      {(course.coursierId && !coursiersEnLigne.some((c) => c.utilisateurId === course.coursierId)
+                        ? [...coursiers.filter((c) => c.utilisateurId === course.coursierId), ...coursiersEnLigne]
+                        : coursiersEnLigne
+                      ).map((c) => (
+                        <option key={c.utilisateurId} value={c.utilisateurId}>
                           {c.utilisateur.prenom ? `${c.utilisateur.prenom} ` : ""}
                           {c.utilisateur.nom}
+                          {c.statut !== "en_ligne" ? " (hors ligne)" : ""}
                         </option>
                       ))}
                     </select>
+                    <button
+                      onClick={() => setCourseDetail(course)}
+                      className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                    >
+                      Détails
+                    </button>
                     {course.statut !== "annulee" && (
                       <button
                         onClick={() => ouvrirPanneauAnnulation(course)}
@@ -373,6 +392,16 @@ function CoursesContenu() {
           </tbody>
         </table>
       </div>
+
+      {courseDetail && (
+        <DetailCourseModal
+          course={courseDetail}
+          client={utilisateurs.find((u) => u.id === courseDetail.clientId)}
+          coursier={courseDetail.coursierId ? utilisateurs.find((u) => u.id === courseDetail.coursierId) : undefined}
+          confirmation={confirmationParCourse.get(courseDetail.id)}
+          onClose={() => setCourseDetail(null)}
+        />
+      )}
     </div>
   );
 }

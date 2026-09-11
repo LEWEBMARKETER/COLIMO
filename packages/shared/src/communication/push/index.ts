@@ -49,3 +49,12 @@ export async function enregistrerAbonnementPush(
   if (error) throw error;
   return abonnementPushFromRow(data as AbonnementPushRow);
 }
+
+// Supprime l'abonnement Web Push par endpoint — appelé quand l'utilisateur
+// désactive les notifications push depuis les Paramètres du compte (cf.
+// apps/mobile/lib/push.ts#desactiverNotificationsPush). RLS : suppression
+// réservée au titulaire (push_subscriptions_delete_own, 0041).
+export async function supprimerAbonnementPush(client: SupabaseClient, endpoint: string): Promise<void> {
+  const { error } = await client.from("push_subscriptions").delete().eq("endpoint", endpoint);
+  if (error) throw error;
+}
