@@ -8,14 +8,14 @@ interface CookieToSet {
   options: CookieOptions;
 }
 
-const ROUTES_PUBLIQUES = ["/login"];
+const ROUTES_PUBLIQUES = ["/login", "/mot-de-passe-oublie"];
 
-// /invitation : la session y est temporaire (créée par le jeton du lien
-// d'invitation, avant que le mot de passe ne soit défini) — ni redirigée
-// vers /login si absente, ni vers / si présente (contrairement à /login),
-// sinon un admin fraîchement invité serait renvoyé au dashboard sans avoir
-// pu définir son mot de passe.
-const ROUTES_EXEMPTEES = ["/invitation"];
+// /invitation et /reinitialiser-mot-de-passe : la session y est temporaire
+// (créée par le jeton du lien reçu par email, avant que le mot de passe ne
+// soit (re)défini) — ni redirigée vers /login si absente, ni vers / si
+// présente (contrairement à /login), sinon l'admin serait renvoyé au
+// dashboard sans avoir pu définir son mot de passe.
+const ROUTES_EXEMPTEES = ["/invitation", "/reinitialiser-mot-de-passe"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
