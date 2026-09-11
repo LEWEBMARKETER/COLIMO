@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import {
   ZONE_LABELS,
@@ -14,14 +14,16 @@ import {
   type CoursierAvecUtilisateur,
 } from "@colimo/shared";
 import BadgeAbonnement from "@/components/BadgeAbonnement";
-import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
+import CarteAction from "@/components/ui/CarteAction";
+import CarteCourseRecente from "@/components/ui/CarteCourseRecente";
 import ChiffreCle from "@/components/ui/ChiffreCle";
 import { getCoursiers, getCoursiersFavorisCommerce, getCourses, getMonCommerce } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 const STATUTS_EN_COURS = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
 const STATUTS_TERMINEES = new Set(["livree", "confirmee"]);
+const STATUTS_TERMINAUX = new Set(["livree", "confirmee", "annulee", "retournee"]);
 
 function estAujourdhui(dateIso: string): boolean {
   const d = new Date(dateIso);
@@ -63,6 +65,8 @@ export default function CommerceDashboard() {
   const enCours = courses.filter((c) => STATUTS_EN_COURS.has(c.statut)).length;
   const terminees = courses.filter((c) => STATUTS_TERMINEES.has(c.statut)).length;
   const depensesJour = coursesJour.filter((c) => c.statut !== "annulee").reduce((s, c) => s + c.prix, 0);
+  const courseActive = courses.find((c) => STATUTS_EN_COURS.has(c.statut)) ?? null;
+  const dernieresCourses = courses.slice(0, 5);
 
   // Business : vraie liste enregistrée (commerce_coursiers_favoris). Autres
   // plans : top-3 informel calculé par fréquence de livraisons confirmées,
@@ -100,6 +104,29 @@ export default function CommerceDashboard() {
         {commerce && <BadgeAbonnement plan={planEffectif} dateExpiration={commerce.abonnementExpireLe} />}
       </View>
 
+      <View className="mt-4">
+        <Text className="font-titre text-base text-colimo-neutre-fonce">Que souhaitez-vous faire ?</Text>
+        <View className="mt-3 flex-row flex-wrap gap-3">
+          <CarteAction
+            icone="storefront-outline"
+            titre="Livrer une commande"
+            onPress={() => router.push("/(client)/nouvelle-livraison")}
+          />
+          <CarteAction
+            icone="location-outline"
+            titre="Suivre une course"
+            onPress={() =>
+              courseActive ? router.push(`/(client)/track/${courseActive.id}`) : router.push("/(client)/historique")
+            }
+          />
+          <CarteAction
+            icone="time-outline"
+            titre="Mes livraisons"
+            onPress={() => router.push("/(client)/historique")}
+          />
+        </View>
+      </View>
+
       {abonnementExpireBientot && (
         <Pressable
           onPress={() => router.push("/(client)/commerce/decouvrir")}
@@ -131,7 +158,31 @@ export default function CommerceDashboard() {
         </Carte>
       </View>
 
-      <Carte className="mt-3">
+      {dernieresCourses.length > 0 && (
+        <View className="mt-4">
+          <Text className="font-titre text-base text-colimo-neutre-fonce">Vos dernières livraisons</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="mt-3"
+            contentContainerStyle={{ paddingRight: 6 }}
+          >
+            {dernieresCourses.map((course) => (
+              <CarteCourseRecente
+                key={course.id}
+                course={course}
+                onRefaire={
+                  STATUTS_TERMINAUX.has(course.statut)
+                    ? () => router.push(`/(client)/nouvelle-livraison?depuisCourseId=${course.id}`)
+                    : undefined
+                }
+              />
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      <Carte className="mt-4">
         <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Coursiers favoris</Text>
         {favoris.length === 0 ? (
           <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/50">
@@ -271,10 +322,6 @@ export default function CommerceDashboard() {
           )}
         </View>
       )}
-
-      <View className="mt-6">
-        <Bouton label="Nouvelle livraison" onPress={() => router.push("/(client)/nouvelle-livraison")} />
-      </View>
     </View>
   );
 }

@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Animated, Easing, Image, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -41,6 +51,28 @@ const MOTS_ROTATIFS = ["colis", "repas", "documents", "courses du quotidien"];
 
 const SEUIL_DESKTOP = 860;
 
+// Respecte la préférence système "réduire les animations" — désactive les
+// boucles Animated ci-dessous plutôt que de les imposer indéfiniment.
+function useReduireAnimations(): boolean {
+  const [reduit, setReduit] = useState(false);
+  useEffect(() => {
+    let actif = true;
+    AccessibilityInfo.isReduceMotionEnabled?.()
+      .then((valeur) => {
+        if (actif) setReduit(valeur);
+      })
+      .catch(() => {});
+    const abonnement = AccessibilityInfo.addEventListener?.("reduceMotionChanged", (valeur: boolean) => {
+      if (actif) setReduit(valeur);
+    });
+    return () => {
+      actif = false;
+      abonnement?.remove?.();
+    };
+  }, []);
+  return reduit;
+}
+
 function GlowDecor() {
   return (
     <>
@@ -60,8 +92,10 @@ function GlowDecor() {
 // on simule la vivacité façon Gozem/Yango avec un petit graphique animé sur le thème
 // livraison plutôt qu'un visuel statique.
 function CercleFlottant({ children }: { children: ReactNode }) {
+  const reduireAnimations = useReduireAnimations();
   const bob = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (reduireAnimations) return;
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(bob, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
@@ -70,20 +104,23 @@ function CercleFlottant({ children }: { children: ReactNode }) {
     );
     anim.start();
     return () => anim.stop();
-  }, [bob]);
+  }, [bob, reduireAnimations]);
   const translateY = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
   return <Animated.View style={{ transform: [{ translateY }] }}>{children}</Animated.View>;
 }
 
 function AnneauPing() {
+  const reduireAnimations = useReduireAnimations();
   const ping = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (reduireAnimations) return;
     const anim = Animated.loop(
       Animated.timing(ping, { toValue: 1, duration: 2000, easing: Easing.out(Easing.ease), useNativeDriver: true })
     );
     anim.start();
     return () => anim.stop();
-  }, [ping]);
+  }, [ping, reduireAnimations]);
+  if (reduireAnimations) return null;
   const scale = ping.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] });
   const opacity = ping.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] });
   return (
@@ -96,9 +133,11 @@ function AnneauPing() {
 }
 
 function LigneLivraisonAnimee() {
+  const reduireAnimations = useReduireAnimations();
   const [largeur, setLargeur] = useState(0);
   const trajet = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    if (reduireAnimations) return;
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(trajet, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
@@ -109,7 +148,7 @@ function LigneLivraisonAnimee() {
     );
     anim.start();
     return () => anim.stop();
-  }, [trajet]);
+  }, [trajet, reduireAnimations]);
   const translateX = trajet.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(largeur - 16, 0)] });
   return (
     <View className="mt-8 w-full">
@@ -131,6 +170,7 @@ function LigneLivraisonAnimee() {
 }
 
 export default function AccueilScreen() {
+  const reduireAnimations = useReduireAnimations();
   const [zone, setZone] = useState<Zone | null>(null);
   const [motIndex, setMotIndex] = useState(0);
   const [yEtapes, setYEtapes] = useState(0);
@@ -139,9 +179,10 @@ export default function AccueilScreen() {
   const desktop = width >= SEUIL_DESKTOP;
 
   useEffect(() => {
+    if (reduireAnimations) return;
     const id = setInterval(() => setMotIndex((i) => (i + 1) % MOTS_ROTATIFS.length), 2600);
     return () => clearInterval(id);
-  }, []);
+  }, [reduireAnimations]);
 
   const dots = (
     <View className="mt-5 flex-row gap-2">
