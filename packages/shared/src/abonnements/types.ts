@@ -23,7 +23,8 @@ export type CleFonctionnalitePremium =
   | "multi_points_depart"
   | "export_excel"
   | "coursiers_favoris"
-  | "support_prioritaire";
+  | "support_prioritaire"
+  | "commandes_masse";
 
 export interface FonctionnalitePremium {
   cle: CleFonctionnalitePremium;
@@ -94,6 +95,12 @@ export const CATALOGUE_FONCTIONNALITES_PREMIUM: FonctionnalitePremium[] = [
     cle: "support_prioritaire",
     nom: "Support prioritaire",
     description: "Vos demandes sont identifiées comme prioritaires auprès de l'équipe COLIMO.",
+    palierRequis: "business",
+  },
+  {
+    cle: "commandes_masse",
+    nom: "Commandes en masse",
+    description: "Importez plusieurs livraisons d'un coup depuis un fichier CSV, avec aperçu avant création.",
     palierRequis: "business",
   },
 ];

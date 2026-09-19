@@ -21,6 +21,7 @@ export type EvenementCommunication =
   | "livraison_en_cours"
   | "livraison_terminee"
   | "livraison_annulee"
+  | "livraison_echouee"
   // Paiement
   | "paiement_recu"
   | "paiement_confirme"
@@ -45,6 +46,8 @@ export type EvenementCommunication =
   | "notification_livraison_terminee"
   | "notification_livraison_annulee"
   | "notification_livraison_annulee_coursier"
+  | "notification_livraison_echouee"
+  | "notification_echec_livraison_resolu"
   | "notification_litige_ouvert"
   | "notification_litige_resolu"
   | "notification_coursier_compte_valide"
@@ -67,6 +70,7 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   livraison_en_cours: "whatsapp_livraison_en_cours",
   livraison_terminee: "whatsapp_livraison_terminee",
   livraison_annulee: "whatsapp_livraison_annulee",
+  livraison_echouee: "whatsapp_livraison_echouee",
 
   paiement_recu: "whatsapp_paiement_recu",
   paiement_confirme: "whatsapp_paiement_confirme",
@@ -88,6 +92,8 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   notification_livraison_terminee: "notification_livraison_terminee",
   notification_livraison_annulee: "notification_livraison_annulee",
   notification_livraison_annulee_coursier: "notification_livraison_annulee_coursier",
+  notification_livraison_echouee: "notification_livraison_echouee",
+  notification_echec_livraison_resolu: "notification_echec_livraison_resolu",
   notification_litige_ouvert: "notification_litige_ouvert",
   notification_litige_resolu: "notification_litige_resolu",
   notification_coursier_compte_valide: "notification_coursier_compte_valide",
@@ -114,6 +120,7 @@ export const EVENEMENT_CANAL: Record<EvenementCommunication, "email" | "sms" | "
   livraison_en_cours: "whatsapp",
   livraison_terminee: "whatsapp",
   livraison_annulee: "whatsapp",
+  livraison_echouee: "whatsapp",
 
   paiement_recu: "whatsapp",
   paiement_confirme: "whatsapp",
@@ -135,6 +142,8 @@ export const EVENEMENT_CANAL: Record<EvenementCommunication, "email" | "sms" | "
   notification_livraison_terminee: "push",
   notification_livraison_annulee: "push",
   notification_livraison_annulee_coursier: "push",
+  notification_livraison_echouee: "push",
+  notification_echec_livraison_resolu: "push",
   notification_litige_ouvert: "push",
   notification_litige_resolu: "push",
   notification_coursier_compte_valide: "push",

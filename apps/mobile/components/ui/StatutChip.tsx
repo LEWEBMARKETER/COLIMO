@@ -20,6 +20,7 @@ export const TEINTES_STATUT: Record<CourseStatus, Teinte> = {
   annulee: { forte: "#57534E", douceFond: "#F1EDEA", douceTexte: "#44403C" },
   litige: { forte: "#9E1419", douceFond: "#FBE7E7", douceTexte: "#9E1419" },
   retournee: { forte: "#C2410C", douceFond: "#FFEDD5", douceTexte: "#9A3412" },
+  echouee: { forte: "#9E1419", douceFond: "#FBE7E7", douceTexte: "#9E1419" },
 };
 
 interface StatutChipProps {

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { router } from "expo-router";
 import {
+  PRIX_PACK_BUSINESS,
+  PRIX_PACK_STARTER,
   ZONE_LABELS,
   calculerPlanEffectif,
   calculerStatistiquesAvanceesCommercant,
@@ -14,6 +16,7 @@ import {
   type CoursierAvecUtilisateur,
 } from "@colimo/shared";
 import BadgeAbonnement from "@/components/BadgeAbonnement";
+import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import CarteAction from "@/components/ui/CarteAction";
 import CarteCourseRecente from "@/components/ui/CarteCourseRecente";
@@ -21,7 +24,7 @@ import ChiffreCle from "@/components/ui/ChiffreCle";
 import { getCoursiers, getCoursiersFavorisCommerce, getCourses, getMonCommerce } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
-const STATUTS_EN_COURS = new Set(["en_attente", "acceptee", "retrait", "en_cours"]);
+const STATUTS_EN_COURS = new Set(["en_attente", "acceptee", "retrait", "en_cours", "echouee"]);
 const STATUTS_TERMINEES = new Set(["livree", "confirmee"]);
 const STATUTS_TERMINAUX = new Set(["livree", "confirmee", "annulee", "retournee"]);
 
@@ -272,17 +275,36 @@ export default function CommerceDashboard() {
         </View>
       )}
 
-      <Pressable onPress={() => router.push("/(client)/commerce/decouvrir")} className="mt-3">
-        <Carte className="border border-colimo-neutre-clair">
+      <Carte className="mt-3 border border-colimo-neutre-clair">
+        <View className="flex-row items-center justify-between">
           <Text className="font-texte-medium text-sm text-colimo-neutre-fonce">COLIMO PRO</Text>
-          <Text className="mt-1 font-texte text-xs text-colimo-neutre-fonce/60">
-            {planEffectif === "gratuit"
-              ? "Débloquez le carnet de destinataires, les exports et le tableau de bord avancé."
-              : "Consultez votre forfait et les fonctionnalités disponibles."}
+          <Text className="font-titre text-sm text-colimo-neutre-fonce">
+            {planEffectif === "gratuit" ? "Gratuit" : `${formatFCFA(planEffectif === "starter" ? PRIX_PACK_STARTER : PRIX_PACK_BUSINESS)} / mois`}
           </Text>
-          <Text className="mt-2 font-texte-medium text-xs text-colimo-rouge">Découvrir nos offres →</Text>
-        </Carte>
-      </Pressable>
+        </View>
+        <Text className="mt-1 font-texte text-xs text-colimo-neutre-fonce/60">
+          {planEffectif === "gratuit"
+            ? "Débloquez le carnet de destinataires, les exports et le tableau de bord avancé."
+            : planEffectif === "starter"
+              ? "Passez à Business pour la gestion d'équipe, les coursiers favoris et les exports Excel."
+              : "Toutes les fonctionnalités COLIMO PRO sont actives sur ce compte."}
+        </Text>
+        <View className="mt-3 flex-row gap-2">
+          <Bouton
+            label={planEffectif === "gratuit" ? "Découvrir nos offres" : "Voir mon forfait"}
+            variante="contour"
+            onPress={() => router.push("/(client)/commerce/decouvrir")}
+            className="flex-1"
+          />
+          {planEffectif === "starter" && (
+            <Bouton
+              label="Passer à Business"
+              onPress={() => router.push("/(client)/commerce/decouvrir?feature=gestion_equipe")}
+              className="flex-1"
+            />
+          )}
+        </View>
+      </Carte>
 
       {(planEffectif === "starter" || planEffectif === "business") && (
         <View className="mt-3 flex-row flex-wrap gap-2">
@@ -317,6 +339,12 @@ export default function CommerceDashboard() {
                 className="rounded-full border border-colimo-neutre-clair bg-white px-3 py-1.5 font-texte-medium text-xs text-colimo-neutre-fonce"
               >
                 Coursiers favoris
+              </Text>
+              <Text
+                onPress={() => router.push("/(client)/commerce/import")}
+                className="rounded-full border border-colimo-neutre-clair bg-white px-3 py-1.5 font-texte-medium text-xs text-colimo-neutre-fonce"
+              >
+                Commandes en masse
               </Text>
             </>
           )}

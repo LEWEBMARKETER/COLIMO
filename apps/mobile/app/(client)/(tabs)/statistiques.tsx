@@ -2,28 +2,33 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  calculerPlanEffectif,
   calculerStatistiquesAvanceesCommercant,
   calculerStatistiquesCommercant,
   formatFCFA,
+  type Commercant,
   type Course,
   type CoursierAvecUtilisateur,
 } from "@colimo/shared";
+import CarteUpsellPro from "@/components/CarteUpsellPro";
 import Carte from "@/components/ui/Carte";
-import { getCoursiers, getCourses } from "@/lib/api";
+import { getCoursiers, getCourses, getMonCommerce } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function MesStatistiquesScreen() {
   const { session } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
+  const [commerce, setCommerce] = useState<Commercant | null>(null);
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
     if (!session) return;
-    Promise.all([getCourses({ clientId: session.user.id }), getCoursiers()])
-      .then(([c, cr]) => {
+    Promise.all([getCourses({ clientId: session.user.id }), getCoursiers(), getMonCommerce(session.user.id)])
+      .then(([c, cr, com]) => {
         setCourses(c);
         setCoursiers(cr);
+        setCommerce(com);
       })
       .finally(() => setChargement(false));
   }, [session]);
@@ -32,6 +37,19 @@ export default function MesStatistiquesScreen() {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-colimo-fond">
         <ActivityIndicator color="#C41E24" />
+      </SafeAreaView>
+    );
+  }
+
+  // Le tableau de bord avancé est une fonctionnalité Starter (catalogue,
+  // packages/shared/src/abonnements/types.ts) — jusqu'ici cet écran n'était
+  // gardé que par la visibilité de l'onglet (estCommerce), pas par le palier
+  // effectif, ce qui laissait un compte commerce Gratuit y accéder.
+  const planEffectif = commerce ? calculerPlanEffectif(commerce) : "gratuit";
+  if (planEffectif === "gratuit") {
+    return (
+      <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
+        <CarteUpsellPro cle="tableau_de_bord_avance" pleinEcran />
       </SafeAreaView>
     );
   }

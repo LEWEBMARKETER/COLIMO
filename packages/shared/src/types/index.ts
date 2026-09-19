@@ -45,7 +45,8 @@ export type CourseStatus =
   | "confirmee"
   | "annulee"
   | "litige"
-  | "retournee";
+  | "retournee"
+  | "echouee";
 
 export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   en_attente_paiement: "En attente de paiement",
@@ -58,6 +59,7 @@ export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   annulee: "Annulée",
   litige: "Litige",
   retournee: "Colis retourné",
+  echouee: "Livraison échouée",
 };
 
 export type PaymentOperator = "airtel_money" | "moov_money";
