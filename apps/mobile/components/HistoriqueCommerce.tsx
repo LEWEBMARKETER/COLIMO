@@ -24,7 +24,7 @@ const STATUTS_PAR_FILTRE: Partial<Record<Filtre, CourseStatus[]>> = {
   en_cours: ["acceptee", "retrait", "en_cours"],
   livrees: ["livree", "confirmee"],
   annulees: ["annulee", "retournee"],
-  problemes: ["litige"],
+  problemes: ["litige", "echouee"],
 };
 
 function estAujourdhui(dateIso: string): boolean {

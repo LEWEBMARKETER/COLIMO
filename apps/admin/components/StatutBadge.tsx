@@ -9,6 +9,7 @@ const COULEURS: Record<string, string> = {
   annulee: "bg-gray-200 text-gray-700",
   litige: "bg-red-100 text-red-800",
   retournee: "bg-orange-100 text-orange-800",
+  echouee: "bg-red-100 text-red-800",
   actif: "bg-emerald-100 text-emerald-800",
   suspendu: "bg-red-100 text-red-800",
   hors_ligne: "bg-gray-200 text-gray-700",

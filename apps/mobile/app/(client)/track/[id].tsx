@@ -6,7 +6,9 @@ import * as Sharing from "expo-sharing";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   COURSE_STATUS_LABELS,
+  DECISION_ECHEC_LIVRAISON_LABELS,
   MODE_PAIEMENT_LABELS,
+  MOTIF_ECHEC_LIVRAISON_LABELS,
   formatDistanceM,
   formatDureeSecondes,
   formatFCFA,
@@ -14,6 +16,8 @@ import {
   type ConfirmationLivraison,
   type Coursier,
   type Course,
+  type DecisionEchecLivraison,
+  type EchecLivraison,
   type PositionCoursier,
   type Utilisateur,
 } from "@colimo/shared";
@@ -31,12 +35,14 @@ import {
   getConfirmationLivraison,
   getCourse,
   getCoursierByUtilisateurId,
+  getEchecsLivraisonPourCourse,
   getPositionCoursier,
   getUtilisateur,
   lienSuiviPublic,
   recalculerBadgesEtNiveau,
   renvoyerOtpLivraison,
   souscrirePositionCoursier,
+  traiterEchecLivraison,
 } from "@/lib/api";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/AuthContext";
@@ -62,6 +68,9 @@ export default function TrackScreen() {
   const [renvoiEnCours, setRenvoiEnCours] = useState(false);
   const [erreurRenvoi, setErreurRenvoi] = useState<string | null>(null);
   const [signalementEnCours, setSignalementEnCours] = useState(false);
+  const [echecEnAttente, setEchecEnAttente] = useState<EchecLivraison | null>(null);
+  const [decisionEnCours, setDecisionEnCours] = useState<DecisionEchecLivraison | null>(null);
+  const [erreurDecision, setErreurDecision] = useState<string | null>(null);
 
   async function telechargerRecu() {
     if (!course) return;
@@ -190,6 +199,44 @@ export default function TrackScreen() {
       setErreurRenvoi(e instanceof Error ? e.message : "Impossible de renvoyer un code pour le moment.");
     } finally {
       setRenvoiEnCours(false);
+    }
+  }
+
+  // Échec de remise signalé par le coursier — récupère le signalement non
+  // encore traité pour afficher son motif et permettre la décision.
+  useEffect(() => {
+    if (!course || course.statut !== "echouee") {
+      setEchecEnAttente(null);
+      return;
+    }
+    let annule = false;
+    getEchecsLivraisonPourCourse(course.id).then((echecs) => {
+      if (!annule) setEchecEnAttente(echecs.find((e) => e.decision === null) ?? null);
+    });
+    return () => {
+      annule = true;
+    };
+  }, [course?.id, course?.statut]);
+
+  async function deciderSuiteEchec(decision: DecisionEchecLivraison) {
+    if (!echecEnAttente) return;
+    setDecisionEnCours(decision);
+    setErreurDecision(null);
+    try {
+      const misAJour = await traiterEchecLivraison(echecEnAttente.id, decision);
+      setCourse(misAJour);
+      if (session) {
+        await notifierEvenement("notification_echec_livraison_resolu", {
+          declenchePar: session.user.id,
+          destinataire: echecEnAttente.coursierId,
+          utilisateurId: echecEnAttente.coursierId,
+          variables: { numero_commande: misAJour.numeroCommande, decision: DECISION_ECHEC_LIVRAISON_LABELS[decision] },
+        });
+      }
+    } catch (e) {
+      setErreurDecision(e instanceof Error ? e.message : "Impossible d'enregistrer votre choix. Réessayez.");
+    } finally {
+      setDecisionEnCours(null);
     }
   }
 
@@ -416,6 +463,35 @@ export default function TrackScreen() {
           <Text className="mt-6 text-center font-texte text-sm text-colimo-rouge">
             Ce problème a été signalé à notre équipe, qui va vous contacter pour le résoudre.
           </Text>
+        )}
+
+        {course.statut === "echouee" && echecEnAttente && (
+          <View className="mt-4 rounded-2xl border-2 border-colimo-rouge bg-white p-4">
+            <Text className="font-titre text-base text-colimo-neutre-fonce">Livraison échouée</Text>
+            <Text className="mt-1 font-texte text-sm text-colimo-neutre-fonce/70">
+              Motif : {MOTIF_ECHEC_LIVRAISON_LABELS[echecEnAttente.motif]}
+            </Text>
+            {echecEnAttente.commentaire && (
+              <Text className="mt-1 font-texte text-xs text-colimo-neutre-fonce/50">{echecEnAttente.commentaire}</Text>
+            )}
+            <Text className="mt-3 font-texte text-sm text-colimo-neutre-fonce">Que souhaitez-vous faire ?</Text>
+            <Bouton
+              label={DECISION_ECHEC_LIVRAISON_LABELS.nouvelle_tentative}
+              onPress={() => deciderSuiteEchec("nouvelle_tentative")}
+              chargement={decisionEnCours === "nouvelle_tentative"}
+              disabled={decisionEnCours !== null}
+              className="mt-3 py-3.5"
+            />
+            <Bouton
+              label={DECISION_ECHEC_LIVRAISON_LABELS.retour}
+              variante="contour"
+              onPress={() => deciderSuiteEchec("retour")}
+              chargement={decisionEnCours === "retour"}
+              disabled={decisionEnCours !== null}
+              className="mt-2 py-3.5"
+            />
+            {erreurDecision && <Text className="mt-2 font-texte text-xs text-colimo-rouge">{erreurDecision}</Text>}
+          </View>
         )}
 
         {erreurConfirmation && (

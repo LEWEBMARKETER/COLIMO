@@ -49,6 +49,9 @@ const PROCHAIN_STATUT: Partial<Record<CourseStatus, CourseStatus>> = {
 
 const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"]);
 const STATUTS_ACTIFS = new Set(["acceptee", "retrait", "en_cours"]);
+// Un échec de remise ne peut être déclaré qu'une fois le colis en main du
+// coursier (mêmes bornes que declarer_echec_livraison, migration 0049).
+const STATUTS_ECHOUABLES = new Set(["retrait", "en_cours"]);
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -314,9 +317,20 @@ export default function CourseDetailScreen() {
             Ce problème a été signalé à notre équipe, qui va vous contacter pour le résoudre.
           </Text>
         )}
+
+        {course.statut === "echouee" && (
+          <Text className="mt-6 text-center font-texte text-sm text-colimo-rouge">
+            Échec signalé — en attente de la décision du client (nouvelle tentative ou retour).
+          </Text>
+        )}
       </ScrollView>
 
-      {(prochain || attendOtp || attendPreuve || !contactsFermes || STATUTS_SIGNALABLES.has(course.statut)) && (
+      {(prochain ||
+        attendOtp ||
+        attendPreuve ||
+        !contactsFermes ||
+        STATUTS_SIGNALABLES.has(course.statut) ||
+        STATUTS_ECHOUABLES.has(course.statut)) && (
         <View className="border-t-2 border-colimo-neutre-fonce bg-colimo-fond px-6 pb-2 pt-3">
           {attendOtp && (
             <View className="mb-3 rounded-2xl border-2 border-colimo-neutre-fonce bg-white p-4">
@@ -360,8 +374,12 @@ export default function CourseDetailScreen() {
             </View>
           )}
 
-          {(!contactsFermes || STATUTS_SIGNALABLES.has(course.statut)) && (
+          {(!contactsFermes || STATUTS_SIGNALABLES.has(course.statut) || STATUTS_ECHOUABLES.has(course.statut)) && (
             <Text className="mb-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50">
+              {STATUTS_ECHOUABLES.has(course.statut) && (
+                <Text onPress={() => router.push(`/(coursier)/echec/${course.id}`)}>Signaler un échec de livraison</Text>
+              )}
+              {STATUTS_ECHOUABLES.has(course.statut) && STATUTS_SIGNALABLES.has(course.statut) && "  ·  "}
               {STATUTS_SIGNALABLES.has(course.statut) && (
                 <Text onPress={() => router.push(`/(coursier)/litige/${course.id}`)}>Signaler un problème</Text>
               )}

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import { calculerPlanEffectif, type Commercant, type CommerceCoursierFavori, type CoursierAvecUtilisateur } from "@colimo/shared";
-import Bouton from "@/components/ui/Bouton";
+import CarteUpsellPro from "@/components/CarteUpsellPro";
 import Carte from "@/components/ui/Carte";
 import NoteEtoiles from "@/components/NoteEtoiles";
 import { ajouterCoursierFavori, getCoursiers, getCoursiersFavorisCommerce, getMonCommerce, retirerCoursierFavori } from "@/lib/api";
@@ -42,17 +41,7 @@ export default function CoursiersFavorisScreen() {
   if (planEffectif !== "business") {
     return (
       <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-center font-titre text-lg text-colimo-neutre-fonce">🔒 Pack Business</Text>
-          <Text className="mt-2 text-center font-texte text-sm text-colimo-neutre-fonce/60">
-            Suivez vos coursiers préférés — sans garantie d&apos;attribution automatique.
-          </Text>
-          <Bouton
-            label="Découvrir l'offre"
-            onPress={() => router.push("/(client)/commerce/decouvrir?feature=coursiers_favoris")}
-            className="mt-6"
-          />
-        </View>
+        <CarteUpsellPro cle="coursiers_favoris" pleinEcran />
       </SafeAreaView>
     );
   }

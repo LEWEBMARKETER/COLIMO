@@ -1,5 +1,11 @@
 import {
   annulerCourseClient as annulerCourseClientQuery,
+  declarerEchecLivraison as declarerEchecLivraisonQuery,
+  traiterEchecLivraison as traiterEchecLivraisonQuery,
+  getEchecsLivraisonPourCourse as getEchecsLivraisonPourCourseQuery,
+  type DecisionEchecLivraison,
+  type EchecLivraison,
+  type MotifEchecLivraison,
   creerCourse as creerCourseQuery,
   creerLitige as creerLitigeQuery,
   creerNotation as creerNotationQuery,
@@ -405,6 +411,24 @@ export function patchCourse(
 
 export function annulerCourseClient(body: { courseId: string; motif: string; commentaire?: string }): Promise<Course> {
   return annulerCourseClientQuery(supabase, body);
+}
+
+// --- Gestion des échecs de livraison ---
+
+export function declarerEchecLivraison(courseId: string, motif: MotifEchecLivraison, commentaire?: string): Promise<Course> {
+  return declarerEchecLivraisonQuery(supabase, courseId, motif, commentaire);
+}
+
+export function traiterEchecLivraison(
+  echecId: string,
+  decision: DecisionEchecLivraison,
+  nouvelleDatePrevue?: string
+): Promise<Course> {
+  return traiterEchecLivraisonQuery(supabase, echecId, decision, nouvelleDatePrevue);
+}
+
+export function getEchecsLivraisonPourCourse(courseId: string): Promise<EchecLivraison[]> {
+  return getEchecsLivraisonPourCourseQuery(supabase, courseId);
 }
 
 // --- Confirmation de livraison (OTP + double confirmation + preuve photo) ---

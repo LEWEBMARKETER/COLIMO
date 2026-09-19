@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import {
   ZONE_LABELS,
   calculerPlanEffectif,
@@ -11,6 +10,7 @@ import {
   type Zone,
 } from "@colimo/shared";
 import ZoneSelector from "@/components/ZoneSelector";
+import CarteUpsellPro from "@/components/CarteUpsellPro";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
@@ -118,18 +118,7 @@ export default function AdressesScreen() {
         </View>
 
         {section === "depart" && !peutBusiness ? (
-          <Carte className="mt-4">
-            <Text className="font-texte-medium text-sm text-colimo-neutre-fonce">🔒 Fonctionnalité Pack Business</Text>
-            <Text className="mt-1 font-texte text-xs text-colimo-neutre-fonce/60">
-              Les points de départ multiples permettent de choisir votre point de récupération à chaque course.
-            </Text>
-            <Bouton
-              label="Découvrir l'offre"
-              variante="contour"
-              onPress={() => router.push("/(client)/commerce/decouvrir?feature=multi_points_depart")}
-              className="mt-3"
-            />
-          </Carte>
+          <CarteUpsellPro cle="multi_points_depart" />
         ) : (
           <>
             <Carte className="mt-4">

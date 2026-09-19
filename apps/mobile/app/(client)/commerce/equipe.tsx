@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Share, Text, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import {
   ROLE_COMMERCE_MEMBRE_LABELS,
   calculerPlanEffectif,
@@ -10,6 +9,7 @@ import {
   type InvitationCommerce,
   type RoleCommerceMembre,
 } from "@colimo/shared";
+import CarteUpsellPro from "@/components/CarteUpsellPro";
 import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
@@ -62,17 +62,7 @@ export default function EquipeScreen() {
   if (planEffectif !== "business") {
     return (
       <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-center font-titre text-lg text-colimo-neutre-fonce">🔒 Pack Business</Text>
-          <Text className="mt-2 text-center font-texte text-sm text-colimo-neutre-fonce/60">
-            Ajoutez jusqu&apos;à 3 utilisateurs supplémentaires à votre compte commerce.
-          </Text>
-          <Bouton
-            label="Découvrir l'offre"
-            onPress={() => router.push("/(client)/commerce/decouvrir?feature=gestion_equipe")}
-            className="mt-6"
-          />
-        </View>
+        <CarteUpsellPro cle="gestion_equipe" pleinEcran />
       </SafeAreaView>
     );
   }
