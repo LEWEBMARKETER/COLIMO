@@ -12,9 +12,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Bouton from "@/components/ui/Bouton";
 import CarteInfoConfiance from "@/components/ui/CarteInfoConfiance";
+import { useInstallationPwa } from "@/lib/pwa";
 
 const INFORMATIONS_CLES: { icone: keyof typeof Ionicons.glyphMap; titre: string; description: string }[] = [
   { icone: "location-outline", titre: "Grand Libreville", description: "Livraisons dans les zones couvertes par COLIMO" },
@@ -95,9 +97,22 @@ function useReduireAnimations(): boolean {
   return reduit;
 }
 
-function GlowDecor() {
+// Remplace l'ancien fond plat "bg-colimo-noir" par un dégradé de profondeur
+// (mêmes tokens de marque, juste noir → noir clair en diagonale) + halos
+// rouges + un anneau fin à peine visible — pas de nouvel asset, pas de
+// couleur hors charte, juste plus de relief qu'un aplat uni. `inverse`
+// permute les deux tons du dégradé pour éviter que deux sections sombres
+// consécutives de la page paraissent identiques.
+function FondDegrade({ inverse = false }: { inverse?: boolean }) {
   return (
     <>
+      <LinearGradient
+        colors={inverse ? ["#26201A", "#18140F"] : ["#18140F", "#26201A"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        pointerEvents="none"
+      />
       <View
         pointerEvents="none"
         className="absolute -right-24 top-0 h-96 w-96 rounded-full bg-colimo-rouge/10"
@@ -105,6 +120,10 @@ function GlowDecor() {
       <View
         pointerEvents="none"
         className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-colimo-rouge/5"
+      />
+      <View
+        pointerEvents="none"
+        className="absolute -left-20 top-1/3 h-56 w-56 rounded-full border border-white/[0.06]"
       />
     </>
   );
@@ -204,6 +223,33 @@ function PilleConfiance({ icone, texte }: { icone: keyof typeof Ionicons.glyphMa
   );
 }
 
+// Pastille pleine (contraste avec les pastilles informatives ci-dessus) pour
+// qu'elle se distingue comme la seule action du groupe. Web uniquement —
+// useInstallationPwa renvoie tout à false sur l'app native, qui n'a pas de
+// notion d'installation PWA.
+function PilleInstallationPwa() {
+  const { dejaInstallee, installationDirecte, instructionsManuelles, installer } = useInstallationPwa();
+  if (dejaInstallee || (!installationDirecte && !instructionsManuelles)) return null;
+
+  if (instructionsManuelles) {
+    return (
+      <View className="flex-row items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5">
+        <Ionicons name="share-outline" size={13} color="#fff" />
+        <Text className="font-texte-medium text-xs text-white/90">Partager → Sur l&apos;écran d&apos;accueil</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Pressable onPress={installer} hitSlop={12}>
+      <View className="flex-row items-center gap-1.5 rounded-full bg-colimo-rouge px-3 py-1.5">
+        <Ionicons name="download-outline" size={13} color="#fff" />
+        <Text className="font-texte-medium text-xs text-white">Installer l&apos;app</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function AccueilScreen() {
   const [yEtapes, setYEtapes] = useState(0);
   const [profil, setProfil] = useState<ProfilHero>("particulier");
@@ -254,8 +300,8 @@ export default function AccueilScreen() {
             </View>
           </View>
 
-          <View className="relative overflow-hidden bg-colimo-noir">
-            <GlowDecor />
+          <View className="relative overflow-hidden">
+            <FondDegrade />
             <View className="mx-auto w-full max-w-6xl flex-row items-center gap-16 px-12 py-24">
               <View className="flex-1">
                 <Text className="font-texte-medium text-xs uppercase tracking-widest text-colimo-rouge">
@@ -278,6 +324,7 @@ export default function AccueilScreen() {
                   {PILLES_CONFIANCE.map((pille) => (
                     <PilleConfiance key={pille.texte} icone={pille.icone} texte={pille.texte} />
                   ))}
+                  <PilleInstallationPwa />
                 </View>
               </View>
 
@@ -314,8 +361,9 @@ export default function AccueilScreen() {
 
           <View
             onLayout={(e) => setYEtapes(e.nativeEvent.layout.y)}
-            className="mt-20 bg-colimo-noir px-12 py-16"
+            className="relative mt-20 overflow-hidden px-12 py-16"
           >
+            <FondDegrade inverse />
             <View className="mx-auto w-full max-w-6xl">
               <Text className="font-titre text-2xl text-white">Comment fonctionne une course COLIMO</Text>
               <View className="mt-10 flex-row gap-12">
@@ -373,8 +421,8 @@ export default function AccueilScreen() {
           </Text>
         </View>
 
-        <View className="relative mt-4 overflow-hidden rounded-b-[32px] bg-colimo-noir px-6 pb-10 pt-8">
-          <GlowDecor />
+        <View className="relative mt-4 overflow-hidden rounded-b-[32px] px-6 pb-10 pt-8">
+          <FondDegrade />
           <Text className="font-texte-medium text-xs uppercase tracking-widest text-colimo-rouge">
             Livraison à Libreville · à partir de 2 000 FCFA
           </Text>
@@ -395,6 +443,7 @@ export default function AccueilScreen() {
             {PILLES_CONFIANCE.map((pille) => (
               <PilleConfiance key={pille.texte} icone={pille.icone} texte={pille.texte} />
             ))}
+            <PilleInstallationPwa />
           </View>
 
           <View className="mt-6 items-center">
@@ -426,7 +475,8 @@ export default function AccueilScreen() {
           </View>
         </View>
 
-        <View className="mt-12 bg-colimo-noir px-6 py-10">
+        <View className="relative mt-12 overflow-hidden px-6 py-10">
+          <FondDegrade inverse />
           <Text className="font-titre text-xl text-white">Comment fonctionne une course COLIMO</Text>
           <View className="mt-6 gap-6">
             {ETAPES.map((etape, index) => (
