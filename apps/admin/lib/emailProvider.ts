@@ -19,7 +19,13 @@ const ResendEmailProvider: EmailProvider = {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${jeton}` },
         body: JSON.stringify({ destinataire, sujet, contenu }),
       });
-      if (!reponse.ok) return { succes: false, erreur: `Erreur ${reponse.status}` };
+      if (!reponse.ok) {
+        // Même correction que apps/mobile/lib/emailProvider.ts : la route
+        // serveur calcule déjà la raison exacte du refus Resend, il faut la
+        // lire plutôt que ne garder que le code HTTP générique.
+        const corps = await reponse.json().catch(() => null);
+        return { succes: false, erreur: corps?.erreur || `Erreur ${reponse.status}` };
+      }
       return { succes: true };
     } catch (e) {
       return { succes: false, erreur: e instanceof Error ? e.message : "Erreur inconnue" };
