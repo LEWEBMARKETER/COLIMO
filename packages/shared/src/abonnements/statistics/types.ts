@@ -10,6 +10,18 @@ export interface StatistiquesCommercant {
   nombreEnCours: number;
 }
 
+// Comparaison du mois en cours au mois précédent (section 2.L du besoin
+// COLIMO PRO Starter : "ajouter une comparaison avec la période précédente
+// lorsque suffisamment de données existent"). `variation` est un ratio
+// signé (0.2 = +20%) ; null quand le mois précédent n'a aucune donnée
+// (rien à comparer, plutôt que d'afficher un +∞ ou un +100% trompeur).
+export interface ComparaisonPeriodeCommercant {
+  coursesMoisPrecedent: number;
+  depensesMoisPrecedent: number;
+  variationCourses: number | null;
+  variationDepenses: number | null;
+}
+
 export interface EntreeDestination {
   zone: Zone;
   nombre: number;

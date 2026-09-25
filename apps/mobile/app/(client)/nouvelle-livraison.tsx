@@ -32,6 +32,7 @@ import {
   getCodePromoParCode,
   getCourse,
   getConfirmationLivraison,
+  getCourses,
   getDestinatairesCommerce,
   getMonCommerce,
   getPointsDepartCommerce,
@@ -101,6 +102,12 @@ export default function NouvelleLivraisonScreen() {
   const [destinataires, setDestinataires] = useState<CommerceDestinataire[]>([]);
   const [destinataireCarnetId, setDestinataireCarnetId] = useState<string | null>(null);
   const [commerce, setCommerce] = useState<Commercant | null>(null);
+  // Dernière date et nombre de livraisons par destinataire du carnet — sert
+  // uniquement à trier "client récent" en premier et à repérer les "clients
+  // fréquents" ci-dessous ; dérivé des courses déjà passées, aucune requête
+  // ni colonne supplémentaire.
+  const [derniereCourseParDestinataire, setDerniereCourseParDestinataire] = useState<Map<string, string>>(new Map());
+  const [nombreCoursesParDestinataire, setNombreCoursesParDestinataire] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     if (!session) return;
@@ -112,12 +119,50 @@ export default function NouvelleLivraisonScreen() {
       const planEffectif = calculerPlanEffectif(commercant);
       if (planEffectif === "starter" || planEffectif === "business") {
         getDestinatairesCommerce(commercant.id).then(setDestinataires);
+        getCourses({ clientId: session.user.id }).then((courses) => {
+          const derniere = new Map<string, string>();
+          const nombre = new Map<string, number>();
+          for (const c of courses) {
+            if (!c.destinataireCarnetId) continue;
+            nombre.set(c.destinataireCarnetId, (nombre.get(c.destinataireCarnetId) ?? 0) + 1);
+            const actuelle = derniere.get(c.destinataireCarnetId);
+            if (!actuelle || c.createdAt > actuelle) derniere.set(c.destinataireCarnetId, c.createdAt);
+          }
+          setDerniereCourseParDestinataire(derniere);
+          setNombreCoursesParDestinataire(nombre);
+        });
       }
       if (planEffectif === "business") {
         getPointsDepartCommerce(commercant.id).then(setPointsDepart);
       }
     });
   }, [session]);
+
+  // Le plus récent en premier — permet de retrouver "le client d'à l'instant"
+  // sans avoir à chercher dans une liste alphabétique.
+  const destinatairesTries = useMemo(
+    () =>
+      [...destinataires].sort((a, b) => {
+        const dateA = derniereCourseParDestinataire.get(a.id);
+        const dateB = derniereCourseParDestinataire.get(b.id);
+        if (dateA && dateB) return dateA > dateB ? -1 : 1;
+        if (dateA) return -1;
+        if (dateB) return 1;
+        return a.nom.localeCompare(b.nom);
+      }),
+    [destinataires, derniereCourseParDestinataire]
+  );
+
+  // Top 3 des destinataires les plus livrés — mis en avant séparément car un
+  // client fréquent n'est pas toujours le plus récent.
+  const destinatairesFrequents = useMemo(
+    () =>
+      [...destinataires]
+        .filter((d) => (nombreCoursesParDestinataire.get(d.id) ?? 0) >= 2)
+        .sort((a, b) => (nombreCoursesParDestinataire.get(b.id) ?? 0) - (nombreCoursesParDestinataire.get(a.id) ?? 0))
+        .slice(0, 3),
+    [destinataires, nombreCoursesParDestinataire]
+  );
 
   // "↻ Refaire cette livraison" (depuis track/[id].tsx, course terminée) —
   // préremplit les champs destinataire/livraison à partir de l'ancienne
@@ -288,10 +333,19 @@ export default function NouvelleLivraisonScreen() {
         )}
 
         <TitreSection>Renseignement client</TitreSection>
-        {destinataires.length > 0 && (
+        {destinatairesFrequents.length > 1 && (
           <GroupePastilles
-            label="Destinataire enregistré (optionnel)"
-            options={destinataires.map((d) => ({ valeur: d.id, label: d.nom }))}
+            label="Clients fréquents"
+            options={destinatairesFrequents.map((d) => ({ valeur: d.id, label: d.nom }))}
+            value={destinataireCarnetId}
+            onChange={choisirDestinataire}
+            defilement
+          />
+        )}
+        {destinatairesTries.length > 0 && (
+          <GroupePastilles
+            label="Client récent (optionnel)"
+            options={destinatairesTries.map((d) => ({ valeur: d.id, label: d.nom }))}
             value={destinataireCarnetId}
             onChange={choisirDestinataire}
             defilement

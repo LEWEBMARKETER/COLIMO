@@ -32,6 +32,7 @@ const GROUPES = [
   {
     label: "Croissance",
     liens: [
+      { href: "/programmes", label: "Programmes" },
       { href: "/promotions", label: "Promotions" },
       { href: "/communication", label: "Communication Center" },
     ],

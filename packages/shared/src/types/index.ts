@@ -193,7 +193,7 @@ export const STATUT_INVITATION_ADMIN_LABELS: Record<StatutInvitationAdmin, strin
 export const PAGES_PAR_POLE: Record<PoleAdmin, string[] | "*"> = {
   super_admin: "*",
   operations: ["/carte", "/courses", "/coursiers", "/annulations"],
-  support_commerces: ["/clients", "/commercants", "/communication", "/litiges"],
+  support_commerces: ["/clients", "/commercants", "/communication", "/litiges", "/programmes"],
   finance_analytics: ["/paiements", "/promotions", "/statistiques"],
 };
 

@@ -19,6 +19,7 @@ export * from "./confirmationLivraison";
 export * from "./otp";
 export * from "./paiements";
 export * from "./programmation";
+export * from "./programmes";
 export * from "./supabase/client";
 export * from "./supabase/mappers";
 export * from "./supabase/queries";
