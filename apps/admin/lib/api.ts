@@ -45,6 +45,8 @@ import {
   getCourses as getCoursesQuery,
   annulerCourseAdmin as annulerCourseAdminQuery,
   resoudreLitige as resoudreLitigeQuery,
+  validerLivraisonAdmin as validerLivraisonAdminQuery,
+  getValidationsAdminLivraison as getValidationsAdminLivraisonQuery,
   getHistoriqueAnnulations as getHistoriqueAnnulationsQuery,
   activerAbonnementCommerce as activerAbonnementCommerceQuery,
   desactiverAbonnementCommerce as desactiverAbonnementCommerceQuery,
@@ -113,6 +115,9 @@ import {
   type VerificationStatus,
   type Utilisateur,
   type Zone,
+  type MethodeVerificationLivraison,
+  type ResultatVerificationLivraison,
+  type ValidationAdminLivraison,
 } from "@colimo/shared";
 import { createClient } from "./supabaseClient";
 
@@ -176,6 +181,19 @@ export function resoudreLitige(body: {
   montant?: number;
 }): Promise<Course> {
   return resoudreLitigeQuery(createClient(), body);
+}
+
+export function validerLivraisonAdmin(body: {
+  courseId: string;
+  methode: MethodeVerificationLivraison;
+  resultat: ResultatVerificationLivraison;
+  note?: string;
+}): Promise<Course> {
+  return validerLivraisonAdminQuery(createClient(), body);
+}
+
+export function getValidationsAdminLivraison(courseId: string): Promise<ValidationAdminLivraison[]> {
+  return getValidationsAdminLivraisonQuery(createClient(), courseId);
 }
 
 export function getHistoriqueAnnulations(params?: {
