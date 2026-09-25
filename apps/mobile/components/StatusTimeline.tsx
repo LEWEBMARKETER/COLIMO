@@ -55,9 +55,11 @@ export default function StatusTimeline({ course }: { course: CourseAvecEtapes })
   const dureeLabel =
     course.statut === "confirmee"
       ? `Durée totale : ${formatDuree(debut, fin)}`
-      : indexActuel > 0
-        ? `En cours depuis ${formatDuree(debut, fin)}`
-        : null;
+      : course.statut === "en_attente"
+        ? `Recherche d'un coursier depuis ${formatDuree(debut, fin)}`
+        : indexActuel > 0
+          ? `En cours depuis ${formatDuree(debut, fin)}`
+          : null;
 
   return (
     <View>

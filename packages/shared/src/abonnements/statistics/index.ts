@@ -1,5 +1,5 @@
 import type { Course } from "../../types";
-import type { StatistiquesCommercant } from "./types";
+import type { ComparaisonPeriodeCommercant, StatistiquesCommercant } from "./types";
 
 export * from "./types";
 export * from "./avancees";
@@ -11,6 +11,18 @@ function estCeMois(dateIso: string): boolean {
   const d = new Date(dateIso);
   const now = new Date();
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+}
+
+function estMoisPrecedent(dateIso: string): boolean {
+  const d = new Date(dateIso);
+  const moisPrecedent = new Date();
+  moisPrecedent.setMonth(moisPrecedent.getMonth() - 1);
+  return d.getFullYear() === moisPrecedent.getFullYear() && d.getMonth() === moisPrecedent.getMonth();
+}
+
+function variation(actuel: number, precedent: number): number | null {
+  if (precedent === 0) return null;
+  return (actuel - precedent) / precedent;
 }
 
 /**
@@ -36,5 +48,25 @@ export function calculerStatistiquesCommercant(courses: Course[]): StatistiquesC
     depensesMois,
     nombreClientsServis: clientsServis,
     nombreEnCours: enCours,
+  };
+}
+
+/**
+ * Comparaison du mois en cours au mois précédent — même contrat que
+ * calculerStatistiquesCommercant (fonction pure, aucun accès DB).
+ */
+export function calculerComparaisonPeriodeCommercant(courses: Course[]): ComparaisonPeriodeCommercant {
+  const coursesMoisPrecedent = courses.filter((c) => estMoisPrecedent(c.createdAt));
+  const nombreMoisPrecedent = coursesMoisPrecedent.length;
+  const depensesMoisPrecedent = coursesMoisPrecedent.filter((c) => c.statut !== "annulee").reduce((s, c) => s + c.prix, 0);
+
+  const coursesMois = courses.filter((c) => estCeMois(c.createdAt));
+  const depensesMois = coursesMois.filter((c) => c.statut !== "annulee").reduce((s, c) => s + c.prix, 0);
+
+  return {
+    coursesMoisPrecedent: nombreMoisPrecedent,
+    depensesMoisPrecedent,
+    variationCourses: variation(coursesMois.length, nombreMoisPrecedent),
+    variationDepenses: variation(depensesMois, depensesMoisPrecedent),
   };
 }

@@ -7,11 +7,26 @@ import StatutChip from "@/components/ui/StatutChip";
 import { getCoursiers, getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
-type Filtre = "toutes" | "aujourdhui" | "en_attente" | "en_cours" | "livrees" | "annulees" | "problemes";
+type Filtre =
+  | "toutes"
+  | "aujourdhui"
+  | "demain"
+  | "programmees"
+  | "semaine"
+  | "mois"
+  | "en_attente"
+  | "en_cours"
+  | "livrees"
+  | "annulees"
+  | "problemes";
 
 const FILTRES: { valeur: Filtre; label: string }[] = [
   { valeur: "toutes", label: "Toutes" },
   { valeur: "aujourdhui", label: "Aujourd'hui" },
+  { valeur: "demain", label: "Demain" },
+  { valeur: "programmees", label: "Programmées" },
+  { valeur: "semaine", label: "Cette semaine" },
+  { valeur: "mois", label: "Ce mois" },
   { valeur: "en_attente", label: "En attente" },
   { valeur: "en_cours", label: "En cours" },
   { valeur: "livrees", label: "Livrées" },
@@ -27,10 +42,39 @@ const STATUTS_PAR_FILTRE: Partial<Record<Filtre, CourseStatus[]>> = {
   problemes: ["litige", "echouee"],
 };
 
-function estAujourdhui(dateIso: string): boolean {
+// Date effective d'une course pour les filtres de planning : la date/heure
+// programmée si elle existe, sinon la date de création (course immédiate).
+function dateEffective(course: Course): Date {
+  return new Date(course.programmeePour ?? course.createdAt);
+}
+
+function memeJour(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function estAujourdhui(course: Course): boolean {
+  return memeJour(dateEffective(course), new Date());
+}
+
+function estDemain(course: Course): boolean {
+  const demain = new Date();
+  demain.setDate(demain.getDate() + 1);
+  return memeJour(dateEffective(course), demain);
+}
+
+function estCetteSemaine(dateIso: string): boolean {
+  const d = new Date(dateIso);
+  const debutSemaine = new Date();
+  const jour = (debutSemaine.getDay() + 6) % 7; // lundi = 0
+  debutSemaine.setDate(debutSemaine.getDate() - jour);
+  debutSemaine.setHours(0, 0, 0, 0);
+  return d >= debutSemaine;
+}
+
+function estCeMois(dateIso: string): boolean {
   const d = new Date(dateIso);
   const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
 }
 
 export default function HistoriqueCommerce() {
@@ -55,9 +99,25 @@ export default function HistoriqueCommerce() {
     return (coursierId: string | null) => (coursierId ? (parId.get(coursierId) ?? "Coursier") : null);
   }, [coursiers]);
 
+  const FILTRES_DATE = new Set<Filtre>(["aujourdhui", "demain", "programmees", "semaine", "mois"]);
   const coursesFiltrees = courses
-    .filter((c) => (filtre === "toutes" || filtre === "aujourdhui" ? true : STATUTS_PAR_FILTRE[filtre]?.includes(c.statut)))
-    .filter((c) => (filtre === "aujourdhui" ? estAujourdhui(c.createdAt) : true))
+    .filter((c) => (filtre === "toutes" || FILTRES_DATE.has(filtre) ? true : STATUTS_PAR_FILTRE[filtre]?.includes(c.statut)))
+    .filter((c) => {
+      switch (filtre) {
+        case "aujourdhui":
+          return estAujourdhui(c);
+        case "demain":
+          return estDemain(c);
+        case "programmees":
+          return c.programmeePour !== null && new Date(c.programmeePour) > new Date();
+        case "semaine":
+          return estCetteSemaine(c.createdAt);
+        case "mois":
+          return estCeMois(c.createdAt);
+        default:
+          return true;
+      }
+    })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (chargement) {
@@ -72,7 +132,7 @@ export default function HistoriqueCommerce() {
     <View className="flex-1">
       <Text className="mb-3 font-titre text-2xl text-colimo-neutre-fonce">Mes livraisons</Text>
 
-      <GroupePastilles label="Filtrer" options={FILTRES} value={filtre} onChange={setFiltre} className="mb-1" />
+      <GroupePastilles label="Filtrer" options={FILTRES} value={filtre} onChange={setFiltre} defilement className="mb-1" />
 
       <FlatList
         data={coursesFiltrees}

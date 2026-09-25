@@ -7,6 +7,7 @@ import {
   ZONE_LABELS,
   calculerPlanEffectif,
   calculerStatistiquesAvanceesCommercant,
+  calculerComparaisonPeriodeCommercant,
   calculerStatistiquesCommercant,
   formatFCFA,
   joursAvantExpiration,
@@ -26,6 +27,7 @@ import Carte from "@/components/ui/Carte";
 import CarteAction from "@/components/ui/CarteAction";
 import CarteCourseRecente from "@/components/ui/CarteCourseRecente";
 import ChiffreCle from "@/components/ui/ChiffreCle";
+import VariationBadge from "@/components/ui/VariationBadge";
 import { getCoursiers, getCoursiersFavorisCommerce, getCourses, getMonCommerce, getProgrammesEligibles } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -69,6 +71,10 @@ export default function CommerceDashboard() {
   const abonnementExpireBientot = planEffectif !== "gratuit" && joursRestants !== null && joursRestants <= 7;
 
   const statistiquesMois = useMemo(() => calculerStatistiquesCommercant(courses), [courses]);
+  // "Ajouter une comparaison avec la période précédente lorsque suffisamment
+  // de données existent" (spec Starter, tableau de bord) — null tant que le
+  // mois précédent n'a aucune donnée à comparer.
+  const comparaisonPeriode = useMemo(() => calculerComparaisonPeriodeCommercant(courses), [courses]);
   const statistiquesAvancees = useMemo(() => calculerStatistiquesAvanceesCommercant(courses), [courses]);
 
   const coursesJour = courses.filter((c) => estAujourdhui(c.createdAt));
@@ -126,6 +132,15 @@ export default function CommerceDashboard() {
       </FondEntete>
 
       <View className="px-6">
+        <View className="mt-4">
+          <Text className="font-titre text-sm text-colimo-neutre-fonce">
+            De la commande à la livraison, COLIMO PRO centralise toute votre logistique.
+          </Text>
+          <Text className="mt-0.5 font-texte text-xs text-colimo-neutre-fonce/60">
+            Planifiez, assignez, suivez et contrôlez vos livraisons depuis un seul espace.
+          </Text>
+        </View>
+
         <View className="mt-4">
           <Text className="font-titre text-base text-colimo-neutre-fonce">Que souhaitez-vous faire ?</Text>
           <View className="mt-3 flex-row flex-wrap gap-3">
@@ -235,6 +250,7 @@ export default function CommerceDashboard() {
               <Carte className="min-w-[30%] flex-1">
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Courses</Text>
                 <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">{statistiquesMois.nombreCoursesMois}</Text>
+                <VariationBadge valeur={comparaisonPeriode.variationCourses} />
               </Carte>
               <Carte className="min-w-[30%] flex-1">
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Terminées</Text>
@@ -247,6 +263,7 @@ export default function CommerceDashboard() {
               <Carte className="min-w-[30%] flex-1">
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Dépenses</Text>
                 <Text className="mt-1 font-titre text-lg text-colimo-neutre-fonce">{formatFCFA(statistiquesMois.depensesMois)}</Text>
+                <VariationBadge valeur={comparaisonPeriode.variationDepenses} inverse />
               </Carte>
               <Carte className="min-w-[30%] flex-1">
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">Clients servis</Text>
