@@ -14,9 +14,11 @@ import {
   type CommerceCoursierFavori,
   type Course,
   type CoursierAvecUtilisateur,
+  type Program,
 } from "@colimo/shared";
 import BadgeAbonnement from "@/components/BadgeAbonnement";
 import BandeauNotificationsPush from "@/components/BandeauNotificationsPush";
+import CarteProgramme from "@/components/CarteProgramme";
 import ClocheNotifications from "@/components/ClocheNotifications";
 import FondEntete from "@/components/FondEntete";
 import Bouton from "@/components/ui/Bouton";
@@ -24,7 +26,7 @@ import Carte from "@/components/ui/Carte";
 import CarteAction from "@/components/ui/CarteAction";
 import CarteCourseRecente from "@/components/ui/CarteCourseRecente";
 import ChiffreCle from "@/components/ui/ChiffreCle";
-import { getCoursiers, getCoursiersFavorisCommerce, getCourses, getMonCommerce } from "@/lib/api";
+import { getCoursiers, getCoursiersFavorisCommerce, getCourses, getMonCommerce, getProgrammesEligibles } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 const STATUTS_EN_COURS = new Set(["en_attente", "acceptee", "retrait", "en_cours", "echouee"]);
@@ -43,11 +45,13 @@ export default function CommerceDashboard() {
   const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
   const [commerce, setCommerce] = useState<Commercant | null>(null);
   const [favorisReels, setFavorisReels] = useState<CommerceCoursierFavori[] | null>(null);
+  const [programmes, setProgrammes] = useState<Program[]>([]);
 
   useEffect(() => {
     if (!session) return;
     getCourses({ clientId: session.user.id }).then(setCourses);
     getCoursiers().then(setCoursiers);
+    getProgrammesEligibles().then(setProgrammes);
     getMonCommerce(session.user.id).then((c) => {
       setCommerce(c);
       // Une fois le Pack Business actif, la vraie liste de coursiers favoris
@@ -156,6 +160,10 @@ export default function CommerceDashboard() {
             <Text className="mt-0.5 font-texte text-xs text-colimo-rouge/80">Demander le renouvellement</Text>
           </Pressable>
         )}
+
+        {programmes.map((programme) => (
+          <CarteProgramme key={programme.id} programme={programme} />
+        ))}
 
         <Carte sombre degrade className="mt-4">
           <ChiffreCle valeur={formatFCFA(depensesJour)} label="Dépenses du jour" sombre />

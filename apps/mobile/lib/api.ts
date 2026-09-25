@@ -65,6 +65,12 @@ import {
   getEtatConfirmationCoursier as getEtatConfirmationCoursierQuery,
   enregistrerPreuveLivraison as enregistrerPreuveLivraisonQuery,
   confirmerReceptionClient as confirmerReceptionClientQuery,
+  getProgrammes as getProgrammesQuery,
+  getCompteurProgramme as getCompteurProgrammeQuery,
+  getMaCandidatureProgramme as getMaCandidatureProgrammeQuery,
+  candidaterProgramme as candidaterProgrammeQuery,
+  type Program,
+  type ProgramParticipant,
   type ConfirmationLivraison,
   type EtatConfirmationCoursier,
   type ResultatVerificationOtp,
@@ -291,6 +297,27 @@ export function upsertCommercant(input: {
 export async function getMonCommerce(utilisateurId: string): Promise<Commercant | null> {
   const commercants = await getCommercantsBrutsQuery(supabase);
   return commercants.find((c) => c.utilisateurId === utilisateurId) ?? null;
+}
+
+// --- Programmes (module générique) ---------------------------------------
+// La RLS ne renvoie que les programmes publiés auxquels l'utilisateur est
+// éligible (cf. supabase/migrations/0050_programmes.sql) — aucun filtrage
+// supplémentaire à faire ici.
+
+export function getProgrammesEligibles(): Promise<Program[]> {
+  return getProgrammesQuery(supabase);
+}
+
+export function getCompteurProgramme(programId: string): Promise<{ participantsAcceptes: number; placesRestantes: number | null }> {
+  return getCompteurProgrammeQuery(supabase, programId);
+}
+
+export function getMaCandidatureProgramme(programId: string): Promise<ProgramParticipant | null> {
+  return getMaCandidatureProgrammeQuery(supabase, programId);
+}
+
+export function candidaterProgramme(programId: string): Promise<ProgramParticipant> {
+  return candidaterProgrammeQuery(supabase, programId);
 }
 
 // --- Abonnements commerçants (COLIMO PRO) -------------------------------

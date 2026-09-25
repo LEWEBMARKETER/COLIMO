@@ -52,6 +52,12 @@ import {
   reactiverAbonnementCommerce as reactiverAbonnementCommerceQuery,
   getDemandesAbonnement as getDemandesAbonnementQuery,
   refuserDemandeAbonnement as refuserDemandeAbonnementQuery,
+  getProgrammes as getProgrammesQuery,
+  getProgramme as getProgrammeQuery,
+  creerProgramme as creerProgrammeQuery,
+  patchProgramme as patchProgrammeQuery,
+  getParticipantsProgramme as getParticipantsProgrammeQuery,
+  traiterCandidatureProgramme as traiterCandidatureProgrammeQuery,
   getHistoriqueAbonnements as getHistoriqueAbonnementsQuery,
   getConfigurationPaiementAbonnement as getConfigurationPaiementAbonnementQuery,
   patchConfigurationPaiementAbonnement as patchConfigurationPaiementAbonnementQuery,
@@ -86,6 +92,12 @@ import {
   type ModeleCommunication,
   type NiveauCoursier,
   type PackPayant,
+  type Program,
+  type ProgramParticipant,
+  type ProgramParticipantAvecUtilisateur,
+  type ProgramParticipantStatus,
+  type ProgramStatus,
+  type ProgramTargetType,
   type ConfigurationPaiementAutomatique,
   type ConfirmationLivraison,
   type Paiement,
@@ -221,6 +233,56 @@ export function getDemandesAbonnement(params?: {
 
 export function refuserDemandeAbonnement(demandeId: string, motif?: string): Promise<DemandeAbonnement> {
   return refuserDemandeAbonnementQuery(createClient(), demandeId, motif);
+}
+
+// --- Programmes (module générique) ---------------------------------------
+
+export function getProgrammes(params?: { status?: ProgramStatus }): Promise<Program[]> {
+  return getProgrammesQuery(createClient(), params);
+}
+
+export function getProgramme(id: string): Promise<Program | null> {
+  return getProgrammeQuery(createClient(), id);
+}
+
+export function creerProgramme(input: {
+  name: string;
+  slug: string;
+  description?: string;
+  targetType: ProgramTargetType;
+  benefits: string[];
+  maxParticipants?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+}): Promise<Program> {
+  return creerProgrammeQuery(createClient(), input);
+}
+
+export function patchProgramme(
+  id: string,
+  patch: Partial<{
+    name: string;
+    description: string | null;
+    targetType: ProgramTargetType;
+    benefits: string[];
+    maxParticipants: number | null;
+    startDate: string | null;
+    endDate: string | null;
+    status: ProgramStatus;
+  }>
+): Promise<Program> {
+  return patchProgrammeQuery(createClient(), id, patch);
+}
+
+export function getParticipantsProgramme(
+  programId: string,
+  params?: { status?: ProgramParticipantStatus }
+): Promise<ProgramParticipantAvecUtilisateur[]> {
+  return getParticipantsProgrammeQuery(createClient(), programId, params);
+}
+
+export function traiterCandidatureProgramme(participantId: string, decision: "approved" | "rejected"): Promise<ProgramParticipant> {
+  return traiterCandidatureProgrammeQuery(createClient(), participantId, decision);
 }
 
 export function getHistoriqueAbonnements(params?: {

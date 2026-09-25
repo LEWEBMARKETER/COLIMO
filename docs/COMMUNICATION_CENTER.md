@@ -253,6 +253,8 @@ et `(coursier)/notifications.tsx`). Marquer comme lu passe par
 | Réinitialisation de mot de passe | ❌ | aucun flux de réinitialisation dans l'authentification actuelle |
 | Litige ouvert | ✅ | `SignalerLitigeForm.tsx` |
 | Litige résolu | ✅ | admin → Litiges (`resoudre`) |
+| Candidature à un programme reçue | ✅ | `CarteProgramme.tsx` (`candidater`) |
+| Candidature à un programme acceptée/refusée | ✅ | admin → Programmes (`traiter`) |
 
 Tous ces déclenchements utilisent des fournisseurs **mock** — aucun message
 n'est réellement envoyé, mais chaque déclenchement crée bien une ligne dans

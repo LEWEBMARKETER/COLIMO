@@ -56,7 +56,11 @@ export type EvenementCommunication =
   | "abonnement_demande_recue"
   | "abonnement_active"
   | "abonnement_expire"
-  | "abonnement_refuse";
+  | "abonnement_refuse"
+  // Programmes (candidatures — module générique, cf. packages/shared/src/programmes)
+  | "programme_candidature_recue"
+  | "programme_candidature_acceptee"
+  | "programme_candidature_refusee";
 
 export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   compte_bienvenue: "email_bienvenue",
@@ -103,6 +107,10 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   abonnement_active: "abonnement_active",
   abonnement_expire: "abonnement_expire",
   abonnement_refuse: "abonnement_refuse",
+
+  programme_candidature_recue: "notification_programme_candidature_recue",
+  programme_candidature_acceptee: "notification_programme_candidature_acceptee",
+  programme_candidature_refusee: "notification_programme_candidature_refusee",
 };
 
 // Canal par défaut de chaque événement — utilisé par les wrappers
@@ -153,4 +161,8 @@ export const EVENEMENT_CANAL: Record<EvenementCommunication, "email" | "sms" | "
   abonnement_active: "push",
   abonnement_expire: "push",
   abonnement_refuse: "push",
+
+  programme_candidature_recue: "push",
+  programme_candidature_acceptee: "push",
+  programme_candidature_refusee: "push",
 };
