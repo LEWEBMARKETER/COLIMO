@@ -1,15 +1,94 @@
 ---
 name: colimo-mobile-ux
 description: >
-  Patrons de navigation et de fraîcheur des données pour apps/mobile
-  (Expo Router + NativeWind). Utiliser pour tout écran affichant une donnée
-  qui peut changer côté serveur pendant que l'app reste ouverte (forfait,
-  statut de candidature, compteur de notifications), et pour toute
-  décision de structure d'écran, geste, cible tactile ou état de
-  chargement/erreur/vide.
+  Patrons de navigation, de segmentation de formulaire, de feedback et de
+  fraîcheur des données pour apps/mobile (Expo Router + NativeWind, PWA).
+  Utiliser pour tout écran affichant une donnée qui peut changer côté
+  serveur pendant que l'app reste ouverte (forfait, statut de candidature,
+  compteur de notifications), pour toute décision de structure d'écran,
+  de navigation, de formulaire multi-étapes, de geste, de cible tactile,
+  ou d'état de chargement/erreur/vide.
 ---
 
 # Mobile UX — COLIMO
+
+## Mission
+
+Faire en sorte que COLIMO donne l'impression d'une application mobile
+moderne **même en fonctionnant comme PWA** (build `expo export -p web`,
+servie sur colimo.online). Ce qui compte pour cette impression dans ce
+repo : navigation par onglets natifs (pas de rechargement de page),
+feedback immédiat sur chaque action (`Bouton` en état `chargement`),
+transitions `react-native-reanimated` plutôt que des sauts d'état bruts
+(voir `.claude/skills/motion-design` pour l'implémentation).
+
+## Navigation
+
+**Structure réelle actuelle** (`(client)/(tabs)/_layout.tsx`) : Accueil
+(`index`) / Historique / Statistiques / Soutien (`support`) / Profil — 5
+onglets en bottom navigation, déjà l'architecture recommandée. **Ne pas la
+remplacer** par une autre liste de destinations (ex. un onglet
+« Commander » séparé) sans raison précise : la création de livraison est
+volontairement un CTA depuis l'Accueil, pas un onglet à part, et les
+notifications passent par la cloche (`ClocheNotifications`) dans l'en-tête
+plutôt qu'un onglet dédié — les deux choix sont déjà cohérents avec
+« limiter la navigation principale aux destinations réellement
+importantes », pas des lacunes à corriger.
+
+## Règle du pouce
+
+Placer les actions fréquentes en zone facilement accessible ; éviter un
+CTA important uniquement en haut d'un écran long. `FondEntete` (en-tête
+des tableaux de bord) et le patron de barre d'action fixe en bas d'écran
+(`track/[id].tsx` : bloc `border-t ... bg-colimo-fond px-6 pb-2 pt-3`
+contenant le CTA principal) sont les deux précédents à répliquer plutôt
+que de placer un CTA critique seulement en haut d'un `ScrollView`.
+
+## Bottom Sheets — recommandation, pas encore construite
+
+Aucune bibliothèque de bottom sheet n'est installée (`@gorhom/bottom-sheet`,
+`react-native-modal` : absentes de `package.json`) et aucun composant
+`Modal`/`BottomSheet` n'existe dans `apps/mobile/components/ui/` — vérifié,
+gap réel (voir aussi `colimo-design-system`). Les sélections qui s'y
+prêteraient le mieux (adresse, horaire, type de livraison, filtres) sont
+aujourd'hui gérées **en écran complet** ou **en section inline** d'un
+Stepper (`SelecteurPointCarte`, `SelecteurCreneauProgramme`,
+`GroupePastilles`) — un choix qui fonctionne mais n'est pas un bottom
+sheet. **Ne pas introduire une lib de bottom sheet spéculativement** :
+si une tâche future en a explicitement besoin, la choisir alors (en
+cohérence avec `react-native-reanimated` déjà installé, qui peut animer un
+bottom sheet fait main sans dépendance supplémentaire) et mettre à jour
+cette section avec le nom réel du composant créé.
+
+## Formulaires
+
+Formulaire de plus de 5 champs → découper avec `Stepper`
+(`components/ui/Stepper.tsx`). Précédent réel : `publish.tsx`
+(`ETAPES = ["Récupération", "Livraison", "Colis", "Options", "Paiement",
+"Confirmation"]`, 6 étapes, état conservé entre étapes via `useState` au
+niveau de l'écran — c'est le patron à copier). **Gap identifié** :
+`nouvelle-livraison.tsx` (création de livraison côté commerce) n'utilise
+**pas** `Stepper` malgré une longueur comparable — c'est un long
+`ScrollView` à sections (`TitreSection`). Si cet écran est retouché en
+profondeur, le segmenter est cohérent avec `publish.tsx` ; ne pas le faire
+à l'occasion d'un correctif ponctuel non lié à sa structure.
+
+Toujours conserver les informations déjà saisies en changeant d'étape
+(état React au niveau de l'écran parent, jamais réinitialisé entre deux
+`etape`) — déjà le comportement de `Stepper`/`publish.tsx`, à ne pas casser.
+
+## Feedback
+
+Après toute action importante : chargement visible, double-tap impossible,
+succès confirmé, erreur explicite, action de récupération proposée.
+Concrètement : passer la prop `chargement` de `Bouton` pendant l'appel
+async — le composant se désactive automatiquement pendant ce temps
+(`const desactive = Boolean(disabled) || chargement`), ce qui couvre à la
+fois l'indicateur visuel et l'anti-double-tap **en un seul geste**. Ne
+jamais lancer un appel réseau depuis un `onPress` sans cette prop. Pour
+l'erreur : message explicite dans le composant (voir patron
+`erreur ? <Text className="text-colimo-rouge">...` déjà répandu), jamais
+une alerte système bloquante à la place.
 
 ## Onglets persistants vs écrans de pile — la distinction qui compte
 
@@ -75,12 +154,14 @@ au minimum, ou un padding généreux (`py-3 px-4`).
   explicite — jamais un échec silencieux qui ressemble à une liste vide.
 - Modèle complet à imiter : `ChatThread.tsx`, `EcranNotifications.tsx`.
 
-## Navigation & formulaires
+## Animations
 
-- Onglet conditionnel par profil : `href: estCommerce ? "/(client)/statistiques" : null`
-  dans `(tabs)/_layout.tsx` — répliquer ce mécanisme, ne pas en inventer un autre.
-- Formulaire de plus de 5 champs : découper avec `Stepper`
-  (précédent : `publish.tsx`, 6 étapes).
+Uniquement des animations fonctionnelles : changement de statut,
+progression, ouverture d'un bottom sheet (le jour où il existe),
+skeleton, confirmation, transition légère — jamais une animation
+décorative qui ralentit la navigation. Pour le **comment** (bibliothèque,
+durée, easing), voir `.claude/skills/motion-design` — ce skill-ci ne fixe
+que le **quoi/pourquoi**, pas l'implémentation.
 
 ## Contrainte NativeWind
 
@@ -90,6 +171,10 @@ au minimum, ou un padding généreux (`py-3 px-4`).
 
 ## Critères de validation
 
+- [ ] Navigation principale inchangée sauf besoin réel démontré (5 onglets existants)
+- [ ] CTA fréquent/critique atteignable sans scroller jusqu'en haut
+- [ ] Formulaire de plus de 5 champs découpé via `Stepper`, état conservé entre étapes
+- [ ] Toute action async passe par `Bouton` en `chargement` (anti-double-tap inclus)
 - [ ] Écran d'onglet avec donnée mutable côté serveur → `useFocusEffect`,
       pas `useEffect` seul
 - [ ] Aucune requête indépendante groupée dans un `Promise.all` avec une
@@ -97,4 +182,4 @@ au minimum, ou un padding généreux (`py-3 px-4`).
 - [ ] Composants `ui/` réutilisés, aucune variante recréée à la main
 - [ ] Toute action-lien texte a un `hitSlop`/padding ≥ zone confortable
 - [ ] Chargement initial toujours visible, erreur réseau explicite avec retry
-- [ ] Formulaire de plus de 5 champs découpé via `Stepper`
+- [ ] Animation ajoutée : fonctionnelle uniquement, conforme à `motion-design`
