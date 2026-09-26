@@ -68,10 +68,18 @@ export async function getCoursierByUtilisateurId(
 export async function getCoursiers(client: SupabaseClient): Promise<CoursierAvecUtilisateur[]> {
   const { data, error } = await client.from("coursiers").select("*, utilisateur:utilisateurs(*)");
   if (error) throw error;
-  return (data as (CoursierRow & { utilisateur: UtilisateurRow })[]).map((row) => ({
-    ...coursierFromRow(row),
-    utilisateur: utilisateurFromRow(row.utilisateur),
-  }));
+  // utilisateur peut être null : la RLS de `utilisateurs` (0001 + 0052) ne
+  // laisse un appelant non-admin lire que sa propre ligne, ou celle d'un
+  // coursier qui lui a été assigné — jamais l'ensemble des coursiers. Un
+  // appel de commerce/client à cette fonction ne récupère donc que le
+  // sous-ensemble auquel il a légitimement accès ; le reste est filtré
+  // plutôt que de planter sur un utilisateur manquant.
+  return (data as (CoursierRow & { utilisateur: UtilisateurRow | null })[])
+    .filter((row): row is CoursierRow & { utilisateur: UtilisateurRow } => row.utilisateur !== null)
+    .map((row) => ({
+      ...coursierFromRow(row),
+      utilisateur: utilisateurFromRow(row.utilisateur),
+    }));
 }
 
 export async function getCoursierAvecUtilisateur(
@@ -85,7 +93,8 @@ export async function getCoursierAvecUtilisateur(
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const row = data as CoursierRow & { utilisateur: UtilisateurRow };
+  const row = data as CoursierRow & { utilisateur: UtilisateurRow | null };
+  if (!row.utilisateur) return null;
   return { ...coursierFromRow(row), utilisateur: utilisateurFromRow(row.utilisateur) };
 }
 
