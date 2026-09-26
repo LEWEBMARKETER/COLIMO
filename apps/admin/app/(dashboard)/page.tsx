@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import StatCard from "@/components/StatCard";
 import { getCoursiers, getCourses, getUtilisateurs, type CoursierAvecUtilisateur } from "@/lib/api";
@@ -64,6 +65,10 @@ export default function DashboardPage() {
   const commandesJour = courses.filter((c) => estAujourdhui(c.createdAt)).length;
   const commandesEnCours = courses.filter((c) => STATUTS_EN_COURS.has(c.statut)).length;
   const litigesOuverts = courses.filter((c) => c.statut === "litige").length;
+  // "livree" = coursier a déclaré la livraison, en attente de confirmation
+  // client/coursier ou, à défaut, de validation administrative (besoin
+  // "Validation administrative finale d'une course", section 10).
+  const livraisonsAConfirmer = courses.filter((c) => c.statut === "livree").length;
 
   const caJour = courses
     .filter((c) => estAujourdhui(c.createdAt) && c.statut !== "annulee")
@@ -106,6 +111,9 @@ export default function DashboardPage() {
         <StatCard label="Chiffre d'affaires du jour" value={formatFCFA(caJour)} />
         <StatCard label="Commandes en cours" value={String(commandesEnCours)} />
         <StatCard label="Litiges ouverts" value={String(litigesOuverts)} />
+        <Link href="/courses?filtre=a_confirmer" className="block transition hover:opacity-80">
+          <StatCard label="Livraisons à confirmer" value={String(livraisonsAConfirmer)} />
+        </Link>
       </div>
 
       <div className="mt-8 flex items-center justify-between">

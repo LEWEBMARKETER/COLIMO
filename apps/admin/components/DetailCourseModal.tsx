@@ -2,13 +2,16 @@ import StatutBadge from "@/components/StatutBadge";
 import {
   CATEGORIE_COLIS_LABELS,
   COURSE_STATUS_LABELS,
+  METHODE_VERIFICATION_LIVRAISON_LABELS,
   MODE_PAIEMENT_LABELS,
   QUI_PAIE_LABELS,
+  RESULTAT_VERIFICATION_LIVRAISON_LABELS,
   ZONE_LABELS,
   formatFCFA,
   type ConfirmationLivraison,
   type Course,
   type Utilisateur,
+  type ValidationAdminLivraison,
 } from "@colimo/shared";
 
 function formatDateHeure(iso: string | null): string {
@@ -39,6 +42,8 @@ interface DetailCourseModalProps {
   client: Utilisateur | undefined;
   coursier: Utilisateur | undefined;
   confirmation: ConfirmationLivraison | undefined;
+  validationsAdmin?: ValidationAdminLivraison[];
+  nomUtilisateur?: (id: string) => string;
   onClose: () => void;
 }
 
@@ -46,7 +51,15 @@ interface DetailCourseModalProps {
 // sous-ensemble (dense mais partiel) des champs de la table courses ; ce
 // panneau réutilise les mêmes données déjà chargées par la page (aucune
 // requête supplémentaire), simplement organisées par section.
-export default function DetailCourseModal({ course, client, coursier, confirmation, onClose }: DetailCourseModalProps) {
+export default function DetailCourseModal({
+  course,
+  client,
+  coursier,
+  confirmation,
+  validationsAdmin = [],
+  nomUtilisateur,
+  onClose,
+}: DetailCourseModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
@@ -156,6 +169,35 @@ export default function DetailCourseModal({ course, client, coursier, confirmati
                 </div>
               )}
             </Section>
+          )}
+
+          {validationsAdmin.length > 0 && (
+            <div className="border-t border-colimo-neutre-clair pt-4">
+              <h3 className="font-titre text-sm font-semibold text-colimo-neutre-fonce">
+                Validations administratives
+              </h3>
+              <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">Information interne au back-office</p>
+              <div className="mt-3 flex flex-col gap-3">
+                {validationsAdmin.map((v) => (
+                  <div key={v.id} className="rounded-lg bg-colimo-fond p-3">
+                    <p className="text-xs text-colimo-neutre-fonce/50">{formatDateHeure(v.createdAt)}</p>
+                    <p className="mt-0.5 text-sm font-medium text-colimo-neutre-fonce">
+                      {v.resultat === "confirmee" && "✓ Livraison confirmée administrativement"}
+                      {v.resultat === "contestee" && "⚠ Livraison contestée — passée en litige"}
+                      {v.resultat === "impossible" && "⏳ Vérification impossible — dernière tentative"}
+                    </p>
+                    <p className="mt-1 text-xs text-colimo-neutre-fonce/70">
+                      Vérification : {METHODE_VERIFICATION_LIVRAISON_LABELS[v.methodeVerification]} · Résultat :{" "}
+                      {RESULTAT_VERIFICATION_LIVRAISON_LABELS[v.resultat]}
+                    </p>
+                    <p className="mt-0.5 text-xs text-colimo-neutre-fonce/70">
+                      Validée par : {nomUtilisateur ? nomUtilisateur(v.administrateurId) : v.administrateurId}
+                    </p>
+                    {v.note && <p className="mt-1 text-sm text-colimo-neutre-fonce/80">« {v.note} »</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

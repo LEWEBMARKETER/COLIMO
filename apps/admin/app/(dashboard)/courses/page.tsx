@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import StatutBadge from "@/components/StatutBadge";
 import CarteCourses from "@/components/CarteCourses";
 import DetailCourseModal from "@/components/DetailCourseModal";
+import ValidationLivraisonModal from "@/components/ValidationLivraisonModal";
 import {
   annulerCourseAdmin,
   getConfirmationsLivraisonAdmin,
   getCourses,
   getUtilisateurs,
   getCoursiers,
+  getValidationsAdminLivraison,
   patchCourse,
   type CoursierAvecUtilisateur,
 } from "@/lib/api";
@@ -27,6 +29,7 @@ import {
   type Course,
   type MotifAnnulationAdmin,
   type Utilisateur,
+  type ValidationAdminLivraison,
   type Zone,
 } from "@colimo/shared";
 
@@ -56,9 +59,20 @@ function CoursesContenu() {
   const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
   const [confirmations, setConfirmations] = useState<ConfirmationLivraison[]>([]);
   const [filtreZone, setFiltreZone] = useState<string>("toutes");
+  const [filtreAConfirmer, setFiltreAConfirmer] = useState(searchParams.get("filtre") === "a_confirmer");
   const [chargement, setChargement] = useState(true);
   const [panneauAnnulation, setPanneauAnnulation] = useState<string | null>(null);
   const [courseDetail, setCourseDetail] = useState<Course | null>(null);
+  const [courseAValider, setCourseAValider] = useState<Course | null>(null);
+  const [validationsDetail, setValidationsDetail] = useState<ValidationAdminLivraison[]>([]);
+
+  useEffect(() => {
+    if (!courseDetail) {
+      setValidationsDetail([]);
+      return;
+    }
+    getValidationsAdminLivraison(courseDetail.id).then(setValidationsDetail);
+  }, [courseDetail]);
   const [motifAnnulation, setMotifAnnulation] = useState<MotifAnnulationAdmin | "">("");
   const [commentaireAnnulation, setCommentaireAnnulation] = useState("");
   const [annulationEnCours, setAnnulationEnCours] = useState(false);
@@ -81,13 +95,24 @@ function CoursesContenu() {
       .finally(() => setChargement(false));
   }, [filtreZone]);
 
-  const coursesAffichees = useMemo(
-    () => (clientIdFiltre ? courses.filter((c) => c.clientId === clientIdFiltre) : courses),
-    [courses, clientIdFiltre]
-  );
+  // "À confirmer" : déclarées livrées par le coursier, pas encore
+  // confirmées — c'est exactement le statut existant "livree" (besoin
+  // section 10), pas un nouveau statut.
+  const coursesAConfirmer = useMemo(() => courses.filter((c) => c.statut === "livree"), [courses]);
+
+  const coursesAffichees = useMemo(() => {
+    let liste = clientIdFiltre ? courses.filter((c) => c.clientId === clientIdFiltre) : courses;
+    if (filtreAConfirmer) liste = liste.filter((c) => c.statut === "livree");
+    return liste;
+  }, [courses, clientIdFiltre, filtreAConfirmer]);
 
   const nomUtilisateur = useMemo(
     () => (id: string) => utilisateurs.find((u) => u.id === id)?.nom ?? "—",
+    [utilisateurs]
+  );
+
+  const telephoneUtilisateur = useMemo(
+    () => (id: string) => utilisateurs.find((u) => u.id === id)?.telephone ?? null,
     [utilisateurs]
   );
 
@@ -178,18 +203,30 @@ function CoursesContenu() {
           <p className="mt-1 text-sm text-colimo-neutre-fonce/70">Suivi de toutes les courses de la plateforme</p>
         </div>
 
-        <select
-          value={filtreZone}
-          onChange={(e) => setFiltreZone(e.target.value)}
-          className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-        >
-          <option value="toutes">Toutes les zones</option>
-          {ZONES.map((zone) => (
-            <option key={zone} value={zone}>
-              {ZONE_LABELS[zone]}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setFiltreAConfirmer((v) => !v)}
+            className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+              filtreAConfirmer
+                ? "border-colimo-rouge bg-colimo-rouge text-white"
+                : "border-colimo-neutre-clair text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            }`}
+          >
+            À confirmer ({coursesAConfirmer.length})
+          </button>
+          <select
+            value={filtreZone}
+            onChange={(e) => setFiltreZone(e.target.value)}
+            className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
+          >
+            <option value="toutes">Toutes les zones</option>
+            {ZONES.map((zone) => (
+              <option key={zone} value={zone}>
+                {ZONE_LABELS[zone]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {clientFiltreNom && (
@@ -319,6 +356,32 @@ function CoursesContenu() {
                     >
                       Détails
                     </button>
+                    {course.statut === "livree" && (
+                      <>
+                        <button
+                          onClick={() => setCourseAValider(course)}
+                          className="rounded-md bg-colimo-rouge px-2 py-1 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
+                        >
+                          Confirmer la livraison
+                        </button>
+                        {telephoneUtilisateur(course.clientId) && (
+                          <a
+                            href={`tel:${telephoneUtilisateur(course.clientId)}`}
+                            className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-center text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                          >
+                            📞 Appeler le client
+                          </a>
+                        )}
+                        {course.coursierId && telephoneUtilisateur(course.coursierId) && (
+                          <a
+                            href={`tel:${telephoneUtilisateur(course.coursierId)}`}
+                            className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-center text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                          >
+                            📞 Appeler le coursier
+                          </a>
+                        )}
+                      </>
+                    )}
                     {course.statut !== "annulee" && (
                       <button
                         onClick={() => ouvrirPanneauAnnulation(course)}
@@ -399,7 +462,20 @@ function CoursesContenu() {
           client={utilisateurs.find((u) => u.id === courseDetail.clientId)}
           coursier={courseDetail.coursierId ? utilisateurs.find((u) => u.id === courseDetail.coursierId) : undefined}
           confirmation={confirmationParCourse.get(courseDetail.id)}
+          validationsAdmin={validationsDetail}
+          nomUtilisateur={nomUtilisateur}
           onClose={() => setCourseDetail(null)}
+        />
+      )}
+
+      {courseAValider && (
+        <ValidationLivraisonModal
+          course={courseAValider}
+          onClose={() => setCourseAValider(null)}
+          onValide={(misAJour) => {
+            setCourses((prev) => prev.map((c) => (c.id === misAJour.id ? misAJour : c)));
+            setCourseAValider(null);
+          }}
         />
       )}
     </div>

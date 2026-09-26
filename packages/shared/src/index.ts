@@ -16,6 +16,7 @@ export * from "./motDePasse";
 export * from "./suivi";
 export * from "./positions";
 export * from "./confirmationLivraison";
+export * from "./validationAdminLivraison";
 export * from "./otp";
 export * from "./paiements";
 export * from "./programmation";
