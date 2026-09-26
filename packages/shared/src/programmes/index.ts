@@ -157,7 +157,9 @@ export async function getParticipantsProgramme(
 ): Promise<ProgramParticipantAvecUtilisateur[]> {
   let requete = client
     .from("program_participants")
-    .select("*, utilisateur:utilisateurs(nom, prenom, telephone)")
+    // program_participants a deux FK vers utilisateurs (user_id, reviewed_by)
+    // — sans préciser laquelle, PostgREST refuse l'embed (ambigu, PGRST201).
+    .select("*, utilisateur:utilisateurs!user_id(nom, prenom, telephone)")
     .eq("program_id", programId)
     .order("applied_at", { ascending: false });
   if (params?.status) requete = requete.eq("status", params.status);
