@@ -28,15 +28,19 @@ export default function MesStatistiquesScreen() {
   // Business par l'admin) reste invisible ici tant que l'onglet, resté en
   // mémoire depuis un chargement précédent, n'est pas rouvert de zéro. Même
   // principe que (coursier)/(tabs)/dashboard.tsx.
+  //
+  // Requêtes indépendantes plutôt que Promise.all : un incident isolé sur
+  // l'une (ex. getCoursiers, dont le résultat dépend de la RLS et peut être
+  // partiel) ne doit jamais empêcher getMonCommerce de renseigner le forfait
+  // effectif, sous peine de retomber sur l'écran verrouillé "gratuit" alors
+  // que l'abonnement est bien actif.
   useFocusEffect(
     useCallback(() => {
       if (!session) return;
-      Promise.all([getCourses({ clientId: session.user.id }), getCoursiers(), getMonCommerce(session.user.id)])
-        .then(([c, cr, com]) => {
-          setCourses(c);
-          setCoursiers(cr);
-          setCommerce(com);
-        })
+      getCourses({ clientId: session.user.id }).then(setCourses);
+      getCoursiers().then(setCoursiers);
+      getMonCommerce(session.user.id)
+        .then(setCommerce)
         .finally(() => setChargement(false));
     }, [session])
   );
