@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import {
   PRIX_PACK_BUSINESS,
   PRIX_PACK_STARTER,
@@ -49,22 +49,29 @@ export default function CommerceDashboard() {
   const [favorisReels, setFavorisReels] = useState<CommerceCoursierFavori[] | null>(null);
   const [programmes, setProgrammes] = useState<Program[]>([]);
 
-  useEffect(() => {
-    if (!session) return;
-    getCourses({ clientId: session.user.id }).then(setCourses);
-    getCoursiers().then(setCoursiers);
-    getProgrammesEligibles().then(setProgrammes);
-    getMonCommerce(session.user.id).then((c) => {
-      setCommerce(c);
-      // Une fois le Pack Business actif, la vraie liste de coursiers favoris
-      // (enregistrée par le commerce) remplace le top informel calculé par
-      // fréquence ci-dessous — évite d'afficher deux notions différentes de
-      // "favori" au même endroit.
-      if (c && calculerPlanEffectif(c) === "business") {
-        getCoursiersFavorisCommerce(c.id).then(setFavorisReels);
-      }
-    });
-  }, [session]);
+  // Rechargé à chaque fois que l'onglet Accueil reprend le focus, pas
+  // seulement au premier montage — sinon un changement de forfait (activation
+  // Starter/Business par l'admin) reste invisible ici tant que l'app n'est
+  // pas rouverte de zéro, puisque ce composant reste monté en mémoire d'un
+  // changement d'onglet à l'autre. Même principe que (coursier)/(tabs)/dashboard.tsx.
+  useFocusEffect(
+    useCallback(() => {
+      if (!session) return;
+      getCourses({ clientId: session.user.id }).then(setCourses);
+      getCoursiers().then(setCoursiers);
+      getProgrammesEligibles().then(setProgrammes);
+      getMonCommerce(session.user.id).then((c) => {
+        setCommerce(c);
+        // Une fois le Pack Business actif, la vraie liste de coursiers favoris
+        // (enregistrée par le commerce) remplace le top informel calculé par
+        // fréquence ci-dessous — évite d'afficher deux notions différentes de
+        // "favori" au même endroit.
+        if (c && calculerPlanEffectif(c) === "business") {
+          getCoursiersFavorisCommerce(c.id).then(setFavorisReels);
+        }
+      });
+    }, [session])
+  );
 
   const planEffectif = commerce ? calculerPlanEffectif(commerce) : "gratuit";
   const joursRestants = commerce ? joursAvantExpiration(commerce) : null;

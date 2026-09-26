@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import {
   calculerPlanEffectif,
   calculerStatistiquesAvanceesCommercant,
@@ -22,16 +23,23 @@ export default function MesStatistiquesScreen() {
   const [commerce, setCommerce] = useState<Commercant | null>(null);
   const [chargement, setChargement] = useState(true);
 
-  useEffect(() => {
-    if (!session) return;
-    Promise.all([getCourses({ clientId: session.user.id }), getCoursiers(), getMonCommerce(session.user.id)])
-      .then(([c, cr, com]) => {
-        setCourses(c);
-        setCoursiers(cr);
-        setCommerce(com);
-      })
-      .finally(() => setChargement(false));
-  }, [session]);
+  // Recharge à chaque fois que l'onglet reprend le focus (pas seulement au
+  // premier montage) — sinon un changement de forfait (activation Starter/
+  // Business par l'admin) reste invisible ici tant que l'onglet, resté en
+  // mémoire depuis un chargement précédent, n'est pas rouvert de zéro. Même
+  // principe que (coursier)/(tabs)/dashboard.tsx.
+  useFocusEffect(
+    useCallback(() => {
+      if (!session) return;
+      Promise.all([getCourses({ clientId: session.user.id }), getCoursiers(), getMonCommerce(session.user.id)])
+        .then(([c, cr, com]) => {
+          setCourses(c);
+          setCoursiers(cr);
+          setCommerce(com);
+        })
+        .finally(() => setChargement(false));
+    }, [session])
+  );
 
   if (chargement) {
     return (
