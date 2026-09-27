@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { MODE_PAIEMENT_LABELS, ZONE_LABELS, formatFCFA, type Course } from "@colimo/shared";
 import HistoriqueCommerce from "@/components/HistoriqueCommerce";
 import StatutChip from "@/components/ui/StatutChip";
+import EmptyState from "@/components/ui/EmptyState";
 import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -50,9 +51,15 @@ export default function HistoriqueClientScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
           ListEmptyComponent={
-            <Text className="mt-6 text-center font-texte text-colimo-neutre-fonce/60">
-              Aucune course pour l&apos;instant
-            </Text>
+            <View className="mt-6">
+              <EmptyState
+                icone="time-outline"
+                titre="Aucune course pour l'instant"
+                description="Lorsque vous commanderez une livraison, elle apparaîtra ici."
+                labelAction="Envoyer un colis"
+                onAction={() => router.push("/(client)/publish")}
+              />
+            </View>
           }
           renderItem={({ item }) => (
             <Pressable onPress={() => router.push(`/(client)/track/${item.id}`)}>

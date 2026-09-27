@@ -26,6 +26,8 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import CarteAction from "@/components/ui/CarteAction";
 import CarteCourseRecente from "@/components/ui/CarteCourseRecente";
+import { CarteCourseRecenteSkeleton } from "@/components/ui/Skeleton";
+import TitreSection from "@/components/ui/TitreSection";
 import ChiffreCle from "@/components/ui/ChiffreCle";
 import VariationBadge from "@/components/ui/VariationBadge";
 import { getCoursiers, getCoursiersFavorisCommerce, getCourses, getMonCommerce, getProgrammesEligibles } from "@/lib/api";
@@ -48,6 +50,7 @@ export default function CommerceDashboard() {
   const [commerce, setCommerce] = useState<Commercant | null>(null);
   const [favorisReels, setFavorisReels] = useState<CommerceCoursierFavori[] | null>(null);
   const [programmes, setProgrammes] = useState<Program[]>([]);
+  const [chargement, setChargement] = useState(true);
 
   // Rechargé à chaque fois que l'onglet Accueil reprend le focus, pas
   // seulement au premier montage — sinon un changement de forfait (activation
@@ -57,7 +60,9 @@ export default function CommerceDashboard() {
   useFocusEffect(
     useCallback(() => {
       if (!session) return;
-      getCourses({ clientId: session.user.id }).then(setCourses);
+      getCourses({ clientId: session.user.id })
+        .then(setCourses)
+        .finally(() => setChargement(false));
       getCoursiers().then(setCoursiers);
       getProgrammesEligibles().then(setProgrammes);
       getMonCommerce(session.user.id).then((c) => {
@@ -149,7 +154,7 @@ export default function CommerceDashboard() {
         </View>
 
         <View className="mt-4">
-          <Text className="font-titre text-base text-colimo-neutre-fonce">Que souhaitez-vous faire ?</Text>
+          <TitreSection>Que souhaitez-vous faire ?</TitreSection>
           <View className="mt-3 flex-row flex-wrap gap-3">
             <CarteAction
               icone="storefront-outline"
@@ -206,28 +211,43 @@ export default function CommerceDashboard() {
           </Carte>
         </View>
 
-        {dernieresCourses.length > 0 && (
+        {chargement ? (
           <View className="mt-4">
-            <Text className="font-titre text-base text-colimo-neutre-fonce">Vos dernières livraisons</Text>
+            <TitreSection>Vos dernières livraisons</TitreSection>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               className="mt-3"
               contentContainerStyle={{ paddingRight: 6 }}
             >
-              {dernieresCourses.map((course) => (
-                <CarteCourseRecente
-                  key={course.id}
-                  course={course}
-                  onRefaire={
-                    STATUTS_TERMINAUX.has(course.statut)
-                      ? () => router.push(`/(client)/nouvelle-livraison?depuisCourseId=${course.id}`)
-                      : undefined
-                  }
-                />
-              ))}
+              <CarteCourseRecenteSkeleton />
+              <CarteCourseRecenteSkeleton />
             </ScrollView>
           </View>
+        ) : (
+          dernieresCourses.length > 0 && (
+            <View className="mt-4">
+              <TitreSection>Vos dernières livraisons</TitreSection>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="mt-3"
+                contentContainerStyle={{ paddingRight: 6 }}
+              >
+                {dernieresCourses.map((course) => (
+                  <CarteCourseRecente
+                    key={course.id}
+                    course={course}
+                    onRefaire={
+                      STATUTS_TERMINAUX.has(course.statut)
+                        ? () => router.push(`/(client)/nouvelle-livraison?depuisCourseId=${course.id}`)
+                        : undefined
+                    }
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )
         )}
 
         <Carte className="mt-4">

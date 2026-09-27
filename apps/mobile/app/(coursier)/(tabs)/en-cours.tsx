@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, router } from "expo-router";
 import type { Course } from "@colimo/shared";
-import Bouton from "@/components/ui/Bouton";
+import EmptyState from "@/components/ui/EmptyState";
 import { getCourses } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -43,15 +43,13 @@ export default function EnCoursScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 items-center justify-center bg-colimo-fond px-8">
-      <Text className="text-center font-titre text-lg text-colimo-neutre-fonce">Aucune course en cours</Text>
-      <Text className="mt-2 text-center font-texte text-sm text-colimo-neutre-fonce/60">
-        Accepte une course depuis le tableau de bord pour la retrouver ici.
-      </Text>
-      <Bouton
-        label="Voir les courses disponibles"
-        onPress={() => router.push("/(coursier)/dashboard")}
-        className="mt-6 px-6 py-3"
+    <SafeAreaView className="flex-1 items-center justify-center bg-colimo-fond px-6">
+      <EmptyState
+        icone="navigate-outline"
+        titre="Aucune course en cours"
+        description="Accepte une course depuis le tableau de bord pour la retrouver ici."
+        labelAction="Voir les courses disponibles"
+        onAction={() => router.push("/(coursier)/dashboard")}
       />
     </SafeAreaView>
   );
