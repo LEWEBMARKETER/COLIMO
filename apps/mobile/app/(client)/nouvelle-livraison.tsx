@@ -186,6 +186,16 @@ export default function NouvelleLivraisonScreen() {
     });
   }, [depuisCourseId]);
 
+  // Le changement de zone de départ peut rendre l'arrivée déjà choisie
+  // injoignable (ex. depuis "Owendo" après une arrivée valide seulement
+  // depuis "Libreville") — on la réinitialise plutôt que de laisser une
+  // pastille sélectionnée qui a disparu des options affichées.
+  useEffect(() => {
+    if (depart && arrivee && !isRouteDesservie(depart, arrivee)) {
+      setArrivee(null);
+    }
+  }, [depart]);
+
   function choisirPointDepart(id: string) {
     const point = pointsDepart.find((p) => p.id === id);
     if (!point) return;
@@ -359,7 +369,7 @@ export default function NouvelleLivraisonScreen() {
           keyboardType="phone-pad"
           placeholder="+241 XX XXX XXX"
         />
-        <ZoneSelector label="Quartier" value={arrivee} onChange={setArrivee} />
+        <ZoneSelector label="Quartier" value={arrivee} onChange={setArrivee} role="arrivee" depart={depart} />
         <ChampTexte
           label="Adresse"
           value={adresseArrivee}
@@ -442,7 +452,7 @@ export default function NouvelleLivraisonScreen() {
         {erreurPromo && <Text className="mb-4 -mt-2 font-texte text-xs text-colimo-rouge">{erreurPromo}</Text>}
 
         <TitreSection>Livraison</TitreSection>
-        <ZoneSelector label="Zone de départ (votre commerce)" value={depart} onChange={setDepart} />
+        <ZoneSelector label="Zone de départ (votre commerce)" value={depart} onChange={setDepart} role="depart" />
         <GroupePastilles
           label="Type de livraison"
           options={TYPES_LIVRAISON}

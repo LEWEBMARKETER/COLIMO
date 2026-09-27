@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { SlideInLeft, SlideInRight } from "react-native-reanimated";
@@ -105,6 +105,15 @@ export default function PublishScreen() {
 
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  // Un changement de zone de départ (étape 1) peut rendre l'arrivée déjà
+  // choisie (étape 2) injoignable — on la réinitialise plutôt que de
+  // laisser une pastille sélectionnée qui a disparu des options affichées.
+  useEffect(() => {
+    if (depart && arrivee && !isRouteDesservie(depart, arrivee)) {
+      setArrivee(null);
+    }
+  }, [depart]);
 
   const pricing = useMemo(() => {
     if (!depart || !arrivee || !isRouteDesservie(depart, arrivee)) return null;
@@ -248,7 +257,7 @@ export default function PublishScreen() {
               onChangeText={setAdresseDepart}
               placeholder="Adresse précise de départ"
             />
-            <ZoneSelector label="Ville ou zone" value={depart} onChange={setDepart} />
+            <ZoneSelector label="Ville ou zone" value={depart} onChange={setDepart} role="depart" />
             <ChampTexte
               label="Repère (optionnel)"
               value={repereDepart}
@@ -288,7 +297,7 @@ export default function PublishScreen() {
               onChangeText={setAdresseArrivee}
               placeholder="Adresse précise d'arrivée"
             />
-            <ZoneSelector label="Ville ou zone" value={arrivee} onChange={setArrivee} />
+            <ZoneSelector label="Ville ou zone" value={arrivee} onChange={setArrivee} role="arrivee" depart={depart} />
             <ChampTexte
               label="Repère (optionnel)"
               value={repereArrivee}
