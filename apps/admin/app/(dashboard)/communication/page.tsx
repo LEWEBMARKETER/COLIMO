@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import StatCard from "@/components/StatCard";
 import StatutBadge from "@/components/StatutBadge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCommunications, getModelesCommunication, patchModeleCommunication } from "@/lib/api";
 import {
   CANAL_COMMUNICATION_LABELS,
@@ -243,18 +245,19 @@ export default function CommunicationPage() {
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-colimo-neutre-fonce/60">Statut</label>
-              <select
-                value={filtreStatut}
-                onChange={(e) => setFiltreStatut(e.target.value as StatutCommunication | "tous")}
-                className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-              >
-                <option value="tous">Tous les statuts</option>
-                {STATUTS_FILTRE.map((s) => (
-                  <option key={s} value={s}>
-                    {STATUT_COMMUNICATION_LABELS[s]}
-                  </option>
-                ))}
-              </select>
+              <Select value={filtreStatut} onValueChange={(v) => setFiltreStatut(v as StatutCommunication | "tous")}>
+                <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tous">Tous les statuts</SelectItem>
+                  {STATUTS_FILTRE.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {STATUT_COMMUNICATION_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-colimo-neutre-fonce/60">Du</label>
@@ -395,44 +398,44 @@ function TableCommunications({
 }) {
   return (
     <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-          <tr>
-            <th className="px-4 py-3 font-medium">Canal</th>
-            <th className="px-4 py-3 font-medium">Destinataire</th>
-            <th className="px-4 py-3 font-medium">Modèle</th>
-            <th className="px-4 py-3 font-medium">Contenu</th>
-            <th className="px-4 py-3 font-medium">Statut</th>
-            <th className="px-4 py-3 font-medium">Date</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+            <TableHead>Canal</TableHead>
+            <TableHead>Destinataire</TableHead>
+            <TableHead>Modèle</TableHead>
+            <TableHead>Contenu</TableHead>
+            <TableHead>Statut</TableHead>
+            <TableHead>Date</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {communications.map((c) => (
-            <tr key={c.id} className="border-b border-colimo-neutre-clair last:border-0">
-              <td className="px-4 py-3">{CANAL_COMMUNICATION_LABELS[c.canal]}</td>
-              <td className="px-4 py-3">{c.destinataire}</td>
-              <td className="px-4 py-3 font-mono text-xs text-colimo-neutre-fonce/70">{c.modeleCode ?? "—"}</td>
-              <td className="max-w-xs truncate px-4 py-3 text-colimo-neutre-fonce/70" title={c.contenu}>
+            <TableRow key={c.id} className="border-colimo-neutre-clair">
+              <TableCell>{CANAL_COMMUNICATION_LABELS[c.canal]}</TableCell>
+              <TableCell>{c.destinataire}</TableCell>
+              <TableCell className="font-mono text-xs text-colimo-neutre-fonce/70">{c.modeleCode ?? "—"}</TableCell>
+              <TableCell className="max-w-xs truncate text-colimo-neutre-fonce/70" title={c.contenu}>
                 {c.contenu}
-              </td>
-              <td className="px-4 py-3">
+              </TableCell>
+              <TableCell>
                 <StatutBadge statut={c.statut} label={STATUT_COMMUNICATION_LABELS[c.statut]} />
                 {c.erreur && <p className="mt-1 text-xs text-colimo-rouge">{c.erreur}</p>}
-              </td>
-              <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/50">
+              </TableCell>
+              <TableCell className="text-xs text-colimo-neutre-fonce/50">
                 {new Date(c.createdAt).toLocaleString("fr-FR")}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
           {!chargement && communications.length === 0 && (
-            <tr>
-              <td colSpan={6} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+            <TableRow>
+              <TableCell colSpan={6} className="py-6 text-center text-colimo-neutre-fonce/50">
                 Aucune communication
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

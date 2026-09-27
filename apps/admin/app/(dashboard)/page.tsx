@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import StatCard from "@/components/StatCard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCoursiers, getCourses, getUtilisateurs, type CoursierAvecUtilisateur } from "@/lib/api";
 import { formatFCFA, type Course, type Utilisateur } from "@colimo/shared";
 
@@ -120,17 +121,18 @@ export default function DashboardPage() {
         <h2 className="text-sm font-medium uppercase tracking-wide text-colimo-neutre-fonce/50">
           Vue d&apos;ensemble
         </h2>
-        <select
-          value={periode}
-          onChange={(e) => setPeriode(e.target.value as Periode)}
-          className="rounded-lg border border-colimo-neutre-clair px-3 py-1.5 text-sm focus:border-colimo-rouge focus:outline-none"
-        >
-          {PERIODES.map((p) => (
-            <option key={p} value={p}>
-              {PERIODE_LABELS[p]}
-            </option>
-          ))}
-        </select>
+        <Select value={periode} onValueChange={(v) => setPeriode(v as Periode)}>
+          <SelectTrigger className="h-auto w-auto min-w-[8rem] rounded-lg border-colimo-neutre-clair py-1.5 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PERIODES.map((p) => (
+              <SelectItem key={p} value={p}>
+                {PERIODE_LABELS[p]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Chiffre d'affaires" value={formatFCFA(caPeriode)} sombre />

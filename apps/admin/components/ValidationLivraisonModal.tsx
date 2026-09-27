@@ -1,4 +1,6 @@
 import { useState } from "react";
+import ModalOverlay from "@/components/ModalOverlay";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   METHODE_VERIFICATION_LIVRAISON_LABELS,
   RESULTAT_VERIFICATION_LIVRAISON_LABELS,
@@ -74,12 +76,8 @@ export default function ValidationLivraisonModal({ course, onClose, onValide }: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {etapeFinale ? (
+    <ModalOverlay onClose={onClose}>
+      {etapeFinale ? (
           <>
             <h2 className="font-titre text-lg font-semibold text-colimo-neutre-fonce">
               Confirmer définitivement cette livraison ?
@@ -119,32 +117,32 @@ export default function ValidationLivraisonModal({ course, onClose, onValide }: 
             </p>
 
             <label className="mt-4 block text-xs font-medium text-colimo-neutre-fonce/60">Méthode de vérification</label>
-            <select
-              value={methode}
-              onChange={(e) => setMethode(e.target.value as MethodeVerificationLivraison)}
-              className="mt-1 w-full rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-            >
-              <option value="">Choisir…</option>
-              {METHODES.map((m) => (
-                <option key={m} value={m}>
-                  {METHODE_VERIFICATION_LIVRAISON_LABELS[m]}
-                </option>
-              ))}
-            </select>
+            <Select value={methode || undefined} onValueChange={(v) => setMethode(v as MethodeVerificationLivraison)}>
+              <SelectTrigger className="mt-1 h-auto w-full px-3 py-2 text-sm">
+                <SelectValue placeholder="Choisir…" />
+              </SelectTrigger>
+              <SelectContent>
+                {METHODES.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {METHODE_VERIFICATION_LIVRAISON_LABELS[m]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <label className="mt-3 block text-xs font-medium text-colimo-neutre-fonce/60">Résultat de la vérification</label>
-            <select
-              value={resultat}
-              onChange={(e) => setResultat(e.target.value as ResultatVerificationLivraison)}
-              className="mt-1 w-full rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-            >
-              <option value="">Choisir…</option>
-              {RESULTATS.map((r) => (
-                <option key={r} value={r}>
-                  {RESULTAT_VERIFICATION_LIVRAISON_LABELS[r]}
-                </option>
-              ))}
-            </select>
+            <Select value={resultat || undefined} onValueChange={(v) => setResultat(v as ResultatVerificationLivraison)}>
+              <SelectTrigger className="mt-1 h-auto w-full px-3 py-2 text-sm">
+                <SelectValue placeholder="Choisir…" />
+              </SelectTrigger>
+              <SelectContent>
+                {RESULTATS.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {RESULTAT_VERIFICATION_LIVRAISON_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <label className="mt-3 block text-xs font-medium text-colimo-neutre-fonce/60">
               Note administrative {noteObligatoire ? "(obligatoire)" : "(facultative)"}
@@ -177,7 +175,6 @@ export default function ValidationLivraisonModal({ course, onClose, onValide }: 
             </div>
           </>
         )}
-      </div>
-    </div>
+    </ModalOverlay>
   );
 }

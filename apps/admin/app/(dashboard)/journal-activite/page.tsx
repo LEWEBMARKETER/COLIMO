@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getHistoriqueActionsAdmin, getUtilisateurs } from "@/lib/api";
 import { ACTION_ADMIN_LABELS, type HistoriqueActionAdmin, type Utilisateur } from "@colimo/shared";
 
@@ -33,46 +34,46 @@ export default function JournalActivitePage() {
       </p>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-            <tr>
-              <th className="px-4 py-3 font-medium">Administrateur</th>
-              <th className="px-4 py-3 font-medium">Action</th>
-              <th className="px-4 py-3 font-medium">Cible</th>
-              <th className="px-4 py-3 font-medium">Résultat</th>
-              <th className="px-4 py-3 font-medium">Date / heure</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+              <TableHead>Administrateur</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Cible</TableHead>
+              <TableHead>Résultat</TableHead>
+              <TableHead>Date / heure</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {actions.map((a) => (
-              <tr key={a.id} className="border-b border-colimo-neutre-clair last:border-0">
-                <td className="px-4 py-3 font-medium text-colimo-neutre-fonce">
+              <TableRow key={a.id} className="border-colimo-neutre-clair">
+                <TableCell className="font-medium text-colimo-neutre-fonce">
                   {nomParId.get(a.administrateurId) ?? "—"}
-                </td>
-                <td className="px-4 py-3">{ACTION_ADMIN_LABELS[a.action]}</td>
-                <td className="px-4 py-3 text-colimo-neutre-fonce/70">
+                </TableCell>
+                <TableCell>{ACTION_ADMIN_LABELS[a.action]}</TableCell>
+                <TableCell className="text-colimo-neutre-fonce/70">
                   {a.cibleId ? (nomParId.get(a.cibleId) ?? "—") : "—"}
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <StatutBadge
                     statut={a.resultat === "succes" ? "actif" : "echec"}
                     label={a.resultat === "succes" ? "Succès" : "Échec"}
                   />
-                </td>
-                <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/50">
+                </TableCell>
+                <TableCell className="text-xs text-colimo-neutre-fonce/50">
                   {new Date(a.createdAt).toLocaleString("fr-FR")}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {!chargement && actions.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+              <TableRow>
+                <TableCell colSpan={5} className="py-6 text-center text-colimo-neutre-fonce/50">
                   Aucune action enregistrée
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

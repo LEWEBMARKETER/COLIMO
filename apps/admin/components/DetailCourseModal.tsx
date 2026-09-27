@@ -1,3 +1,4 @@
+import ModalOverlay from "@/components/ModalOverlay";
 import StatutBadge from "@/components/StatutBadge";
 import {
   CATEGORIE_COLIS_LABELS,
@@ -61,11 +62,7 @@ export default function DetailCourseModal({
   onClose,
 }: DetailCourseModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div
-        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalOverlay onClose={onClose} maxWidth="max-w-2xl">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="font-titre text-lg font-semibold text-colimo-neutre-fonce">{course.numeroCommande}</h2>
@@ -200,7 +197,6 @@ export default function DetailCourseModal({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </ModalOverlay>
   );
 }

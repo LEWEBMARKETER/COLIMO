@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
 import { router, useFocusEffect } from "expo-router";
 import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
 import CourseDisponibleCard from "@/components/CourseDisponibleCard";
@@ -68,8 +69,20 @@ export default function CoursierDashboard() {
     }, [chargerCourses])
   );
 
+  // Action la plus fréquente de l'écran (cf. colimo-mobile-ux) — un léger
+  // rebond confirme immédiatement l'appui, avant même la réponse serveur.
+  const echelleDisponibilite = useSharedValue(1);
+  const styleRangeeDisponibilite = useAnimatedStyle(() => ({
+    transform: [{ scale: echelleDisponibilite.value }],
+    borderColor: withTiming(coursier?.disponibilite ? "#C41E24" : "#2B2622", { duration: 250 }),
+  }));
+
   async function toggleDisponibilite(valeur: boolean) {
     if (!coursier) return;
+    echelleDisponibilite.value = withSequence(
+      withTiming(1.03, { duration: 90 }),
+      withSpring(1, { damping: 6, stiffness: 200 })
+    );
     await patchCoursier(coursier.id, { disponibilite: valeur });
     await refreshProfile();
   }
@@ -137,7 +150,10 @@ export default function CoursierDashboard() {
               </Text>
             </View>
 
-            <View className="mt-4 flex-row items-center justify-between rounded-lg border-2 border-colimo-neutre-fonce bg-white px-4 py-3">
+            <Animated.View
+              style={styleRangeeDisponibilite}
+              className="mt-4 flex-row items-center justify-between rounded-lg border-2 bg-white px-4 py-3"
+            >
               <View className="flex-1 pr-3">
                 <Text className="font-texte-medium text-colimo-neutre-fonce">Disponible</Text>
                 <Text className="font-texte text-xs text-colimo-neutre-fonce/60">
@@ -150,7 +166,7 @@ export default function CoursierDashboard() {
                 disabled={coursier?.statutVerification !== "valide" || compteBloque}
                 trackColor={{ true: "#C41E24" }}
               />
-            </View>
+            </Animated.View>
 
             {erreur && <Text className="mt-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 

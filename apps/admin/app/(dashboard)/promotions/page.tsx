@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCodesPromo, getCourses, creerCodePromo, patchCodePromo } from "@/lib/api";
 import type { CodePromo, Course, TypeReductionPromo } from "@colimo/shared";
 
@@ -75,14 +77,15 @@ export default function PromotionsPage() {
             placeholder="CODE"
             className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm uppercase"
           />
-          <select
-            value={typeReduction}
-            onChange={(e) => setTypeReduction(e.target.value as TypeReductionPromo)}
-            className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
-          >
-            <option value="pourcentage">Pourcentage (%)</option>
-            <option value="montant_fixe">Montant fixe (FCFA)</option>
-          </select>
+          <Select value={typeReduction} onValueChange={(v) => setTypeReduction(v as TypeReductionPromo)}>
+            <SelectTrigger className="h-auto rounded-md border-colimo-neutre-clair px-3 py-2 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pourcentage">Pourcentage (%)</SelectItem>
+              <SelectItem value="montant_fixe">Montant fixe (FCFA)</SelectItem>
+            </SelectContent>
+          </Select>
           <input
             value={valeur}
             onChange={(e) => setValeur(e.target.value)}
@@ -115,52 +118,52 @@ export default function PromotionsPage() {
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-            <tr>
-              <th className="px-4 py-3 font-medium">Code</th>
-              <th className="px-4 py-3 font-medium">Réduction</th>
-              <th className="px-4 py-3 font-medium">Usage</th>
-              <th className="px-4 py-3 font-medium">Fin</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+              <TableHead>Code</TableHead>
+              <TableHead>Réduction</TableHead>
+              <TableHead>Usage</TableHead>
+              <TableHead>Fin</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {codes.map((promo) => (
-              <tr key={promo.id} className="border-b border-colimo-neutre-clair last:border-0">
-                <td className="px-4 py-3 font-mono">{promo.code}</td>
-                <td className="px-4 py-3">
+              <TableRow key={promo.id} className="border-colimo-neutre-clair">
+                <TableCell className="font-mono">{promo.code}</TableCell>
+                <TableCell>
                   {promo.typeReduction === "pourcentage" ? `${promo.valeur}%` : `${promo.valeur} FCFA`}
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   {usageReel(promo.id)} {promo.usageMax ? `/ ${promo.usageMax}` : ""}
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   {promo.dateFin ? new Date(promo.dateFin).toLocaleDateString("fr-FR") : "—"}
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <StatutBadge statut={promo.actif ? "actif" : "suspendu"} label={promo.actif ? "Actif" : "Inactif"} />
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <button
                     onClick={() => toggleActif(promo)}
                     className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                   >
                     {promo.actif ? "Désactiver" : "Activer"}
                   </button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {!chargement && codes.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+              <TableRow>
+                <TableCell colSpan={6} className="py-6 text-center text-colimo-neutre-fonce/50">
                   Aucun code promo créé
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

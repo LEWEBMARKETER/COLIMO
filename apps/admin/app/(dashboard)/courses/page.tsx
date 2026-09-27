@@ -6,6 +6,19 @@ import StatutBadge from "@/components/StatutBadge";
 import CarteCourses from "@/components/CarteCourses";
 import DetailCourseModal from "@/components/DetailCourseModal";
 import ValidationLivraisonModal from "@/components/ValidationLivraisonModal";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   annulerCourseAdmin,
   getConfirmationsLivraisonAdmin,
@@ -172,14 +185,6 @@ function CoursesContenu() {
 
   async function marquerRetournee(course: Course) {
     const frais = calculerFraisRetour(course.prix);
-    if (
-      !window.confirm(
-        `Marquer le colis de ${course.numeroCommande} comme retourné ? Le client sera facturé ${formatFCFA(
-          frais
-        )} (50% du prix), conformément à la politique de retour.`
-      )
-    )
-      return;
     const misAJour = await patchCourse(course.id, { statut: "retournee", fraisRetour: frais });
     setCourses((prev) => prev.map((c) => (c.id === course.id ? misAJour : c)));
   }
@@ -214,18 +219,19 @@ function CoursesContenu() {
           >
             À confirmer ({coursesAConfirmer.length})
           </button>
-          <select
-            value={filtreZone}
-            onChange={(e) => setFiltreZone(e.target.value)}
-            className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-          >
-            <option value="toutes">Toutes les zones</option>
-            {ZONES.map((zone) => (
-              <option key={zone} value={zone}>
-                {ZONE_LABELS[zone]}
-              </option>
-            ))}
-          </select>
+          <Select value={filtreZone} onValueChange={setFiltreZone}>
+            <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="toutes">Toutes les zones</SelectItem>
+              {ZONES.map((zone) => (
+                <SelectItem key={zone} value={zone}>
+                  {ZONE_LABELS[zone]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -251,27 +257,27 @@ function CoursesContenu() {
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-            <tr>
-              <th className="px-4 py-3 font-medium">N° commande</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Client</th>
-              <th className="px-4 py-3 font-medium">Coursier</th>
-              <th className="px-4 py-3 font-medium">Trajet</th>
-              <th className="px-4 py-3 font-medium">Colis</th>
-              <th className="px-4 py-3 font-medium">Prix</th>
-              <th className="px-4 py-3 font-medium">Paiement</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
-              <th className="px-4 py-3 font-medium">Preuve de livraison</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+              <TableHead>N° commande</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Coursier</TableHead>
+              <TableHead>Trajet</TableHead>
+              <TableHead>Colis</TableHead>
+              <TableHead>Prix</TableHead>
+              <TableHead>Paiement</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Preuve de livraison</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {coursesAffichees.map((course) => (
-              <tr key={course.id} className="border-b border-colimo-neutre-clair last:border-0">
-                <td className="px-4 py-3 font-mono text-xs text-colimo-neutre-fonce/70">{course.numeroCommande}</td>
-                <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+              <TableRow key={course.id} className="border-colimo-neutre-clair">
+                <TableCell className="font-mono text-xs text-colimo-neutre-fonce/70">{course.numeroCommande}</TableCell>
+                <TableCell className="text-xs text-colimo-neutre-fonce/70">
                   {new Date(course.createdAt).toLocaleString("fr-FR", {
                     day: "2-digit",
                     month: "2-digit",
@@ -279,14 +285,14 @@ function CoursesContenu() {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                </td>
-                <td className="px-4 py-3">{nomUtilisateur(course.clientId)}</td>
-                <td className="px-4 py-3">{course.coursierId ? nomUtilisateur(course.coursierId) : "—"}</td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>{nomUtilisateur(course.clientId)}</TableCell>
+                <TableCell>{course.coursierId ? nomUtilisateur(course.coursierId) : "—"}</TableCell>
+                <TableCell>
                   {ZONE_LABELS[course.zoneDepart]} → {ZONE_LABELS[course.zoneArrivee]}
-                </td>
-                <td className="px-4 py-3">{CATEGORIE_COLIS_LABELS[course.categorieColis]}</td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>{CATEGORIE_COLIS_LABELS[course.categorieColis]}</TableCell>
+                <TableCell>
                   {formatFCFA(course.prix)}
                   <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">
                     Commission : {formatFCFA(course.commission)}
@@ -296,12 +302,12 @@ function CoursesContenu() {
                       Retour : {formatFCFA(course.fraisRetour)}
                     </p>
                   )}
-                </td>
-                <td className="px-4 py-3">{MODE_PAIEMENT_LABELS[course.modePaiement]}</td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>{MODE_PAIEMENT_LABELS[course.modePaiement]}</TableCell>
+                <TableCell>
                   <StatutBadge statut={course.statut} label={COURSE_STATUS_LABELS[course.statut]} />
-                </td>
-                <td className="px-4 py-3 text-xs">
+                </TableCell>
+                <TableCell className="text-xs">
                   {(() => {
                     const confirmation = confirmationParCourse.get(course.id);
                     if (!confirmation) return <span className="text-colimo-neutre-fonce/40">—</span>;
@@ -327,29 +333,33 @@ function CoursesContenu() {
                       </div>
                     );
                   })()}
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <div className="flex flex-col gap-1.5">
-                    <select
-                      value={course.coursierId ?? ""}
-                      onChange={(e) => reattribuer(course, e.target.value)}
-                      className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs"
+                    <Select
+                      value={course.coursierId ?? "aucun"}
+                      onValueChange={(v) => reattribuer(course, v === "aucun" ? "" : v)}
                     >
-                      <option value="">Sans coursier</option>
-                      {/* Attribution manuelle réservée aux coursiers en ligne ;
-                          le coursier déjà assigné reste visible même hors ligne,
-                          pour ne pas fausser l'état affiché du select. */}
-                      {(course.coursierId && !coursiersEnLigne.some((c) => c.utilisateurId === course.coursierId)
-                        ? [...coursiers.filter((c) => c.utilisateurId === course.coursierId), ...coursiersEnLigne]
-                        : coursiersEnLigne
-                      ).map((c) => (
-                        <option key={c.utilisateurId} value={c.utilisateurId}>
-                          {c.utilisateur.prenom ? `${c.utilisateur.prenom} ` : ""}
-                          {c.utilisateur.nom}
-                          {c.statut !== "en_ligne" ? " (hors ligne)" : ""}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-auto rounded-md border-colimo-neutre-clair px-2 py-1 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="aucun">Sans coursier</SelectItem>
+                        {/* Attribution manuelle réservée aux coursiers en ligne ;
+                            le coursier déjà assigné reste visible même hors ligne,
+                            pour ne pas fausser l'état affiché du select. */}
+                        {(course.coursierId && !coursiersEnLigne.some((c) => c.utilisateurId === course.coursierId)
+                          ? [...coursiers.filter((c) => c.utilisateurId === course.coursierId), ...coursiersEnLigne]
+                          : coursiersEnLigne
+                        ).map((c) => (
+                          <SelectItem key={c.utilisateurId} value={c.utilisateurId}>
+                            {c.utilisateur.prenom ? `${c.utilisateur.prenom} ` : ""}
+                            {c.utilisateur.nom}
+                            {c.statut !== "en_ligne" ? " (hors ligne)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <button
                       onClick={() => setCourseDetail(course)}
                       className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
@@ -391,27 +401,45 @@ function CoursesContenu() {
                       </button>
                     )}
                     {STATUTS_RETOURNABLES.has(course.statut) && (
-                      <button
-                        onClick={() => marquerRetournee(course)}
-                        className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
-                      >
-                        Colis retourné
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair">
+                            Colis retourné
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Marquer ce colis comme retourné ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Le client de {course.numeroCommande} sera facturé{" "}
+                              {formatFCFA(calculerFraisRetour(course.prix))} (50% du prix), conformément à la
+                              politique de retour.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => marquerRetournee(course)}>Confirmer</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                     {panneauAnnulation === course.id && (
                       <div className="mt-1 w-56 rounded-md border border-colimo-neutre-clair bg-colimo-fond p-2">
-                        <select
-                          value={motifAnnulation}
-                          onChange={(e) => setMotifAnnulation(e.target.value as MotifAnnulationAdmin)}
-                          className="mb-2 w-full rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs"
+                        <Select
+                          value={motifAnnulation || undefined}
+                          onValueChange={(v) => setMotifAnnulation(v as MotifAnnulationAdmin)}
                         >
-                          <option value="">Motif de l'annulation…</option>
-                          {MOTIFS_ADMIN.map((m) => (
-                            <option key={m.valeur} value={m.valeur}>
-                              {m.label}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="mb-2 h-auto w-full rounded-md border-colimo-neutre-clair px-2 py-1 text-xs">
+                            <SelectValue placeholder="Motif de l'annulation…" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MOTIFS_ADMIN.map((m) => (
+                              <SelectItem key={m.valeur} value={m.valeur}>
+                                {m.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <textarea
                           value={commentaireAnnulation}
                           onChange={(e) => setCommentaireAnnulation(e.target.value)}
@@ -442,18 +470,18 @@ function CoursesContenu() {
                       </div>
                     )}
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {!chargement && coursesAffichees.length === 0 && (
-              <tr>
-                <td colSpan={11} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+              <TableRow>
+                <TableCell colSpan={11} className="py-6 text-center text-colimo-neutre-fonce/50">
                   Aucune course pour ce filtre
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {courseDetail && (

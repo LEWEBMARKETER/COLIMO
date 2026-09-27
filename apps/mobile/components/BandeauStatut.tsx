@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { Text } from "react-native";
+import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { COURSE_STATUS_LABELS, type CourseStatus } from "@colimo/shared";
 import { TEINTES_STATUT } from "@/components/ui/StatutChip";
 
@@ -15,10 +16,17 @@ interface BandeauStatutProps {
  */
 export default function BandeauStatut({ statut, numeroCommande }: BandeauStatutProps) {
   const teinte = TEINTES_STATUT[statut];
+  // Fondu de couleur plutôt qu'un changement de statut en coupe sèche — un
+  // changement de statut serveur (retrait → en_cours, par ex.) devient
+  // visible, pas juste "la page a changé".
+  const style = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(teinte.forte, { duration: 300 }),
+  }));
+
   return (
-    <View style={{ backgroundColor: teinte.forte }} className="flex-row items-baseline justify-between px-6 py-4">
+    <Animated.View style={style} className="flex-row items-baseline justify-between px-6 py-4">
       <Text className="font-titre-bold text-lg text-white">{COURSE_STATUS_LABELS[statut]}</Text>
       <Text className="font-texte-medium text-xs text-white/75">{numeroCommande}</Text>
-    </View>
+    </Animated.View>
   );
 }

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import StatutBadge from "@/components/StatutBadge";
 import StatCard from "@/components/StatCard";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getParticipantsProgramme, getProgramme, patchProgramme, traiterCandidatureProgramme } from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 import {
@@ -187,28 +189,30 @@ export default function FicheProgrammePage() {
               rows={2}
               className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm sm:col-span-2"
             />
-            <select
-              value={cible}
-              onChange={(e) => setCible(e.target.value as ProgramTargetType)}
-              className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
-            >
-              {CIBLES.map((c) => (
-                <option key={c} value={c}>
-                  {PROGRAM_TARGET_TYPE_LABELS[c]}
-                </option>
-              ))}
-            </select>
-            <select
-              value={statut}
-              onChange={(e) => setStatut(e.target.value as ProgramStatus)}
-              className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
-            >
-              {STATUTS_PROGRAMME.map((s) => (
-                <option key={s} value={s}>
-                  {PROGRAM_STATUS_LABELS[s]}
-                </option>
-              ))}
-            </select>
+            <Select value={cible} onValueChange={(v) => setCible(v as ProgramTargetType)}>
+              <SelectTrigger className="h-auto rounded-md border-colimo-neutre-clair px-3 py-2 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CIBLES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {PROGRAM_TARGET_TYPE_LABELS[c]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statut} onValueChange={(v) => setStatut(v as ProgramStatus)}>
+              <SelectTrigger className="h-auto rounded-md border-colimo-neutre-clair px-3 py-2 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUTS_PROGRAMME.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {PROGRAM_STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <input
               value={maxParticipants}
               onChange={(e) => setMaxParticipants(e.target.value)}
@@ -258,28 +262,28 @@ export default function FicheProgrammePage() {
         </div>
 
         <div className="mt-3 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-              <tr>
-                <th className="px-4 py-3 font-medium">Commerce / utilisateur</th>
-                <th className="px-4 py-3 font-medium">Contact</th>
-                <th className="px-4 py-3 font-medium">Date de candidature</th>
-                <th className="px-4 py-3 font-medium">Statut</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                <TableHead>Commerce / utilisateur</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Date de candidature</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {participantsFiltres.map((p) => {
                 const nomAffiche = p.utilisateur ? (p.utilisateur.prenom ? `${p.utilisateur.prenom} ${p.utilisateur.nom}` : p.utilisateur.nom) : "—";
                 return (
-                  <tr key={p.id} className="border-b border-colimo-neutre-clair last:border-0">
-                    <td className="px-4 py-3 font-medium text-colimo-neutre-fonce">{nomAffiche}</td>
-                    <td className="px-4 py-3 text-colimo-neutre-fonce/70">{p.utilisateur?.telephone ?? "—"}</td>
-                    <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/50">{new Date(p.appliedAt).toLocaleString("fr-FR")}</td>
-                    <td className="px-4 py-3">
+                  <TableRow key={p.id} className="border-colimo-neutre-clair">
+                    <TableCell className="font-medium text-colimo-neutre-fonce">{nomAffiche}</TableCell>
+                    <TableCell className="text-colimo-neutre-fonce/70">{p.utilisateur?.telephone ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-colimo-neutre-fonce/50">{new Date(p.appliedAt).toLocaleString("fr-FR")}</TableCell>
+                    <TableCell>
                       <StatutBadge statut={p.status} label={PROGRAM_PARTICIPANT_STATUS_LABELS[p.status]} />
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <div className="flex flex-wrap gap-1.5">
                         {p.status === "pending" && (
                           <>
@@ -306,19 +310,19 @@ export default function FicheProgrammePage() {
                           Voir le profil
                         </Link>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
               {participantsFiltres.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <TableRow>
+                  <TableCell colSpan={5} className="py-6 text-center text-colimo-neutre-fonce/50">
                     Aucune candidature
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>
