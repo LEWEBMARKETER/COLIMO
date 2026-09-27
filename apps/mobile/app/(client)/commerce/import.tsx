@@ -212,7 +212,7 @@ export default function ImportCommandesMasseScreen() {
               <Text className="mb-3 font-texte text-xs text-colimo-neutre-fonce/50">
                 La même pour toutes les commandes de ce lot.
               </Text>
-              <ZoneSelector label="Zone de départ" value={zoneDepart} onChange={setZoneDepart} />
+              <ZoneSelector label="Zone de départ" value={zoneDepart} onChange={setZoneDepart} role="depart" />
               <ChampTexte
                 label="Adresse de retrait"
                 value={adresseDepart}

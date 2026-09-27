@@ -1,4 +1,4 @@
-import type { Zone } from "../types";
+import { ZONE_LABELS, type Zone } from "../types";
 
 // Grille tarifaire V2 — docs/COLIMO_CONTEXTE_PROJET.md §4 (nouvelle grille,
 // tarif fixe par trajet — remplace l'ancienne fourchette min/max).
@@ -32,6 +32,25 @@ export function getTarifBase(depart: Zone, arrivee: Zone): number | undefined {
 
 export function isRouteDesservie(depart: Zone, arrivee: Zone): boolean {
   return getTarifBase(depart, arrivee) !== undefined;
+}
+
+// Dérivées de GRILLE_TARIFAIRE (jamais une liste séparée à maintenir à la
+// main) — sert à ne proposer, dans les sélecteurs de zone, que des zones
+// vers/depuis lesquelles une course peut réellement être créée. Ex :
+// Bikélé-Essassa n'est desservie qu'en arrivée (jamais en départ), PK12
+// n'est desservie dans aucun sens pour l'instant.
+export function zonesDepartDesservies(): Zone[] {
+  const departs = new Set(Object.keys(GRILLE_TARIFAIRE).map((cle) => cle.split("|")[0] as Zone));
+  return (Object.keys(ZONE_LABELS) as Zone[]).filter((zone) => departs.has(zone));
+}
+
+export function zonesArriveeDesservies(depart?: Zone | null): Zone[] {
+  const arrivees = new Set(
+    Object.keys(GRILLE_TARIFAIRE)
+      .filter((cle) => !depart || cle.startsWith(`${depart}|`))
+      .map((cle) => cle.split("|")[1] as Zone)
+  );
+  return (Object.keys(ZONE_LABELS) as Zone[]).filter((zone) => arrivees.has(zone));
 }
 
 /**
