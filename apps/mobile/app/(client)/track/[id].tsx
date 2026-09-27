@@ -1,7 +1,18 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, ScrollView, Share, Text, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { router, useLocalSearchParams } from "expo-router";
@@ -68,12 +79,56 @@ function PointRecherche() {
   return <Animated.View style={style} className="h-2.5 w-2.5 rounded-full bg-colimo-rouge" />;
 }
 
+// Retour transitoire sur "Confirmer la réception du colis" — la seule
+// action qui clôture le parcours client, jusqu'ici accompagnée d'un son
+// mais d'aucun feedback visuel dédié. Se referme seule (ou au premier tap) ;
+// le bandeau de statut et la timeline en dessous restent la source de
+// vérité, cet écran ne fait que marquer l'instant où l'action a réussi.
+function ConfirmationReception({ onTermine }: { onTermine: () => void }) {
+  const echelle = useSharedValue(0.5);
+
+  useEffect(() => {
+    echelle.value = withSequence(
+      withTiming(1.15, { duration: 220, easing: Easing.out(Easing.ease) }),
+      withSpring(1, { damping: 9 })
+    );
+    const minuteur = setTimeout(onTermine, 2200);
+    return () => clearTimeout(minuteur);
+  }, [echelle, onTermine]);
+
+  const stylePulsation = useAnimatedStyle(() => ({ transform: [{ scale: echelle.value }] }));
+
+  return (
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
+      className="absolute inset-0 items-center justify-center bg-black/40 px-8"
+    >
+      <Pressable onPress={onTermine} className="items-center rounded-2xl bg-white px-8 py-8">
+        <Animated.View
+          style={stylePulsation}
+          className="h-16 w-16 items-center justify-center rounded-full bg-colimo-succes"
+        >
+          <Ionicons name="checkmark" size={32} color="white" />
+        </Animated.View>
+        <Text className="mt-4 text-center font-titre-bold text-lg text-colimo-neutre-fonce">
+          Livraison confirmée !
+        </Text>
+        <Text className="mt-1 text-center font-texte text-sm text-colimo-neutre-fonce/60">
+          Merci d&apos;avoir utilisé COLIMO.
+        </Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export default function TrackScreen() {
   const { session, utilisateur } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [course, setCourse] = useState<Course | null>(null);
   const [confirmationEnCours, setConfirmationEnCours] = useState(false);
   const [erreurConfirmation, setErreurConfirmation] = useState<string | null>(null);
+  const [confirmationReussieVisible, setConfirmationReussieVisible] = useState(false);
   const [coursier, setCoursier] = useState<Coursier | null>(null);
   const [coursierUtilisateur, setCoursierUtilisateur] = useState<Utilisateur | null>(null);
   const [positionCoursier, setPositionCoursier] = useState<PositionCoursier | null>(null);
@@ -122,6 +177,7 @@ export default function TrackScreen() {
     try {
       await confirmerReceptionClient(course.id);
       jouerIdentiteSonoreColimo();
+      setConfirmationReussieVisible(true);
       const misAJour = await getCourse(course.id);
       setCourse(misAJour);
       await notifierEvenement("livraison_terminee", {
@@ -419,13 +475,24 @@ export default function TrackScreen() {
               </View>
               <NoteEtoiles note={coursier?.noteMoyenne ?? 0} />
             </View>
-            {coursierUtilisateur.telephone && !contactsFermes && (
-              <Bouton
-                label={`Appeler ${coursierUtilisateur.prenom ?? coursierUtilisateur.nom}`}
-                variante="contour"
-                onPress={() => Linking.openURL(`tel:${coursierUtilisateur.telephone}`)}
-                className="mt-3 py-2.5"
-              />
+            {!contactsFermes && (
+              <View className="mt-3 flex-row items-center gap-2">
+                {coursierUtilisateur.telephone && (
+                  <Bouton
+                    label={`Appeler ${coursierUtilisateur.prenom ?? coursierUtilisateur.nom}`}
+                    variante="contour"
+                    onPress={() => Linking.openURL(`tel:${coursierUtilisateur.telephone}`)}
+                    className="flex-1 py-2.5"
+                  />
+                )}
+                <Pressable
+                  onPress={() => router.push(`/(client)/chat/${course.id}`)}
+                  hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+                  className="h-11 w-11 items-center justify-center rounded-full border border-colimo-neutre-clair bg-white"
+                >
+                  <Ionicons name="chatbubble-outline" size={20} color="#2B2622" />
+                </Pressable>
+              </View>
             )}
           </View>
         )}
@@ -513,20 +580,14 @@ export default function TrackScreen() {
         )}
       </ScrollView>
 
-      {(course.statut === "livree" ||
-        (course.coursierId && !contactsFermes) ||
-        STATUTS_SIGNALABLES.has(course.statut) ||
-        peutAnnulerCourse(course)) && (
+      {(course.statut === "livree" || STATUTS_SIGNALABLES.has(course.statut) || peutAnnulerCourse(course)) && (
         <View className="border-t border-colimo-neutre-clair bg-colimo-fond px-6 pb-2 pt-3">
-          {(STATUTS_SIGNALABLES.has(course.statut) || (course.coursierId && !contactsFermes)) && (
-            <Text className="mb-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50">
-              {STATUTS_SIGNALABLES.has(course.statut) && (
-                <Text onPress={signalerProbleme}>Signaler un problème</Text>
-              )}
-              {STATUTS_SIGNALABLES.has(course.statut) && course.coursierId && !contactsFermes && "  ·  "}
-              {course.coursierId && !contactsFermes && (
-                <Text onPress={() => router.push(`/(client)/chat/${course.id}`)}>Discuter avec le coursier</Text>
-              )}
+          {STATUTS_SIGNALABLES.has(course.statut) && (
+            <Text
+              onPress={signalerProbleme}
+              className="mb-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50"
+            >
+              Signaler un problème
             </Text>
           )}
           {course.statut === "livree" && (
@@ -579,6 +640,10 @@ export default function TrackScreen() {
           </View>
         </View>
       </BottomSheet>
+
+      {confirmationReussieVisible && (
+        <ConfirmationReception onTermine={() => setConfirmationReussieVisible(false)} />
+      )}
     </SafeAreaView>
   );
 }

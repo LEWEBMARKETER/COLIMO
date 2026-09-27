@@ -10,3 +10,8 @@ build/
 .env.local
 .DS_Store
 web-build/
+
+# Binaire compilé du skill impeccable (téléchargé automatiquement au premier
+# usage par .claude/skills/impeccable/scripts/impeccable, ~18 Mo) — jamais
+# versionné, comme l'upstream ne le fait pas lui-même.
+.claude/skills/impeccable/scripts/bin/

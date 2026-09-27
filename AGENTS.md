@@ -53,13 +53,24 @@ Ces cinq skills documentent l'architecture **produit** de COLIMO
 (navigation, statuts de livraison, forfaits). Ils complètent, sans les
 dupliquer, les skills de **craft visuel** déjà présents sous
 `.claude/skills/` (`world-class-ui-ux`, `design-system`, `mobile-ux`,
-`motion-design`, `ux-audit`) — ceux-là couvrent les principes génériques et
-l'audit pleine-app ; ceux-ci couvrent les patrons spécifiques à COLIMO et
-les bugs de référence déjà rencontrés et corrigés dans ce repo. En cas de
-recouvrement apparent entre un skill `.agents/skills/colimo-*` et son
-équivalent `.claude/skills/*`, charger les deux : le second donne les
-principes, le premier donne les faits concrets de ce repo (chemins de
-fichiers, précédents, bugs corrigés).
+`motion-design`, `ux-audit`, `impeccable`) — ceux-là couvrent les principes
+génériques et l'audit pleine-app ; ceux-ci couvrent les patrons spécifiques
+à COLIMO et les bugs de référence déjà rencontrés et corrigés dans ce
+repo. En cas de recouvrement apparent entre un skill
+`.agents/skills/colimo-*` et son équivalent `.claude/skills/*`, charger
+les deux : le second donne les principes, le premier donne les faits
+concrets de ce repo (chemins de fichiers, précédents, bugs corrigés).
+
+`impeccable` (vendoré depuis [pbakaus/impeccable](https://github.com/pbakaus/impeccable),
+Apache 2.0 — voir `.claude/skills/impeccable/NOTICE.md`) apporte un
+vocabulaire de commandes (`critique`, `audit`, `polish`, `bolder`,
+`quieter`...) et un détecteur rapide de clichés d'UI générée par IA
+(dégradés génériques, cartes imbriquées, tout en Inter...). Le binaire
+compilé qu'il utilise n'est jamais versionné (`.claude/skills/impeccable/scripts/bin/`
+est dans `.gitignore`, comme en amont) — il se télécharge une seule fois
+au premier usage sur une machine avec accès réseau normal ; sans lui, le
+skill continue de fonctionner en lisant directement `PRODUCT.md`/`DESIGN.md`
+(dégradation documentée dans son propre `SKILL.md`).
 
 ## Règles transverses non négociables
 
