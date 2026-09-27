@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { router, useLocalSearchParams } from "expo-router";
@@ -28,6 +29,7 @@ import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import NoteEtoiles from "@/components/NoteEtoiles";
 import Bouton from "@/components/ui/Bouton";
+import BottomSheet from "@/components/ui/BottomSheet";
 import Carte from "@/components/ui/Carte";
 import ChiffreCle from "@/components/ui/ChiffreCle";
 import {
@@ -53,6 +55,18 @@ const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"
 const STATUTS_AVEC_POSITION = new Set(["acceptee", "retrait", "en_cours"]);
 const STATUTS_TERMINAUX = new Set(["livree", "confirmee", "annulee", "retournee"]);
 const STATUTS_AVEC_OTP = new Set(["acceptee", "retrait", "en_cours"]);
+
+// Pastille qui pulse pendant la recherche — indique un processus actif en
+// arrière-plan, pas un écran figé (seule animation en boucle de cet écran,
+// visible uniquement tant que le bottom sheet de recherche est affiché).
+function PointRecherche() {
+  const echelle = useSharedValue(1);
+  useEffect(() => {
+    echelle.value = withRepeat(withTiming(1.6, { duration: 700, easing: Easing.inOut(Easing.ease) }), -1, true);
+  }, [echelle]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: echelle.value }] }));
+  return <Animated.View style={style} className="h-2.5 w-2.5 rounded-full bg-colimo-rouge" />;
+}
 
 export default function TrackScreen() {
   const { session, utilisateur } = useAuth();
@@ -553,6 +567,18 @@ export default function TrackScreen() {
           />
         </View>
       )}
+
+      <BottomSheet visible={course.statut === "en_attente"}>
+        <View className="flex-row items-center gap-3">
+          <PointRecherche />
+          <View className="flex-1">
+            <Text className="font-titre-bold text-base text-colimo-neutre-fonce">Recherche d&apos;un coursier…</Text>
+            <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/60">
+              Nous recherchons un coursier disponible à proximité.
+            </Text>
+          </View>
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }

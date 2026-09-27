@@ -1,8 +1,19 @@
 import { Text, View } from "react-native";
+import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
+import { colors } from "@colimo/shared";
 
 interface StepperProps {
   etapes: string[];
   etapeActuelle: number;
+}
+
+// Transition de couleur animée plutôt qu'un changement instantané — la
+// progression se "voit" avancer plutôt que de sauter d'un état à l'autre.
+function Segment({ actif }: { actif: boolean }) {
+  const style = useAnimatedStyle(() => ({
+    backgroundColor: withTiming(actif ? colors.rougePrincipal : colors.neutreClair, { duration: 200 }),
+  }));
+  return <Animated.View style={style} className="h-1.5 flex-1 rounded-full" />;
 }
 
 export default function Stepper({ etapes, etapeActuelle }: StepperProps) {
@@ -10,12 +21,7 @@ export default function Stepper({ etapes, etapeActuelle }: StepperProps) {
     <View>
       <View className="flex-row items-center gap-1.5">
         {etapes.map((_, index) => (
-          <View
-            key={index}
-            className={`h-1.5 flex-1 rounded-full ${
-              index <= etapeActuelle ? "bg-colimo-rouge" : "bg-colimo-neutre-clair"
-            }`}
-          />
+          <Segment key={index} actif={index <= etapeActuelle} />
         ))}
       </View>
       <View className="mt-2 flex-row items-center justify-between">

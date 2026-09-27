@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { SlideInLeft, SlideInRight } from "react-native-reanimated";
 import { router } from "expo-router";
 import {
   CATEGORIE_COLIS_EMOJIS,
@@ -65,6 +66,7 @@ const ETAPES = ["Récupération", "Livraison", "Colis", "Options", "Paiement", "
 export default function PublishScreen() {
   const { session, utilisateur } = useAuth();
   const [etape, setEtape] = useState(0);
+  const [direction, setDirection] = useState<"avant" | "arriere">("avant");
 
   // Étape 1 — récupération
   const [depart, setDepart] = useState<Zone | null>(utilisateur?.zone ?? null);
@@ -147,10 +149,12 @@ export default function PublishScreen() {
 
   function suivant() {
     if (!validationParEtape[etape]) return;
+    setDirection("avant");
     setEtape((e) => Math.min(e + 1, ETAPES.length - 1));
   }
 
   function precedent() {
+    setDirection("arriere");
     setEtape((e) => Math.max(e - 1, 0));
   }
 
@@ -234,6 +238,7 @@ export default function PublishScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}>
+        <Animated.View key={etape} entering={direction === "avant" ? SlideInRight.duration(220) : SlideInLeft.duration(220)}>
         {etape === 0 && (
           <>
             <ChampTexte
@@ -429,6 +434,7 @@ export default function PublishScreen() {
             )}
           </>
         )}
+        </Animated.View>
 
         {erreur && <Text className="mb-4 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 
