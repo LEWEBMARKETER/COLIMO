@@ -15,6 +15,21 @@ module.exports = {
         "colimo-fond": "#FAF8F5",
         "colimo-noir": "#18140F",
         "colimo-noir-clair": "#26201A",
+
+        // Nuances dérivées + couleurs sémantiques (LOT 1) — mêmes valeurs
+        // que packages/shared/src/theme/index.ts.
+        "colimo-surface": "#FFFFFF",
+        "colimo-bordure": "#E8E2DA",
+        "colimo-survol": "#F5F1EC",
+        "colimo-selection-fond": "#FBE7E7",
+        "colimo-selection-texte": "#9E1419",
+        "colimo-desactive-fond": "#F1EDEA",
+        "colimo-succes": "#2F7D5C",
+        "colimo-succes-fond": "#E6F3ED",
+        "colimo-avertissement": "#B8720D",
+        "colimo-avertissement-fond": "#FBEEDC",
+        "colimo-info": "#3B6B8C",
+        "colimo-info-fond": "#E7F0F5",
       },
       fontFamily: {
         titre: ["Poppins_600SemiBold"],

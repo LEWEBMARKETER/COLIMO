@@ -8,6 +8,8 @@ import Carte from "@/components/ui/Carte";
 import CarteAction from "@/components/ui/CarteAction";
 import CarteInfoConfiance from "@/components/ui/CarteInfoConfiance";
 import CarteCourseRecente from "@/components/ui/CarteCourseRecente";
+import { CarteCourseRecenteSkeleton } from "@/components/ui/Skeleton";
+import TitreSection from "@/components/ui/TitreSection";
 import BandeauNotificationsPush from "@/components/BandeauNotificationsPush";
 import ClocheNotifications from "@/components/ClocheNotifications";
 import CommerceDashboard from "@/components/CommerceDashboard";
@@ -20,12 +22,15 @@ const STATUTS_TERMINES = new Set(["confirmee", "annulee"]);
 export default function ClientHome() {
   const { session, utilisateur } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
     if (!session) return;
     // Une seule requête, réutilisée pour la course active et "Vos dernières
     // livraisons" — évite un second appel réseau pour la même donnée.
-    getCourses({ clientId: session.user.id }).then(setCourses);
+    getCourses({ clientId: session.user.id })
+      .then(setCourses)
+      .finally(() => setChargement(false));
   }, [session]);
 
   if (utilisateur?.typeClient === "commerce") {
@@ -50,9 +55,9 @@ export default function ClientHome() {
         <FondEntete className="px-6 pb-6 pt-8">
           <View className="flex-row items-center gap-3">
             {utilisateur?.photoUrl ? (
-              <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full" />
+              <Image source={{ uri: utilisateur.photoUrl }} className="h-12 w-12 rounded-full border-2 border-white" />
             ) : (
-              <View className="h-12 w-12 items-center justify-center rounded-full bg-colimo-rouge-clair">
+              <View className="h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-colimo-rouge-clair">
                 <Text className="font-titre text-colimo-rouge">{(utilisateur?.nom ?? "?").charAt(0).toUpperCase()}</Text>
               </View>
             )}
@@ -77,13 +82,13 @@ export default function ClientHome() {
         <View className="px-6">
           {courseActive && (
             <Pressable onPress={() => router.push(`/(client)/track/${courseActive.id}`)} className="mt-6">
-              <Carte>
-                <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/50">Course en cours</Text>
-                <Text className="mt-1 font-texte-medium text-colimo-neutre-fonce">
+              <Carte sombre degrade>
+                <Text className="font-texte-medium text-xs text-white/50">Course en cours</Text>
+                <Text className="mt-1 font-texte-medium text-white">
                   {ZONE_LABELS[courseActive.zoneDepart]} → {ZONE_LABELS[courseActive.zoneArrivee]}
                 </Text>
                 <View className="mt-2 flex-row items-center justify-between">
-                  <Text className="font-titre text-colimo-rouge">{formatFCFA(courseActive.prix)}</Text>
+                  <Text className="font-titre text-white">{formatFCFA(courseActive.prix)}</Text>
                   <StatutChip statut={courseActive.statut} intensite="douce" />
                 </View>
               </Carte>
@@ -91,7 +96,7 @@ export default function ClientHome() {
           )}
 
           <View className="mt-6">
-            <Text className="font-titre text-base text-colimo-neutre-fonce">Que souhaitez-vous faire ?</Text>
+            <TitreSection>Que souhaitez-vous faire ?</TitreSection>
             <View className="mt-3 flex-row flex-wrap gap-3">
               <CarteAction icone="cube-outline" titre="Envoyer un colis" onPress={() => router.push("/(client)/publish")} />
               <CarteAction
@@ -109,20 +114,35 @@ export default function ClientHome() {
             </View>
           </View>
 
-          {dernieresCourses.length > 0 && (
+          {chargement ? (
             <View className="mt-6">
-              <Text className="font-titre text-base text-colimo-neutre-fonce">Vos dernières livraisons</Text>
+              <TitreSection>Vos dernières livraisons</TitreSection>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 className="mt-3"
                 contentContainerStyle={{ paddingRight: 6 }}
               >
-                {dernieresCourses.map((course) => (
-                  <CarteCourseRecente key={course.id} course={course} />
-                ))}
+                <CarteCourseRecenteSkeleton />
+                <CarteCourseRecenteSkeleton />
               </ScrollView>
             </View>
+          ) : (
+            dernieresCourses.length > 0 && (
+              <View className="mt-6">
+                <TitreSection>Vos dernières livraisons</TitreSection>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="mt-3"
+                  contentContainerStyle={{ paddingRight: 6 }}
+                >
+                  {dernieresCourses.map((course) => (
+                    <CarteCourseRecente key={course.id} course={course} />
+                  ))}
+                </ScrollView>
+              </View>
+            )
           )}
 
           <View className="mt-6">
