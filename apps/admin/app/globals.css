@@ -2,6 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Variables shadcn/ui mappées sur les tokens COLIMO existants
+ * (packages/shared/src/theme) — jamais la palette zinc/slate par défaut.
+ * Valeurs en HSL "H S% L%" (sans hsl(), format attendu par shadcn/ui) ;
+ * converties depuis les hex de la charte, voir commit pour le détail.
+ * Pas de bloc .dark : l'admin n'a pas de mode sombre aujourd'hui.
+ */
+@layer base {
+  :root {
+    --background: 36 33% 97%; /* colimo-fond #FAF8F5 */
+    --foreground: 27 12% 15%; /* colimo-neutre-fonce #2B2622 */
+
+    --card: 0 0% 100%; /* surface — nouveau token, cf. maquette LOT 1 */
+    --card-foreground: 27 12% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 27 12% 15%;
+
+    --primary: 358 73% 44%; /* colimo-rouge #C41E24 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 26 20% 93%; /* colimo-neutre-clair #F1EDEA */
+    --secondary-foreground: 27 12% 15%;
+
+    --muted: 26 20% 93%;
+    --muted-foreground: 30 9% 38%; /* dérivé de neutre-fonce, plus clair */
+
+    --accent: 0 71% 95%; /* colimo-rouge-clair #FBE7E7 */
+    --accent-foreground: 358 78% 35%; /* colimo-rouge-fonce #9E1419 */
+
+    --destructive: 358 78% 35%; /* colimo-rouge-fonce — distinct du rouge CTA */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 155 45% 34%;
+    --success-foreground: 0 0% 100%;
+    --warning: 35 87% 39%;
+    --warning-foreground: 0 0% 100%;
+    --info: 204 41% 39%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 34 23% 88%; /* dérivé — border, cf. maquette LOT 1 */
+    --input: 34 23% 88%;
+    --ring: 358 73% 44%; /* colimo-rouge */
+
+    --radius: 0.75rem; /* 12px — rayon des boutons/inputs existants */
+  }
+}
+
 body {
   background-color: theme("colors.colimo-fond");
   color: theme("colors.colimo-neutre-fonce");
