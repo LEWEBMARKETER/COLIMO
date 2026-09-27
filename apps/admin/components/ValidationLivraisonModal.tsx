@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ModalOverlay from "@/components/ModalOverlay";
 import {
   METHODE_VERIFICATION_LIVRAISON_LABELS,
   RESULTAT_VERIFICATION_LIVRAISON_LABELS,
@@ -74,12 +75,8 @@ export default function ValidationLivraisonModal({ course, onClose, onValide }: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {etapeFinale ? (
+    <ModalOverlay onClose={onClose}>
+      {etapeFinale ? (
           <>
             <h2 className="font-titre text-lg font-semibold text-colimo-neutre-fonce">
               Confirmer définitivement cette livraison ?
@@ -177,7 +174,6 @@ export default function ValidationLivraisonModal({ course, onClose, onValide }: 
             </div>
           </>
         )}
-      </div>
-    </div>
+    </ModalOverlay>
   );
 }
