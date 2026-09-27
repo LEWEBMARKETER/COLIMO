@@ -2,6 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import StatCard from "@/components/StatCard";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   activerAbonnementCommerce,
   desactiverAbonnementCommerce,
@@ -83,6 +97,12 @@ export default function CommercantsPage() {
   const [actionEnCours, setActionEnCours] = useState<string | null>(null);
 
   const [brouillonConfig, setBrouillonConfig] = useState<ConfigurationPaiementAbonnement | null>(null);
+  const [commerceASupprimer, setCommerceASupprimer] = useState<Utilisateur | null>(null);
+  const [motifSuppression, setMotifSuppression] = useState("");
+  const [commerceASuspendre, setCommerceASuspendre] = useState<string | null>(null);
+  const [motifSuspension, setMotifSuspension] = useState("");
+  const [demandeARefuser, setDemandeARefuser] = useState<DemandeAbonnement | null>(null);
+  const [motifRefus, setMotifRefus] = useState("");
 
   useEffect(() => {
     charger();
@@ -169,24 +189,17 @@ export default function CommercantsPage() {
     setEnEdition(null);
   }
 
-  async function supprimerCompte(client: Utilisateur) {
-    if (
-      !window.confirm(
-        `Supprimer le compte commerce de ${client.nom} ?\n\nSi ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé.\n\nCette action est irréversible.`
-      )
-    ) {
-      return;
-    }
-    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
+  async function confirmerSuppressionCompte() {
+    if (!commerceASupprimer) return;
     try {
-      const resultat = await supprimerCompteUtilisateur(client.id, motif || undefined);
+      const resultat = await supprimerCompteUtilisateur(commerceASupprimer.id, motifSuppression.trim() || undefined);
       if (resultat.mode === "suppression_definitive") {
-        setUtilisateurs((prev) => prev.filter((u) => u.id !== client.id));
-        setCommercants((prev) => prev.filter((c) => c.utilisateurId !== client.id));
-        window.alert(`Compte de ${client.nom} supprimé définitivement.`);
+        setUtilisateurs((prev) => prev.filter((u) => u.id !== commerceASupprimer.id));
+        setCommercants((prev) => prev.filter((c) => c.utilisateurId !== commerceASupprimer.id));
+        window.alert(`Compte de ${commerceASupprimer.nom} supprimé définitivement.`);
       } else {
         if (resultat.utilisateur) {
-          setUtilisateurs((prev) => prev.map((u) => (u.id === client.id ? resultat.utilisateur! : u)));
+          setUtilisateurs((prev) => prev.map((u) => (u.id === commerceASupprimer.id ? resultat.utilisateur! : u)));
         }
         window.alert(
           `Ce compte avait de l'historique : ses données personnelles ont été anonymisées et sa connexion bloquée définitivement (l'historique de courses/paiements est conservé).`
@@ -194,6 +207,9 @@ export default function CommercantsPage() {
       }
     } catch (erreur) {
       window.alert(erreur instanceof Error ? erreur.message : "Impossible de supprimer ce compte.");
+    } finally {
+      setCommerceASupprimer(null);
+      setMotifSuppression("");
     }
   }
 
@@ -277,7 +293,6 @@ export default function CommercantsPage() {
   }
 
   async function desactiver(commerceId: string) {
-    if (!window.confirm("Désactiver l'abonnement de ce commerce ? Le compte repasse au niveau Gratuit.")) return;
     setActionEnCours(commerceId);
     try {
       const commerce = await desactiverAbonnementCommerce(commerceId);
@@ -292,15 +307,16 @@ export default function CommercantsPage() {
     }
   }
 
-  async function suspendre(commerceId: string) {
-    const motif = window.prompt("Motif de la suspension (obligatoire) :");
-    if (!motif) return;
-    setActionEnCours(commerceId);
+  async function confirmerSuspension() {
+    if (!commerceASuspendre || !motifSuspension.trim()) return;
+    setActionEnCours(commerceASuspendre);
     try {
-      const commerce = await suspendreAbonnementCommerce(commerceId, motif);
+      const commerce = await suspendreAbonnementCommerce(commerceASuspendre, motifSuspension.trim());
       setCommercants((prev) => [...prev.filter((c) => c.id !== commerce.id), commerce]);
     } finally {
       setActionEnCours(null);
+      setCommerceASuspendre(null);
+      setMotifSuspension("");
     }
   }
 
@@ -314,18 +330,20 @@ export default function CommercantsPage() {
     }
   }
 
-  async function refuser(demande: DemandeAbonnement) {
-    const motif = window.prompt("Motif du refus (optionnel) :") ?? undefined;
-    const misAJour = await refuserDemandeAbonnement(demande.id, motif);
+  async function confirmerRefus() {
+    if (!demandeARefuser) return;
+    const misAJour = await refuserDemandeAbonnement(demandeARefuser.id, motifRefus.trim() || undefined);
     setDemandes((prev) => prev.map((d) => (d.id === misAJour.id ? misAJour : d)));
-    const commerce = commercants.find((c) => c.id === demande.commerceId);
+    const commerce = commercants.find((c) => c.id === demandeARefuser.commerceId);
     if (commerce) {
       await notifierEvenement("abonnement_refuse", {
         destinataire: commerce.utilisateurId,
         utilisateurId: commerce.utilisateurId,
-        variables: { pack: SUBSCRIPTION_PLAN_LABELS[demande.packDemande] },
+        variables: { pack: SUBSCRIPTION_PLAN_LABELS[demandeARefuser.packDemande] },
       });
     }
+    setDemandeARefuser(null);
+    setMotifRefus("");
   }
 
   // --- Onglet Paramètres ---------------------------------------------------
@@ -484,7 +502,7 @@ export default function CommercantsPage() {
                         Modifier
                       </button>
                       <button
-                        onClick={() => supprimerCompte(client)}
+                        onClick={() => setCommerceASupprimer(client)}
                         className="rounded-md border border-colimo-rouge/30 px-3 py-1.5 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair"
                       >
                         Supprimer
@@ -547,7 +565,7 @@ export default function CommercantsPage() {
                           Activer
                         </button>
                         <button
-                          onClick={() => refuser(d)}
+                          onClick={() => setDemandeARefuser(d)}
                           className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                         >
                           Refuser
@@ -563,33 +581,33 @@ export default function CommercantsPage() {
           <div>
             <h2 className="mb-2 font-titre text-base font-semibold text-colimo-neutre-fonce">Tous les commerces</h2>
             <div className="overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Commerce</th>
-                    <th className="px-4 py-3 font-medium">Forfait</th>
-                    <th className="px-4 py-3 font-medium">Expiration</th>
-                    <th className="px-4 py-3 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                    <TableHead>Commerce</TableHead>
+                    <TableHead>Forfait</TableHead>
+                    <TableHead>Expiration</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {commercesAvecPlan.map(({ utilisateur, commerce }) => {
                     const planEffectif = calculerPlanEffectif(commerce);
                     return (
-                      <tr key={commerce.id} className="border-b border-colimo-neutre-clair last:border-0 align-top">
-                        <td className="px-4 py-3">{utilisateur.nom}</td>
-                        <td className="px-4 py-3">
+                      <TableRow key={commerce.id} className="border-colimo-neutre-clair align-top">
+                        <TableCell>{utilisateur.nom}</TableCell>
+                        <TableCell>
                           {SUBSCRIPTION_PLAN_LABELS[planEffectif]}
                           {commerce.abonnementSuspendu && (
                             <span className="ml-1 text-xs text-colimo-rouge">(suspendu)</span>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                        </TableCell>
+                        <TableCell className="text-xs text-colimo-neutre-fonce/70">
                           {commerce.abonnementExpireLe
                             ? new Date(commerce.abonnementExpireLe).toLocaleDateString("fr-FR")
                             : "—"}
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                           <div className="flex flex-wrap gap-1.5">
                             <button
                               onClick={() => ouvrirPanneauActivation(commerce.id, "starter")}
@@ -607,7 +625,7 @@ export default function CommercantsPage() {
                             </button>
                             {planEffectif !== "gratuit" && !commerce.abonnementSuspendu && (
                               <button
-                                onClick={() => suspendre(commerce.id)}
+                                onClick={() => setCommerceASuspendre(commerce.id)}
                                 disabled={actionEnCours === commerce.id}
                                 className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
                               >
@@ -624,13 +642,31 @@ export default function CommercantsPage() {
                               </button>
                             )}
                             {commerce.subscriptionPlan !== "gratuit" && (
-                              <button
-                                onClick={() => desactiver(commerce.id)}
-                                disabled={actionEnCours === commerce.id}
-                                className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
-                              >
-                                Désactiver
-                              </button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <button
+                                    disabled={actionEnCours === commerce.id}
+                                    className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-60"
+                                  >
+                                    Désactiver
+                                  </button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Désactiver cet abonnement ?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Désactiver l&apos;abonnement de ce commerce ? Le compte repasse au niveau
+                                      Gratuit.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => desactiver(commerce.id)}>
+                                      Désactiver
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             )}
                           </div>
 
@@ -685,12 +721,12 @@ export default function CommercantsPage() {
                               </div>
                             </div>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>
@@ -698,28 +734,28 @@ export default function CommercantsPage() {
 
       {section === "historique" && (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-              <tr>
-                <th className="px-4 py-3 font-medium">Commerce</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-                <th className="px-4 py-3 font-medium">Ancien → nouveau forfait</th>
-                <th className="px-4 py-3 font-medium">Motif</th>
-                <th className="px-4 py-3 font-medium">Date</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                <TableHead>Commerce</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Ancien → nouveau forfait</TableHead>
+                <TableHead>Motif</TableHead>
+                <TableHead>Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {historique.map((h) => {
                 const commerce = commercants.find((c) => c.id === h.commerceId);
                 return (
-                  <tr key={h.id} className="border-b border-colimo-neutre-clair last:border-0">
-                    <td className="px-4 py-3">{commerce ? nomUtilisateur(commerce.utilisateurId) : "—"}</td>
-                    <td className="px-4 py-3">{ACTION_HISTORIQUE_ABONNEMENT_LABELS[h.action]}</td>
-                    <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                  <TableRow key={h.id} className="border-colimo-neutre-clair">
+                    <TableCell>{commerce ? nomUtilisateur(commerce.utilisateurId) : "—"}</TableCell>
+                    <TableCell>{ACTION_HISTORIQUE_ABONNEMENT_LABELS[h.action]}</TableCell>
+                    <TableCell className="text-xs text-colimo-neutre-fonce/70">
                       {h.ancienForfait ?? "—"} → {h.nouveauForfait ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-colimo-neutre-fonce/70">{h.motif ?? "—"}</td>
-                    <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                    </TableCell>
+                    <TableCell className="text-colimo-neutre-fonce/70">{h.motif ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-colimo-neutre-fonce/70">
                       {new Date(h.createdAt).toLocaleString("fr-FR", {
                         day: "2-digit",
                         month: "2-digit",
@@ -727,19 +763,19 @@ export default function CommercantsPage() {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
               {!chargement && historique.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <TableRow>
+                  <TableCell colSpan={5} className="py-6 text-center text-colimo-neutre-fonce/50">
                     Aucune activité d'abonnement
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -810,6 +846,120 @@ export default function CommercantsPage() {
           </div>
         </div>
       )}
+
+      <Dialog
+        open={commerceASupprimer !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCommerceASupprimer(null);
+            setMotifSuppression("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le compte commerce de {commerceASupprimer?.nom} ?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-colimo-neutre-fonce/70">
+            Si ce compte n&apos;a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y
+            compris de Supabase Auth. S&apos;il a de l&apos;historique, ses données personnelles seront anonymisées
+            et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé. Cette
+            action est irréversible.
+          </p>
+          <Input
+            value={motifSuppression}
+            onChange={(e) => setMotifSuppression(e.target.value)}
+            placeholder="Motif de la suppression (optionnel)"
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setCommerceASupprimer(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerSuppressionCompte}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Supprimer
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={commerceASuspendre !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCommerceASuspendre(null);
+            setMotifSuspension("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Suspendre cet abonnement</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={motifSuspension}
+            onChange={(e) => setMotifSuspension(e.target.value)}
+            placeholder="Motif de la suspension (obligatoire)"
+            autoFocus
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setCommerceASuspendre(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerSuspension}
+              disabled={!motifSuspension.trim()}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-40"
+            >
+              Suspendre
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={demandeARefuser !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDemandeARefuser(null);
+            setMotifRefus("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Refuser cette demande d&apos;abonnement</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={motifRefus}
+            onChange={(e) => setMotifRefus(e.target.value)}
+            placeholder="Motif du refus (optionnel)"
+            autoFocus
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setDemandeARefuser(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerRefus}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Refuser
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

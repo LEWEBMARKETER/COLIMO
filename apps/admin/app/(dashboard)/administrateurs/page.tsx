@@ -2,6 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   getHistoriqueInvitationsAdmin,
   getIdAdminConnecte,
@@ -43,6 +58,10 @@ export default function AdministrateursPage() {
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [actionEnCoursId, setActionEnCoursId] = useState<string | null>(null);
   const [afficherSupprimes, setAfficherSupprimes] = useState(false);
+  const [adminPourRole, setAdminPourRole] = useState<Utilisateur | null>(null);
+  const [poleChoisi, setPoleChoisi] = useState<PoleAdmin>("operations");
+  const [adminASupprimer, setAdminASupprimer] = useState<Utilisateur | null>(null);
+  const [motifSuppression, setMotifSuppression] = useState("");
 
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
@@ -107,10 +126,8 @@ export default function AdministrateursPage() {
   async function executerAction(
     administrateur: Utilisateur,
     action: "modifier_role" | "suspendre" | "reactiver" | "renvoyer_invitation" | "annuler_invitation",
-    confirmation: string,
     nouveauPole?: PoleAdmin
   ) {
-    if (!window.confirm(confirmation)) return;
     setActionEnCoursId(administrateur.id);
     try {
       const misAJour = await modifierAdministrateur(administrateur.id, action, nouveauPole);
@@ -122,22 +139,15 @@ export default function AdministrateursPage() {
     }
   }
 
-  async function modifierRole(administrateur: Utilisateur) {
-    const libelles = POLES_ADMIN.map((p, i) => `${i + 1}. ${p.libelle}`).join("\n");
-    const choix = window.prompt(`Nouveau pôle pour ${administrateur.nom} :\n${libelles}\n\nEntrez le numéro (1-4) :`);
-    if (!choix) return;
-    const index = Number(choix.trim()) - 1;
-    const nouveauPole = POLES_ADMIN[index]?.valeur;
-    if (!nouveauPole) {
-      window.alert("Choix invalide.");
-      return;
-    }
-    await executerAction(
-      administrateur,
-      "modifier_role",
-      `Changer le pôle de ${administrateur.nom} en « ${POLE_ADMIN_LABELS[nouveauPole]} » ?`,
-      nouveauPole
-    );
+  function ouvrirModificationRole(administrateur: Utilisateur) {
+    setAdminPourRole(administrateur);
+    setPoleChoisi(administrateur.poleAdmin ?? "operations");
+  }
+
+  async function confirmerModificationRole() {
+    if (!adminPourRole) return;
+    await executerAction(adminPourRole, "modifier_role", poleChoisi);
+    setAdminPourRole(null);
   }
 
   // Réutilise la route de suppression de compte générique (déjà utilisée
@@ -145,23 +155,16 @@ export default function AdministrateursPage() {
   // anonymisation + bannissement définitif — le serveur réserve cette action
   // aux admins ciblant un autre admin au Super Admin (0046 + route
   // api/utilisateurs/[id]).
-  async function supprimerAdministrateur(administrateur: Utilisateur) {
-    if (
-      !window.confirm(
-        `Supprimer définitivement le compte de ${administrateur.nom} ?\n\nSi ce compte n'a aucun historique d'actions, il sera supprimé définitivement. S'il a de l'historique (invitations envoyées, actions journalisées...), ses données personnelles seront anonymisées et sa connexion bloquée définitivement.\n\nCette action est irréversible.`
-      )
-    ) {
-      return;
-    }
-    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
-    setActionEnCoursId(administrateur.id);
+  async function confirmerSuppression() {
+    if (!adminASupprimer) return;
+    setActionEnCoursId(adminASupprimer.id);
     try {
-      const resultat = await supprimerCompteUtilisateur(administrateur.id, motif || undefined);
+      const resultat = await supprimerCompteUtilisateur(adminASupprimer.id, motifSuppression.trim() || undefined);
       if (resultat.mode === "suppression_definitive") {
-        setAdministrateurs((prev) => prev.filter((a) => a.id !== administrateur.id));
-        window.alert(`Compte de ${administrateur.nom} supprimé définitivement.`);
+        setAdministrateurs((prev) => prev.filter((a) => a.id !== adminASupprimer.id));
+        window.alert(`Compte de ${adminASupprimer.nom} supprimé définitivement.`);
       } else if (resultat.utilisateur) {
-        setAdministrateurs((prev) => prev.map((a) => (a.id === administrateur.id ? resultat.utilisateur! : a)));
+        setAdministrateurs((prev) => prev.map((a) => (a.id === adminASupprimer.id ? resultat.utilisateur! : a)));
         window.alert(
           `Ce compte avait de l'historique : ses données personnelles ont été anonymisées et sa connexion bloquée définitivement.`
         );
@@ -170,6 +173,8 @@ export default function AdministrateursPage() {
       window.alert(e instanceof Error ? e.message : "Impossible de supprimer ce compte.");
     } finally {
       setActionEnCoursId(null);
+      setAdminASupprimer(null);
+      setMotifSuppression("");
     }
   }
 
@@ -209,17 +214,18 @@ export default function AdministrateursPage() {
             placeholder="Téléphone"
             className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
           />
-          <select
-            value={pole}
-            onChange={(e) => setPole(e.target.value as PoleAdmin)}
-            className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
-          >
-            {POLES_ADMIN.map((p) => (
-              <option key={p.valeur} value={p.valeur}>
-                {p.libelle}
-              </option>
-            ))}
-          </select>
+          <Select value={pole} onValueChange={(v) => setPole(v as PoleAdmin)}>
+            <SelectTrigger className="h-auto rounded-md border-colimo-neutre-clair px-3 py-2 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {POLES_ADMIN.map((p) => (
+                <SelectItem key={p.valeur} value={p.valeur}>
+                  {p.libelle}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {erreur && <p className="mt-3 text-sm text-colimo-rouge">{erreur}</p>}
         <button
@@ -239,19 +245,19 @@ export default function AdministrateursPage() {
       )}
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-            <tr>
-              <th className="px-4 py-3 font-medium">Nom</th>
-              <th className="px-4 py-3 font-medium">Téléphone</th>
-              <th className="px-4 py-3 font-medium">Pôle</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
-              <th className="px-4 py-3 font-medium">Invité par</th>
-              <th className="px-4 py-3 font-medium">Depuis</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+              <TableHead>Nom</TableHead>
+              <TableHead>Téléphone</TableHead>
+              <TableHead>Pôle</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Invité par</TableHead>
+              <TableHead>Depuis</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {administrateursAffiches.map((admin) => {
               const invitation = invitationParUtilisateur.get(admin.id);
               const estMoi = admin.id === monId;
@@ -261,24 +267,24 @@ export default function AdministrateursPage() {
               const confirme = admin.statutInvitation === "confirme";
               const actionEnCours = actionEnCoursId === admin.id;
               return (
-                <tr key={admin.id} className="border-b border-colimo-neutre-clair last:border-0">
-                  <td className="px-4 py-3 font-medium text-colimo-neutre-fonce">
+                <TableRow key={admin.id} className="border-colimo-neutre-clair">
+                  <TableCell className="font-medium text-colimo-neutre-fonce">
                     {admin.nom} {estMoi && <span className="text-xs text-colimo-neutre-fonce/40">(vous)</span>}
-                  </td>
-                  <td className="px-4 py-3">{admin.telephone}</td>
-                  <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                  </TableCell>
+                  <TableCell>{admin.telephone}</TableCell>
+                  <TableCell className="text-xs text-colimo-neutre-fonce/70">
                     {admin.poleAdmin ? POLE_ADMIN_LABELS[admin.poleAdmin] : "—"}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <StatutBadge statut={badge.statut} label={badge.label} />
-                  </td>
-                  <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                  </TableCell>
+                  <TableCell className="text-xs text-colimo-neutre-fonce/70">
                     {invitation ? (nomParId.get(invitation.invitePar) ?? "—") : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/50">
+                  </TableCell>
+                  <TableCell className="text-xs text-colimo-neutre-fonce/50">
                     {invitation ? new Date(invitation.createdAt).toLocaleDateString("fr-FR") : "—"}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     {supprime ? (
                       <span className="text-xs text-colimo-neutre-fonce/40">Compte supprimé — aucune action possible</span>
                     ) : (
@@ -286,61 +292,99 @@ export default function AdministrateursPage() {
                       <div className="flex flex-wrap gap-2">
                         {enCours && (
                           <>
-                            <button
-                              disabled={actionEnCours}
-                              onClick={() =>
-                                executerAction(
-                                  admin,
-                                  "renvoyer_invitation",
-                                  `Renvoyer l'invitation à ${admin.nom} ?`
-                                )
-                              }
-                              className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-40"
-                            >
-                              Renvoyer l&apos;invitation
-                            </button>
-                            <button
-                              disabled={actionEnCours}
-                              onClick={() =>
-                                executerAction(
-                                  admin,
-                                  "annuler_invitation",
-                                  `Annuler l'invitation de ${admin.nom} ? Cette action est irréversible.`
-                                )
-                              }
-                              className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-neutre-clair disabled:opacity-40"
-                            >
-                              Annuler l&apos;invitation
-                            </button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  disabled={actionEnCours}
+                                  className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-40"
+                                >
+                                  Renvoyer l&apos;invitation
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Renvoyer l&apos;invitation ?</AlertDialogTitle>
+                                  <AlertDialogDescription>Renvoyer l&apos;invitation à {admin.nom} ?</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => executerAction(admin, "renvoyer_invitation")}>
+                                    Renvoyer
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  disabled={actionEnCours}
+                                  className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-neutre-clair disabled:opacity-40"
+                                >
+                                  Annuler l&apos;invitation
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Annuler l&apos;invitation ?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Annuler l&apos;invitation de {admin.nom} ? Cette action est irréversible.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Retour</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => executerAction(admin, "annuler_invitation")}>
+                                    Annuler l&apos;invitation
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </>
                         )}
                         {(confirme || enCours) && (
                           <button
                             disabled={actionEnCours}
-                            onClick={() => modifierRole(admin)}
+                            onClick={() => ouvrirModificationRole(admin)}
                             className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-40"
                           >
                             Modifier le rôle
                           </button>
                         )}
                         {confirme && (
-                          <button
-                            disabled={actionEnCours}
-                            onClick={() =>
-                              executerAction(
-                                admin,
-                                admin.statut === "suspendu" ? "reactiver" : "suspendre",
-                                `${admin.statut === "suspendu" ? "Réactiver" : "Suspendre"} l'accès admin de ${admin.nom} ?`
-                              )
-                            }
-                            className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-40"
-                          >
-                            {admin.statut === "suspendu" ? "Réactiver" : "Suspendre"}
-                          </button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <button
+                                disabled={actionEnCours}
+                                className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-40"
+                              >
+                                {admin.statut === "suspendu" ? "Réactiver" : "Suspendre"}
+                              </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {admin.statut === "suspendu" ? "Réactiver" : "Suspendre"} cet accès ?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {admin.statut === "suspendu" ? "Réactiver" : "Suspendre"} l&apos;accès admin de{" "}
+                                  {admin.nom} ?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() =>
+                                    executerAction(admin, admin.statut === "suspendu" ? "reactiver" : "suspendre")
+                                  }
+                                >
+                                  Confirmer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                         <button
                           disabled={actionEnCours}
-                          onClick={() => supprimerAdministrateur(admin)}
+                          onClick={() => setAdminASupprimer(admin)}
                           className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:opacity-40"
                         >
                           Supprimer
@@ -348,20 +392,94 @@ export default function AdministrateursPage() {
                       </div>
                       )
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
             {!chargement && administrateursAffiches.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+              <TableRow>
+                <TableCell colSpan={7} className="py-6 text-center text-colimo-neutre-fonce/50">
                   Aucun administrateur
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
+
+      <Dialog open={adminPourRole !== null} onOpenChange={(open) => !open && setAdminPourRole(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier le pôle de {adminPourRole?.nom}</DialogTitle>
+          </DialogHeader>
+          <Select value={poleChoisi} onValueChange={(v) => setPoleChoisi(v as PoleAdmin)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {POLES_ADMIN.map((p) => (
+                <SelectItem key={p.valeur} value={p.valeur}>
+                  {p.libelle}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <button
+              onClick={() => setAdminPourRole(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerModificationRole}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Changer le pôle
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={adminASupprimer !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAdminASupprimer(null);
+            setMotifSuppression("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer définitivement le compte de {adminASupprimer?.nom} ?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-colimo-neutre-fonce/70">
+            Si ce compte n&apos;a aucun historique d&apos;actions, il sera supprimé définitivement. S&apos;il a de
+            l&apos;historique (invitations envoyées, actions journalisées...), ses données personnelles seront
+            anonymisées et sa connexion bloquée définitivement. Cette action est irréversible.
+          </p>
+          <Input
+            value={motifSuppression}
+            onChange={(e) => setMotifSuppression(e.target.value)}
+            placeholder="Motif de la suppression (optionnel)"
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setAdminASupprimer(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerSuppression}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Supprimer
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

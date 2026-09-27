@@ -7,6 +7,21 @@ import StatutBadge from "@/components/StatutBadge";
 import BadgePill from "@/components/BadgePill";
 import NiveauBadge from "@/components/NiveauBadge";
 import NoteEtoiles from "@/components/NoteEtoiles";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   desactiverCoursier,
   getBadgesCoursier,
@@ -85,6 +100,15 @@ export default function CoursiersPage() {
   const [filtreHistoriqueCoursier, setFiltreHistoriqueCoursier] = useState<string>("tous");
   const [filtreHistoriqueAction, setFiltreHistoriqueAction] = useState<ActionHistoriqueCoursier | "toutes">("toutes");
   const [afficherSupprimes, setAfficherSupprimes] = useState(false);
+  const [coursierARejeter, setCoursierARejeter] = useState<string | null>(null);
+  const [motifRejet, setMotifRejet] = useState("");
+  const [coursierASuspendre, setCoursierASuspendre] = useState<CoursierAvecStatutEffectif | null>(null);
+  const [motifSuspension, setMotifSuspension] = useState("");
+  const [commentaireSuspension, setCommentaireSuspension] = useState("");
+  const [coursierADesactiver, setCoursierADesactiver] = useState<CoursierAvecStatutEffectif | null>(null);
+  const [motifDesactivation, setMotifDesactivation] = useState("");
+  const [coursierASupprimer, setCoursierASupprimer] = useState<CoursierAvecStatutEffectif | null>(null);
+  const [motifSuppressionCoursier, setMotifSuppressionCoursier] = useState("");
 
   async function chargerTout() {
     const [c, b, n, ba, h] = await Promise.all([
@@ -170,32 +194,42 @@ export default function CoursiersPage() {
     await chargerTout();
   }
 
-  async function rejeter(coursierId: string) {
-    const motif = window.prompt("Motif du rejet (optionnel) :") ?? undefined;
-    await rejeterDossierCoursier(coursierId, motif || undefined);
+  async function confirmerRejet() {
+    if (!coursierARejeter) return;
+    await rejeterDossierCoursier(coursierARejeter, motifRejet.trim() || undefined);
+    setCoursierARejeter(null);
+    setMotifRejet("");
     await chargerTout();
   }
 
-  async function suspendre(coursier: CoursierAvecStatutEffectif) {
+  function ouvrirSuspension(coursier: CoursierAvecStatutEffectif) {
     if (coursier.aCourseEnCours) {
       window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le suspendre.");
       return;
     }
-    const motif = window.prompt(
-      `Suspendre ${nomCoursier(coursier)} — motif (obligatoire) :\nEx. mauvais comportement, documents expirés, litiges élevés, fraude, demande personnelle`
-    );
-    if (!motif) return;
-    const commentaire = window.prompt("Commentaire interne (optionnel) :") ?? undefined;
+    setCoursierASuspendre(coursier);
+    setMotifSuspension("");
+    setCommentaireSuspension("");
+  }
+
+  async function confirmerSuspension() {
+    if (!coursierASuspendre || !motifSuspension.trim()) return;
     try {
-      await suspendreCoursier(coursier.id, { motif, commentaire: commentaire || undefined });
+      await suspendreCoursier(coursierASuspendre.id, {
+        motif: motifSuspension.trim(),
+        commentaire: commentaireSuspension.trim() || undefined,
+      });
       await chargerTout();
     } catch (erreur) {
       window.alert(erreur instanceof Error ? erreur.message : "Impossible de suspendre ce coursier.");
+    } finally {
+      setCoursierASuspendre(null);
+      setMotifSuspension("");
+      setCommentaireSuspension("");
     }
   }
 
   async function reactiver(coursier: CoursierAvecStatutEffectif) {
-    if (!window.confirm(`Réactiver ${nomCoursier(coursier)} ?`)) return;
     try {
       await reactiverCoursier(coursier.id);
       await chargerTout();
@@ -204,44 +238,55 @@ export default function CoursiersPage() {
     }
   }
 
-  async function desactiver(coursier: CoursierAvecStatutEffectif) {
+  function ouvrirDesactivation(coursier: CoursierAvecStatutEffectif) {
     if (coursier.aCourseEnCours) {
       window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le désactiver.");
       return;
     }
-    if (!window.confirm(`Désactiver définitivement ${nomCoursier(coursier)} ? Cette action ferme le compte.`)) return;
-    const motif = window.prompt("Motif de la désactivation (optionnel) :") ?? undefined;
+    setCoursierADesactiver(coursier);
+    setMotifDesactivation("");
+  }
+
+  async function confirmerDesactivation() {
+    if (!coursierADesactiver) return;
     try {
-      await desactiverCoursier(coursier.id, { motif: motif || undefined });
+      await desactiverCoursier(coursierADesactiver.id, { motif: motifDesactivation.trim() || undefined });
       await chargerTout();
     } catch (erreur) {
       window.alert(erreur instanceof Error ? erreur.message : "Impossible de désactiver ce coursier.");
+    } finally {
+      setCoursierADesactiver(null);
+      setMotifDesactivation("");
     }
   }
 
-  async function supprimerCompte(coursier: CoursierAvecStatutEffectif) {
+  function ouvrirSuppression(coursier: CoursierAvecStatutEffectif) {
     if (coursier.aCourseEnCours) {
       window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le supprimer.");
       return;
     }
-    if (
-      !window.confirm(
-        `Supprimer définitivement ce coursier ? Cette action est irréversible.\n\n${nomCoursier(coursier)} — si ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé.`
-      )
-    ) {
-      return;
-    }
-    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
+    setCoursierASupprimer(coursier);
+    setMotifSuppressionCoursier("");
+  }
+
+  async function confirmerSuppressionCoursier() {
+    if (!coursierASupprimer) return;
     try {
-      const resultat = await supprimerCompteUtilisateur(coursier.utilisateurId, motif || undefined);
+      const resultat = await supprimerCompteUtilisateur(
+        coursierASupprimer.utilisateurId,
+        motifSuppressionCoursier.trim() || undefined
+      );
       window.alert(
         resultat.mode === "suppression_definitive"
-          ? `Compte de ${nomCoursier(coursier)} supprimé définitivement.`
+          ? `Compte de ${nomCoursier(coursierASupprimer)} supprimé définitivement.`
           : `Ce compte avait de l'historique : ses données personnelles ont été anonymisées et sa connexion bloquée définitivement (l'historique de courses/paiements est conservé).`
       );
       await chargerTout();
     } catch (erreur) {
       window.alert(erreur instanceof Error ? erreur.message : "Impossible de supprimer ce compte.");
+    } finally {
+      setCoursierASupprimer(null);
+      setMotifSuppressionCoursier("");
     }
   }
 
@@ -325,35 +370,35 @@ export default function CoursiersPage() {
 
       {section === "liste" && (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nom</th>
-                <th className="px-4 py-3 font-medium">Statut</th>
-                <th className="px-4 py-3 font-medium">Niveau</th>
-                <th className="px-4 py-3 font-medium">Badges</th>
-                <th className="px-4 py-3 font-medium">Zones</th>
-                <th className="px-4 py-3 font-medium">Note</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                <TableHead>Nom</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead>Niveau</TableHead>
+                <TableHead>Badges</TableHead>
+                <TableHead>Zones</TableHead>
+                <TableHead>Note</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {coursiersVisibles.map((c) => {
                 const niveau = c.niveauId ? niveauParId.get(c.niveauId) : undefined;
                 const mesBadges = badgesParCoursier.get(c.id) ?? [];
                 return (
-                  <tr key={c.id} className="border-b border-colimo-neutre-clair last:border-0">
-                    <td className="px-4 py-3">
+                  <TableRow key={c.id} className="border-colimo-neutre-clair">
+                    <TableCell>
                       <Link href={`/coursiers/${c.id}`} className="font-medium text-colimo-neutre-fonce hover:text-colimo-rouge">
                         {nomCoursier(c)}
                       </Link>
                       <p className="text-xs text-colimo-neutre-fonce/50">{c.utilisateur.telephone}</p>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <StatutBadge statut={c.statutEffectif} label={STATUT_COURSIER_LABELS[c.statutEffectif]} />
-                    </td>
-                    <td className="px-4 py-3">{niveau ? <NiveauBadge nom={niveau.nom} couleur={niveau.couleur} icone={niveau.icone} /> : "—"}</td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>{niveau ? <NiveauBadge nom={niveau.nom} couleur={niveau.couleur} icone={niveau.icone} /> : "—"}</TableCell>
+                    <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {mesBadges.slice(0, 3).map((attribution) => {
                           const badge = badgeParId.get(attribution.badgeId);
@@ -361,12 +406,12 @@ export default function CoursiersPage() {
                         })}
                         {mesBadges.length > 3 && <span className="text-xs text-colimo-neutre-fonce/50">+{mesBadges.length - 3}</span>}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">{c.zonesCouvertes.map((z) => ZONE_LABELS[z]).join(", ") || "—"}</td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>{c.zonesCouvertes.map((z) => ZONE_LABELS[z]).join(", ") || "—"}</TableCell>
+                    <TableCell>
                       <NoteEtoiles note={c.noteMoyenne} />
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <div className="flex flex-wrap gap-1.5">
                         {c.statutVerification === "en_attente" && (
                           <>
@@ -377,7 +422,7 @@ export default function CoursiersPage() {
                               Valider
                             </button>
                             <button
-                              onClick={() => rejeter(c.id)}
+                              onClick={() => setCoursierARejeter(c.id)}
                               className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                             >
                               Rejeter
@@ -391,19 +436,19 @@ export default function CoursiersPage() {
                           👁️ Voir la fiche
                         </Link>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
               {!chargement && coursiersVisibles.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <TableRow>
+                  <TableCell colSpan={7} className="py-6 text-center text-colimo-neutre-fonce/50">
                     Aucun coursier inscrit
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -411,37 +456,38 @@ export default function CoursiersPage() {
         <div>
           <div className="mt-6 flex items-center gap-3">
             <label className="text-xs font-medium text-colimo-neutre-fonce/60">Filtrer par statut</label>
-            <select
-              value={filtreStatut}
-              onChange={(e) => setFiltreStatut(e.target.value as StatutCoursierEffectif | "tous")}
-              className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-            >
-              <option value="tous">Tous les statuts</option>
-              {STATUTS_EFFECTIFS_FILTRE.map((s) => (
-                <option key={s} value={s}>
-                  {STATUT_COURSIER_LABELS[s]}
-                </option>
-              ))}
-            </select>
+            <Select value={filtreStatut} onValueChange={(v) => setFiltreStatut(v as StatutCoursierEffectif | "tous")}>
+              <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tous">Tous les statuts</SelectItem>
+                {STATUTS_EFFECTIFS_FILTRE.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUT_COURSIER_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="mt-4 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Nom</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {coursiersFiltres.map((c) => (
-                  <tr key={c.id} className="border-b border-colimo-neutre-clair last:border-0">
-                    <td className="px-4 py-3 font-medium text-colimo-neutre-fonce">{nomCoursier(c)}</td>
-                    <td className="px-4 py-3">
+                  <TableRow key={c.id} className="border-colimo-neutre-clair">
+                    <TableCell className="font-medium text-colimo-neutre-fonce">{nomCoursier(c)}</TableCell>
+                    <TableCell>
                       <StatutBadge statut={c.statutEffectif} label={STATUT_COURSIER_LABELS[c.statutEffectif]} />
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       {estCompteSupprime(c.utilisateur.telephone) ? (
                         <span className="text-xs text-colimo-neutre-fonce/40">Compte supprimé — aucune action possible</span>
                       ) : (
@@ -455,7 +501,7 @@ export default function CoursiersPage() {
                                 Valider
                               </button>
                               <button
-                                onClick={() => rejeter(c.id)}
+                                onClick={() => setCoursierARejeter(c.id)}
                                 className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                               >
                                 Rejeter
@@ -463,16 +509,27 @@ export default function CoursiersPage() {
                             </>
                           )}
                           {c.statut === "suspendu" || c.statut === "desactive" ? (
-                            <button
-                              onClick={() => reactiver(c)}
-                              className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
-                            >
-                              ♻️ Réactiver
-                            </button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair">
+                                  ♻️ Réactiver
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Réactiver ce coursier ?</AlertDialogTitle>
+                                  <AlertDialogDescription>Réactiver {nomCoursier(c)} ?</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => reactiver(c)}>Réactiver</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           ) : (
                             c.statutVerification === "valide" && (
                               <button
-                                onClick={() => suspendre(c)}
+                                onClick={() => ouvrirSuspension(c)}
                                 disabled={c.aCourseEnCours}
                                 title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de suspendre" : undefined}
                                 className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:cursor-not-allowed disabled:opacity-40"
@@ -483,7 +540,7 @@ export default function CoursiersPage() {
                           )}
                           {c.statut !== "desactive" && (
                             <button
-                              onClick={() => desactiver(c)}
+                              onClick={() => ouvrirDesactivation(c)}
                               disabled={c.aCourseEnCours}
                               title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de désactiver" : undefined}
                               className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
@@ -492,7 +549,7 @@ export default function CoursiersPage() {
                             </button>
                           )}
                           <button
-                            onClick={() => supprimerCompte(c)}
+                            onClick={() => ouvrirSuppression(c)}
                             disabled={c.aCourseEnCours}
                             title={c.aCourseEnCours ? "Course active en cours — réaffectez-la avant de supprimer" : undefined}
                             className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
@@ -501,18 +558,18 @@ export default function CoursiersPage() {
                           </button>
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!chargement && coursiersFiltres.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-6 text-center text-colimo-neutre-fonce/50">
                       Aucun coursier pour ce filtre
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
@@ -546,39 +603,39 @@ export default function CoursiersPage() {
 
       {section === "performances" && (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nom</th>
-                <th className="px-4 py-3 font-medium">Note</th>
-                <th className="px-4 py-3 font-medium">Livraisons</th>
-                <th className="px-4 py-3 font-medium">Taux de réussite</th>
-                <th className="px-4 py-3 font-medium">Taux d&apos;annulation</th>
-                <th className="px-4 py-3 font-medium">Durée moyenne</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                <TableHead>Nom</TableHead>
+                <TableHead>Note</TableHead>
+                <TableHead>Livraisons</TableHead>
+                <TableHead>Taux de réussite</TableHead>
+                <TableHead>Taux d&apos;annulation</TableHead>
+                <TableHead>Durée moyenne</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {coursiersVisibles.map((c) => {
                 const stats = calculerStatistiquesCoursier(c, c.utilisateur);
                 return (
-                  <tr key={c.id} className="border-b border-colimo-neutre-clair last:border-0">
-                    <td className="px-4 py-3">
+                  <TableRow key={c.id} className="border-colimo-neutre-clair">
+                    <TableCell>
                       <Link href={`/coursiers/${c.id}`} className="font-medium text-colimo-neutre-fonce hover:text-colimo-rouge">
                         {nomCoursier(c)}
                       </Link>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <NoteEtoiles note={stats.noteMoyenne} />
-                    </td>
-                    <td className="px-4 py-3">{stats.nombreLivraisons}</td>
-                    <td className="px-4 py-3">{Math.round(stats.tauxReussite * 100)}%</td>
-                    <td className="px-4 py-3">{Math.round(stats.tauxAnnulation * 100)}%</td>
-                    <td className="px-4 py-3">{formatDuree(stats.dureeLivraisonMoyenneSecondes)}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>{stats.nombreLivraisons}</TableCell>
+                    <TableCell>{Math.round(stats.tauxReussite * 100)}%</TableCell>
+                    <TableCell>{Math.round(stats.tauxAnnulation * 100)}%</TableCell>
+                    <TableCell>{formatDuree(stats.dureeLivraisonMoyenneSecondes)}</TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -587,75 +644,80 @@ export default function CoursiersPage() {
           <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-colimo-neutre-clair bg-white p-4">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-colimo-neutre-fonce/60">Coursier</label>
-              <select
-                value={filtreHistoriqueCoursier}
-                onChange={(e) => setFiltreHistoriqueCoursier(e.target.value)}
-                className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-              >
-                <option value="tous">Tous les coursiers</option>
-                {coursiersVisibles.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {nomCoursier(c)}
-                  </option>
-                ))}
-              </select>
+              <Select value={filtreHistoriqueCoursier} onValueChange={setFiltreHistoriqueCoursier}>
+                <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tous">Tous les coursiers</SelectItem>
+                  {coursiersVisibles.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {nomCoursier(c)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-colimo-neutre-fonce/60">Action</label>
-              <select
+              <Select
                 value={filtreHistoriqueAction}
-                onChange={(e) => setFiltreHistoriqueAction(e.target.value as ActionHistoriqueCoursier | "toutes")}
-                className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
+                onValueChange={(v) => setFiltreHistoriqueAction(v as ActionHistoriqueCoursier | "toutes")}
               >
-                <option value="toutes">Toutes les actions</option>
-                {Object.entries(ACTION_HISTORIQUE_COURSIER_LABELS).map(([action, label]) => (
-                  <option key={action} value={action}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="toutes">Toutes les actions</SelectItem>
+                  {Object.entries(ACTION_HISTORIQUE_COURSIER_LABELS).map(([action, label]) => (
+                    <SelectItem key={action} value={action}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="mt-4 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Coursier</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
-                  <th className="px-4 py-3 font-medium">Détail</th>
-                  <th className="px-4 py-3 font-medium">Motif / commentaire</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                  <TableHead>Date</TableHead>
+                  <TableHead>Coursier</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Détail</TableHead>
+                  <TableHead>Motif / commentaire</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {historiqueFiltre.map((h) => {
                   const coursier = coursiers.find((c) => c.id === h.coursierId);
                   return (
-                    <tr key={h.id} className="border-b border-colimo-neutre-clair last:border-0">
-                      <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/50">{new Date(h.createdAt).toLocaleString("fr-FR")}</td>
-                      <td className="px-4 py-3">{coursier ? nomCoursier(coursier) : "—"}</td>
-                      <td className="px-4 py-3">{ACTION_HISTORIQUE_COURSIER_LABELS[h.action]}</td>
-                      <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                    <TableRow key={h.id} className="border-colimo-neutre-clair">
+                      <TableCell className="text-xs text-colimo-neutre-fonce/50">{new Date(h.createdAt).toLocaleString("fr-FR")}</TableCell>
+                      <TableCell>{coursier ? nomCoursier(coursier) : "—"}</TableCell>
+                      <TableCell>{ACTION_HISTORIQUE_COURSIER_LABELS[h.action]}</TableCell>
+                      <TableCell className="text-xs text-colimo-neutre-fonce/70">
                         {h.ancienneValeur && <span>{h.ancienneValeur} → </span>}
                         {h.nouvelleValeur ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                      </TableCell>
+                      <TableCell className="text-xs text-colimo-neutre-fonce/70">
                         {h.motif && <p>Motif : {h.motif}</p>}
                         {h.commentaire && <p>{h.commentaire}</p>}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
                 {!chargement && historiqueFiltre.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-6 text-center text-colimo-neutre-fonce/50">
                       Aucune entrée pour ce filtre
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
@@ -663,6 +725,163 @@ export default function CoursiersPage() {
       {section === "parametres" && (
         <ParametresCoursiers niveaux={niveaux} badges={badges} onEnregistre={chargerTout} />
       )}
+
+      <Dialog
+        open={coursierARejeter !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCoursierARejeter(null);
+            setMotifRejet("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeter ce dossier</DialogTitle>
+          </DialogHeader>
+          <Input value={motifRejet} onChange={(e) => setMotifRejet(e.target.value)} placeholder="Motif du rejet (optionnel)" autoFocus />
+          <DialogFooter>
+            <button
+              onClick={() => setCoursierARejeter(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerRejet}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Rejeter
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={coursierASuspendre !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCoursierASuspendre(null);
+            setMotifSuspension("");
+            setCommentaireSuspension("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Suspendre {coursierASuspendre && nomCoursier(coursierASuspendre)}</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-colimo-neutre-fonce/60">
+            Ex. mauvais comportement, documents expirés, litiges élevés, fraude, demande personnelle
+          </p>
+          <Input
+            value={motifSuspension}
+            onChange={(e) => setMotifSuspension(e.target.value)}
+            placeholder="Motif (obligatoire)"
+            autoFocus
+          />
+          <Input
+            value={commentaireSuspension}
+            onChange={(e) => setCommentaireSuspension(e.target.value)}
+            placeholder="Commentaire interne (optionnel)"
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setCoursierASuspendre(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerSuspension}
+              disabled={!motifSuspension.trim()}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-40"
+            >
+              Suspendre
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={coursierADesactiver !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCoursierADesactiver(null);
+            setMotifDesactivation("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Désactiver définitivement {coursierADesactiver && nomCoursier(coursierADesactiver)} ?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-colimo-neutre-fonce/70">Cette action ferme le compte.</p>
+          <Input
+            value={motifDesactivation}
+            onChange={(e) => setMotifDesactivation(e.target.value)}
+            placeholder="Motif de la désactivation (optionnel)"
+            autoFocus
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setCoursierADesactiver(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerDesactivation}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Désactiver
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={coursierASupprimer !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCoursierASupprimer(null);
+            setMotifSuppressionCoursier("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer définitivement ce coursier ?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-colimo-neutre-fonce/70">
+            {coursierASupprimer && nomCoursier(coursierASupprimer)} — si ce compte n&apos;a aucun historique (aucune
+            course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S&apos;il a de
+            l&apos;historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement —
+            mais son historique de courses/paiements sera conservé. Cette action est irréversible.
+          </p>
+          <Input
+            value={motifSuppressionCoursier}
+            onChange={(e) => setMotifSuppressionCoursier(e.target.value)}
+            placeholder="Motif de la suppression (optionnel)"
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setCoursierASupprimer(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerSuppressionCoursier}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Supprimer
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -3,6 +3,28 @@
 import { useEffect, useMemo, useState } from "react";
 import StatCard from "@/components/StatCard";
 import StatutBadge from "@/components/StatutBadge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   getConfigurationPaiementAutomatique,
   getCourses,
@@ -46,6 +68,8 @@ export default function PaiementsPage() {
   const [webhooks, setWebhooks] = useState<WebhookPaiement[]>([]);
   const [configEnCours, setConfigEnCours] = useState(false);
   const [afficherWebhooks, setAfficherWebhooks] = useState(false);
+  const [paiementARejeter, setPaiementARejeter] = useState<Paiement | null>(null);
+  const [motifRejet, setMotifRejet] = useState("");
 
   useEffect(() => {
     Promise.all([getPaiements(), getCourses(), getUtilisateurs(), getConfigurationPaiementAutomatique()])
@@ -99,7 +123,6 @@ export default function PaiementsPage() {
   }).length;
 
   async function valider(paiement: Paiement) {
-    if (!window.confirm(`Confirmer le paiement ${paiement.reference} ?`)) return;
     setEnCours(paiement.id);
     try {
       const misAJour = await validerPaiement(paiement.id);
@@ -115,9 +138,7 @@ export default function PaiementsPage() {
     }
   }
 
-  async function rejeter(paiement: Paiement) {
-    const motif = window.prompt(`Rejeter le paiement ${paiement.reference} ? Indiquez un motif (optionnel) :`);
-    if (motif === null) return;
+  async function rejeter(paiement: Paiement, motif: string) {
     setEnCours(paiement.id);
     try {
       const misAJour = await rejeterPaiement(paiement.id, motif || undefined);
@@ -130,6 +151,8 @@ export default function PaiementsPage() {
       });
     } finally {
       setEnCours(null);
+      setPaiementARejeter(null);
+      setMotifRejet("");
     }
   }
 
@@ -169,18 +192,22 @@ export default function PaiementsPage() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <label className="text-xs font-medium text-colimo-neutre-fonce/70">
+          <label className="flex items-center text-xs font-medium text-colimo-neutre-fonce/70">
             Fournisseur
-            <select
-              className="ml-2 rounded-lg border border-colimo-neutre-clair px-2 py-1 text-sm"
-              value={configAuto?.fournisseur ?? ""}
+            <Select
+              value={configAuto?.fournisseur ?? "aucun"}
               disabled={configEnCours || !configAuto}
-              onChange={(e) => changerFournisseur(e.target.value as PaymentOperator | "")}
+              onValueChange={(v) => changerFournisseur(v === "aucun" ? "" : (v as PaymentOperator))}
             >
-              <option value="">— Non configuré —</option>
-              <option value="airtel_money">Airtel Money</option>
-              <option value="moov_money">Moov Money</option>
-            </select>
+              <SelectTrigger className="ml-2 h-auto w-auto rounded-lg border-colimo-neutre-clair px-2 py-1 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="aucun">— Non configuré —</SelectItem>
+                <SelectItem value="airtel_money">Airtel Money</SelectItem>
+                <SelectItem value="moov_money">Moov Money</SelectItem>
+              </SelectContent>
+            </Select>
           </label>
           <button
             onClick={afficherJournalWebhooks}
@@ -195,26 +222,26 @@ export default function PaiementsPage() {
             {webhooks.length === 0 ? (
               <p className="p-3 text-xs text-colimo-neutre-fonce/50">Aucun webhook reçu pour l&apos;instant.</p>
             ) : (
-              <table className="w-full text-xs">
-                <thead className="bg-colimo-neutre-clair/40 text-left text-colimo-neutre-fonce/60">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Date</th>
-                    <th className="px-3 py-2 font-medium">Fournisseur</th>
-                    <th className="px-3 py-2 font-medium">Traité</th>
-                    <th className="px-3 py-2 font-medium">Erreur</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="text-xs">
+                <TableHeader>
+                  <TableRow className="border-colimo-neutre-clair bg-colimo-neutre-clair/40 text-colimo-neutre-fonce/60">
+                    <TableHead className="h-8 px-3 py-2">Date</TableHead>
+                    <TableHead className="h-8 px-3 py-2">Fournisseur</TableHead>
+                    <TableHead className="h-8 px-3 py-2">Traité</TableHead>
+                    <TableHead className="h-8 px-3 py-2">Erreur</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {webhooks.map((w) => (
-                    <tr key={w.id} className="border-t border-colimo-neutre-clair">
-                      <td className="px-3 py-2">{new Date(w.createdAt).toLocaleString("fr-FR")}</td>
-                      <td className="px-3 py-2">{w.fournisseur}</td>
-                      <td className="px-3 py-2">{w.traite ? "✓" : "—"}</td>
-                      <td className="px-3 py-2 text-colimo-rouge">{w.erreur ?? ""}</td>
-                    </tr>
+                    <TableRow key={w.id} className="border-colimo-neutre-clair">
+                      <TableCell className="p-2 px-3">{new Date(w.createdAt).toLocaleString("fr-FR")}</TableCell>
+                      <TableCell className="p-2 px-3">{w.fournisseur}</TableCell>
+                      <TableCell className="p-2 px-3">{w.traite ? "✓" : "—"}</TableCell>
+                      <TableCell className="p-2 px-3 text-colimo-rouge">{w.erreur ?? ""}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </div>
         )}
@@ -242,51 +269,51 @@ export default function PaiementsPage() {
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-            <tr>
-              <th className="px-4 py-3 font-medium">N° commande</th>
-              <th className="px-4 py-3 font-medium">Client</th>
-              <th className="px-4 py-3 font-medium">Téléphone</th>
-              <th className="px-4 py-3 font-medium">Montant</th>
-              <th className="px-4 py-3 font-medium">Réseau</th>
-              <th className="px-4 py-3 font-medium">Référence</th>
-              <th className="px-4 py-3 font-medium">Capture</th>
-              <th className="px-4 py-3 font-medium">Déclaré le</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
-              {onglet === "a_valider" && <th className="px-4 py-3 font-medium">Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+              <TableHead>N° commande</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Téléphone</TableHead>
+              <TableHead>Montant</TableHead>
+              <TableHead>Réseau</TableHead>
+              <TableHead>Référence</TableHead>
+              <TableHead>Capture</TableHead>
+              <TableHead>Déclaré le</TableHead>
+              <TableHead>Statut</TableHead>
+              {onglet === "a_valider" && <TableHead>Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {paiementsAffiches.map((paiement) => {
               const c = course(paiement.courseId);
               const client = utilisateur(paiement.utilisateurId);
               return (
-                <tr key={paiement.id} className="border-b border-colimo-neutre-clair last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-colimo-neutre-fonce/70">
+                <TableRow key={paiement.id} className="border-colimo-neutre-clair">
+                  <TableCell className="font-mono text-xs text-colimo-neutre-fonce/70">
                     {c?.numeroCommande ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     {client?.prenom ? `${client.prenom} ` : ""}
                     {client?.nom ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">{paiement.numeroPayeur ?? client?.telephone ?? "—"}</td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>{paiement.numeroPayeur ?? client?.telephone ?? "—"}</TableCell>
+                  <TableCell>
                     {formatFCFA(paiement.montantPaye ?? paiement.montantAttendu)}
                     {paiement.montantPaye !== null && paiement.montantPaye !== paiement.montantAttendu && (
                       <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">
                         Attendu : {formatFCFA(paiement.montantAttendu)}
                       </p>
                     )}
-                  </td>
-                  <td className="px-4 py-3">{paiement.reseau ? RESEAU_PAIEMENT_LABELS[paiement.reseau] : "—"}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-colimo-neutre-fonce/70">
+                  </TableCell>
+                  <TableCell>{paiement.reseau ? RESEAU_PAIEMENT_LABELS[paiement.reseau] : "—"}</TableCell>
+                  <TableCell className="font-mono text-xs text-colimo-neutre-fonce/70">
                     {paiement.reference}
                     {paiement.referenceTransaction && (
                       <p className="mt-0.5 text-colimo-neutre-fonce/50">Txn : {paiement.referenceTransaction}</p>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     {paiement.captureUrl && estUrlHttpSure(paiement.captureUrl) ? (
                       <a
                         href={paiement.captureUrl}
@@ -299,45 +326,94 @@ export default function PaiementsPage() {
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/50">
+                  </TableCell>
+                  <TableCell className="text-xs text-colimo-neutre-fonce/50">
                     {paiement.declareAt ? new Date(paiement.declareAt).toLocaleString("fr-FR") : "—"}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <StatutBadge statut={paiement.statut} label={STATUT_PAIEMENT_LABELS[paiement.statut]} />
-                  </td>
+                  </TableCell>
                   {onglet === "a_valider" && (
-                    <td className="px-4 py-3">
+                    <TableCell>
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => valider(paiement)}
-                          disabled={enCours === paiement.id}
-                          className="rounded-md bg-colimo-rouge px-2.5 py-1 text-xs font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-40"
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              disabled={enCours === paiement.id}
+                              className="rounded-md bg-colimo-rouge px-2.5 py-1 text-xs font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-40"
+                            >
+                              Valider
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmer ce paiement ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Confirmer le paiement {paiement.reference} ?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => valider(paiement)}>Confirmer</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        <Dialog
+                          open={paiementARejeter?.id === paiement.id}
+                          onOpenChange={(open) => {
+                            setPaiementARejeter(open ? paiement : null);
+                            setMotifRejet("");
+                          }}
                         >
-                          Valider
-                        </button>
-                        <button
-                          onClick={() => rejeter(paiement)}
-                          disabled={enCours === paiement.id}
-                          className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-40"
-                        >
-                          Rejeter
-                        </button>
+                          <DialogTrigger asChild>
+                            <button
+                              disabled={enCours === paiement.id}
+                              className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:opacity-40"
+                            >
+                              Rejeter
+                            </button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Rejeter le paiement {paiement.reference}</DialogTitle>
+                            </DialogHeader>
+                            <Input
+                              value={motifRejet}
+                              onChange={(e) => setMotifRejet(e.target.value)}
+                              placeholder="Motif (optionnel)"
+                              autoFocus
+                            />
+                            <DialogFooter>
+                              <button
+                                onClick={() => setPaiementARejeter(null)}
+                                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+                              >
+                                Annuler
+                              </button>
+                              <button
+                                onClick={() => rejeter(paiement, motifRejet)}
+                                className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+                              >
+                                Rejeter
+                              </button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
-                    </td>
+                    </TableCell>
                   )}
-                </tr>
+                </TableRow>
               );
             })}
             {!chargement && paiementsAffiches.length === 0 && (
-              <tr>
-                <td colSpan={onglet === "a_valider" ? 10 : 9} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+              <TableRow>
+                <TableCell colSpan={onglet === "a_valider" ? 10 : 9} className="py-6 text-center text-colimo-neutre-fonce/50">
                   {onglet === "a_valider" ? "Aucun paiement à valider" : "Aucun paiement"}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

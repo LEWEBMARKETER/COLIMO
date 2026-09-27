@@ -7,6 +7,21 @@ import StatutBadge from "@/components/StatutBadge";
 import BadgePill from "@/components/BadgePill";
 import NiveauBadge from "@/components/NiveauBadge";
 import NoteEtoiles from "@/components/NoteEtoiles";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ajouterCommentaireInterne,
   attribuerBadge,
@@ -65,6 +80,12 @@ export default function FicheCoursierPage() {
   const [badgeAAttribuer, setBadgeAAttribuer] = useState<string>("");
   const [niveauSelectionne, setNiveauSelectionne] = useState<string>("");
   const [commentaire, setCommentaire] = useState("");
+  const [dialogStatutOuvert, setDialogStatutOuvert] = useState(false);
+  const [motifChangementStatut, setMotifChangementStatut] = useState("");
+  const [dialogSuspensionOuvert, setDialogSuspensionOuvert] = useState(false);
+  const [motifSuspension, setMotifSuspension] = useState("");
+  const [dialogSuppressionOuvert, setDialogSuppressionOuvert] = useState(false);
+  const [motifSuppression, setMotifSuppression] = useState("");
 
   async function charger() {
     const c = await getCoursierAvecUtilisateur(coursierId);
@@ -99,13 +120,12 @@ export default function FicheCoursierPage() {
   const niveauActuel = coursier?.niveauId ? niveaux.find((n) => n.id === coursier.niveauId) : undefined;
   const badgesDisponibles = badges.filter((b) => !badgesAttribues.some((a) => a.badgeId === b.id));
 
-  async function enregistrerStatut() {
+  async function appliquerChangementStatut(motif?: string) {
     if (!coursier) return;
     if (aCourseEnCours && ["suspendu", "desactive"].includes(nouveauStatut)) {
       window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le suspendre/désactiver.");
       return;
     }
-    const motif = ["suspendu", "desactive"].includes(nouveauStatut) ? window.prompt("Motif (optionnel) :") ?? undefined : undefined;
     try {
       await changerStatutCoursier(coursier.id, nouveauStatut, { ancienStatut: coursier.statut, motif });
       await charger();
@@ -114,21 +134,39 @@ export default function FicheCoursierPage() {
     }
   }
 
-  async function suspendre() {
-    if (!coursier) return;
+  function cliquerModifierStatut() {
+    if (["suspendu", "desactive"].includes(nouveauStatut)) {
+      setMotifChangementStatut("");
+      setDialogStatutOuvert(true);
+    } else {
+      appliquerChangementStatut();
+    }
+  }
+
+  async function confirmerChangementStatut() {
+    await appliquerChangementStatut(motifChangementStatut.trim() || undefined);
+    setDialogStatutOuvert(false);
+  }
+
+  function ouvrirSuspension() {
     if (aCourseEnCours) {
       window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le suspendre.");
       return;
     }
-    const motif = window.prompt(
-      "Motif de la suspension (obligatoire) :\nEx. mauvais comportement, documents expirés, litiges élevés, fraude, demande personnelle"
-    );
-    if (!motif) return;
+    setMotifSuspension("");
+    setDialogSuspensionOuvert(true);
+  }
+
+  async function confirmerSuspension() {
+    if (!coursier || !motifSuspension.trim()) return;
     try {
-      await suspendreCoursier(coursier.id, { motif });
+      await suspendreCoursier(coursier.id, { motif: motifSuspension.trim() });
       await charger();
     } catch (erreur) {
       window.alert(erreur instanceof Error ? erreur.message : "Impossible de suspendre ce coursier.");
+    } finally {
+      setDialogSuspensionOuvert(false);
+      setMotifSuspension("");
     }
   }
 
@@ -148,7 +186,6 @@ export default function FicheCoursierPage() {
       window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le désactiver.");
       return;
     }
-    if (!window.confirm("Désactiver définitivement ce compte ?")) return;
     try {
       await desactiverCoursier(coursier.id);
       await charger();
@@ -157,22 +194,19 @@ export default function FicheCoursierPage() {
     }
   }
 
-  async function supprimer() {
-    if (!coursier) return;
+  function ouvrirSuppression() {
     if (aCourseEnCours) {
       window.alert("Ce coursier a une course active en cours — réaffectez-la ou attendez sa finalisation avant de le supprimer.");
       return;
     }
-    if (
-      !window.confirm(
-        "Supprimer définitivement ce coursier ? Cette action est irréversible.\n\nSi ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé."
-      )
-    ) {
-      return;
-    }
-    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
+    setMotifSuppression("");
+    setDialogSuppressionOuvert(true);
+  }
+
+  async function confirmerSuppression() {
+    if (!coursier) return;
     try {
-      const resultat = await supprimerCompteUtilisateur(coursier.utilisateurId, motif || undefined);
+      const resultat = await supprimerCompteUtilisateur(coursier.utilisateurId, motifSuppression.trim() || undefined);
       window.alert(
         resultat.mode === "suppression_definitive"
           ? "Compte supprimé définitivement."
@@ -181,6 +215,7 @@ export default function FicheCoursierPage() {
       router.push("/coursiers");
     } catch (erreur) {
       window.alert(erreur instanceof Error ? erreur.message : "Impossible de supprimer ce compte.");
+      setDialogSuppressionOuvert(false);
     }
   }
 
@@ -316,19 +351,20 @@ export default function FicheCoursierPage() {
             </p>
           )}
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={nouveauStatut}
-              onChange={(e) => setNouveauStatut(e.target.value as StatutCoursier)}
-              className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-            >
-              {STATUTS_MODIFIABLES.map((s) => (
-                <option key={s} value={s}>
-                  {STATUT_COURSIER_LABELS[s]}
-                </option>
-              ))}
-            </select>
+            <Select value={nouveauStatut} onValueChange={(v) => setNouveauStatut(v as StatutCoursier)}>
+              <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUTS_MODIFIABLES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUT_COURSIER_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <button
-              onClick={enregistrerStatut}
+              onClick={cliquerModifierStatut}
               className="rounded-md bg-colimo-rouge px-3 py-1.5 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
             >
               ✏️ Modifier le statut
@@ -344,7 +380,7 @@ export default function FicheCoursierPage() {
               </button>
             ) : (
               <button
-                onClick={suspendre}
+                onClick={ouvrirSuspension}
                 disabled={aCourseEnCours}
                 title={aCourseEnCours ? "Course active en cours — réaffectez-la avant de suspendre" : undefined}
                 className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair disabled:cursor-not-allowed disabled:opacity-40"
@@ -353,17 +389,29 @@ export default function FicheCoursierPage() {
               </button>
             )}
             {coursier.statut !== "desactive" && (
-              <button
-                onClick={desactiver}
-                disabled={aCourseEnCours}
-                title={aCourseEnCours ? "Course active en cours — réaffectez-la avant de désactiver" : undefined}
-                className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                🚫 Désactiver
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    disabled={aCourseEnCours}
+                    title={aCourseEnCours ? "Course active en cours — réaffectez-la avant de désactiver" : undefined}
+                    className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    🚫 Désactiver
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Désactiver définitivement ce compte ?</AlertDialogTitle>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={desactiver}>Désactiver</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             <button
-              onClick={supprimer}
+              onClick={ouvrirSuppression}
               disabled={aCourseEnCours}
               title={aCourseEnCours ? "Course active en cours — réaffectez-la avant de supprimer" : undefined}
               className="rounded-md border border-colimo-rouge/30 px-3 py-1.5 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair disabled:cursor-not-allowed disabled:opacity-40"
@@ -376,18 +424,19 @@ export default function FicheCoursierPage() {
         <div className="rounded-2xl border border-colimo-neutre-clair bg-white p-5">
           <p className="mb-3 font-medium text-colimo-neutre-fonce">Niveau</p>
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={niveauSelectionne}
-              onChange={(e) => setNiveauSelectionne(e.target.value)}
-              className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-            >
-              <option value="">Aucun</option>
-              {niveaux.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.nom}
-                </option>
-              ))}
-            </select>
+            <Select value={niveauSelectionne || "aucun"} onValueChange={(v) => setNiveauSelectionne(v === "aucun" ? "" : v)}>
+              <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="aucun">Aucun</SelectItem>
+                {niveaux.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <button
               onClick={enregistrerNiveau}
               className="rounded-md bg-colimo-rouge px-3 py-1.5 text-xs font-medium text-white hover:bg-colimo-rouge-fonce"
@@ -400,18 +449,19 @@ export default function FicheCoursierPage() {
         <div className="rounded-2xl border border-colimo-neutre-clair bg-white p-5">
           <p className="mb-3 font-medium text-colimo-neutre-fonce">Attribuer un badge</p>
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={badgeAAttribuer}
-              onChange={(e) => setBadgeAAttribuer(e.target.value)}
-              className="rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm focus:border-colimo-rouge focus:outline-none"
-            >
-              <option value="">Choisir un badge</option>
-              {badgesDisponibles.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.icone} {b.nom}
-                </option>
-              ))}
-            </select>
+            <Select value={badgeAAttribuer || "aucun"} onValueChange={(v) => setBadgeAAttribuer(v === "aucun" ? "" : v)}>
+              <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="aucun">Choisir un badge</SelectItem>
+                {badgesDisponibles.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.icone} {b.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <button
               onClick={attribuer}
               disabled={!badgeAAttribuer}
@@ -445,41 +495,134 @@ export default function FicheCoursierPage() {
       <div className="mt-8">
         <p className="mb-3 font-titre text-base font-semibold text-colimo-neutre-fonce">Historique</p>
         <div className="overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-              <tr>
-                <th className="px-4 py-3 font-medium">Date</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-                <th className="px-4 py-3 font-medium">Détail</th>
-                <th className="px-4 py-3 font-medium">Motif / commentaire</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                <TableHead>Date</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Détail</TableHead>
+                <TableHead>Motif / commentaire</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {historique.map((h) => (
-                <tr key={h.id} className="border-b border-colimo-neutre-clair last:border-0">
-                  <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/50">{new Date(h.createdAt).toLocaleString("fr-FR")}</td>
-                  <td className="px-4 py-3">{ACTION_HISTORIQUE_COURSIER_LABELS[h.action]}</td>
-                  <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                <TableRow key={h.id} className="border-colimo-neutre-clair">
+                  <TableCell className="text-xs text-colimo-neutre-fonce/50">{new Date(h.createdAt).toLocaleString("fr-FR")}</TableCell>
+                  <TableCell>{ACTION_HISTORIQUE_COURSIER_LABELS[h.action]}</TableCell>
+                  <TableCell className="text-xs text-colimo-neutre-fonce/70">
                     {h.ancienneValeur && <span>{h.ancienneValeur} → </span>}
                     {h.nouvelleValeur ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-colimo-neutre-fonce/70">
+                  </TableCell>
+                  <TableCell className="text-xs text-colimo-neutre-fonce/70">
                     {h.motif && <p>Motif : {h.motif}</p>}
                     {h.commentaire && <p>{h.commentaire}</p>}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
               {historique.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+                <TableRow>
+                  <TableCell colSpan={4} className="py-6 text-center text-colimo-neutre-fonce/50">
                     Aucun historique
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
+
+      <Dialog open={dialogStatutOuvert} onOpenChange={setDialogStatutOuvert}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Changer le statut en « {STATUT_COURSIER_LABELS[nouveauStatut]} »</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={motifChangementStatut}
+            onChange={(e) => setMotifChangementStatut(e.target.value)}
+            placeholder="Motif (optionnel)"
+            autoFocus
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setDialogStatutOuvert(false)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerChangementStatut}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Confirmer
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialogSuspensionOuvert} onOpenChange={setDialogSuspensionOuvert}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Suspendre {nom}</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-colimo-neutre-fonce/60">
+            Ex. mauvais comportement, documents expirés, litiges élevés, fraude, demande personnelle
+          </p>
+          <Input
+            value={motifSuspension}
+            onChange={(e) => setMotifSuspension(e.target.value)}
+            placeholder="Motif (obligatoire)"
+            autoFocus
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setDialogSuspensionOuvert(false)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerSuspension}
+              disabled={!motifSuspension.trim()}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-40"
+            >
+              Suspendre
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialogSuppressionOuvert} onOpenChange={setDialogSuppressionOuvert}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer définitivement ce coursier ?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-colimo-neutre-fonce/70">
+            Cette action est irréversible. Si ce compte n&apos;a aucun historique (aucune course, aucun avis...), il
+            sera supprimé définitivement, y compris de Supabase Auth. S&apos;il a de l&apos;historique, ses données
+            personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de
+            courses/paiements sera conservé.
+          </p>
+          <Input
+            value={motifSuppression}
+            onChange={(e) => setMotifSuppression(e.target.value)}
+            placeholder="Motif de la suppression (optionnel)"
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setDialogSuppressionOuvert(false)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerSuppression}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Supprimer
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

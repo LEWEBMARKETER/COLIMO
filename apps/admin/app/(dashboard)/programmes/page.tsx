@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import StatutBadge from "@/components/StatutBadge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { creerProgramme, getParticipantsProgramme, getProgrammes } from "@/lib/api";
 import {
   PROGRAM_STATUS_LABELS,
@@ -118,17 +120,18 @@ export default function ProgrammesPage() {
               rows={2}
               className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm sm:col-span-2"
             />
-            <select
-              value={cible}
-              onChange={(e) => setCible(e.target.value as ProgramTargetType)}
-              className="rounded-md border border-colimo-neutre-clair px-3 py-2 text-sm"
-            >
-              {CIBLES.map((c) => (
-                <option key={c} value={c}>
-                  {PROGRAM_TARGET_TYPE_LABELS[c]}
-                </option>
-              ))}
-            </select>
+            <Select value={cible} onValueChange={(v) => setCible(v as ProgramTargetType)}>
+              <SelectTrigger className="h-auto rounded-md border-colimo-neutre-clair px-3 py-2 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CIBLES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {PROGRAM_TARGET_TYPE_LABELS[c]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <input
               value={maxParticipants}
               onChange={(e) => setMaxParticipants(e.target.value)}
@@ -165,47 +168,47 @@ export default function ProgrammesPage() {
       )}
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-            <tr>
-              <th className="px-4 py-3 font-medium">Programme</th>
-              <th className="px-4 py-3 font-medium">Cible</th>
-              <th className="px-4 py-3 font-medium">Participants</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+              <TableHead>Programme</TableHead>
+              <TableHead>Cible</TableHead>
+              <TableHead>Participants</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {programmes.map((p) => (
-              <tr key={p.id} className="border-b border-colimo-neutre-clair last:border-0">
-                <td className="px-4 py-3 font-medium text-colimo-neutre-fonce">{p.name}</td>
-                <td className="px-4 py-3">{PROGRAM_TARGET_TYPE_LABELS[p.targetType]}</td>
-                <td className="px-4 py-3 [font-variant-numeric:tabular-nums]">
+              <TableRow key={p.id} className="border-colimo-neutre-clair">
+                <TableCell className="font-medium text-colimo-neutre-fonce">{p.name}</TableCell>
+                <TableCell>{PROGRAM_TARGET_TYPE_LABELS[p.targetType]}</TableCell>
+                <TableCell className="[font-variant-numeric:tabular-nums]">
                   {p.participantsAcceptes}
                   {p.maxParticipants !== null ? ` / ${p.maxParticipants}` : ""}
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <StatutBadge statut={p.status} label={PROGRAM_STATUS_LABELS[p.status]} />
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell>
                   <Link
                     href={`/programmes/${p.id}`}
                     className="rounded-md border border-colimo-neutre-clair px-2.5 py-1 text-xs font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
                   >
                     Gérer
                   </Link>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {!chargement && programmes.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+              <TableRow>
+                <TableCell colSpan={5} className="py-6 text-center text-colimo-neutre-fonce/50">
                   Aucun programme créé
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

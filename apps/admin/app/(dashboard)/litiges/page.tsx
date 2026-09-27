@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from "react";
 import StatutBadge from "@/components/StatutBadge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+} from "@/components/ui/alert-dialog";
 import { getCommercantsBruts, getCourses, getLitiges, getUtilisateurs, resoudreLitige } from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 import {
@@ -22,8 +33,8 @@ import {
   type Utilisateur,
 } from "@colimo/shared";
 
-// Résolutions qui n'ont besoin d'aucune saisie complémentaire — un simple
-// window.confirm suffit, comme le reste des actions rapides de l'admin.
+// Résolutions qui n'ont besoin d'aucune saisie complémentaire — une simple
+// confirmation (AlertDialog) suffit, comme le reste des actions rapides de l'admin.
 const RESOLUTIONS_SIMPLES = new Set<ResolutionLitige>(["maintenue", "retour"]);
 
 const MOTIFS_ADMIN: { valeur: MotifAnnulationAdmin; label: string }[] = (
@@ -47,6 +58,10 @@ export default function LitigesPage() {
   const [motifPanneau, setMotifPanneau] = useState<MotifAnnulationAdmin | "">("");
   const [commentairePanneau, setCommentairePanneau] = useState("");
   const [montantPanneau, setMontantPanneau] = useState("");
+  const [resolutionAConfirmer, setResolutionAConfirmer] = useState<{
+    course: Course;
+    resolution: "maintenue" | "retour";
+  } | null>(null);
 
   useEffect(() => {
     charger();
@@ -128,18 +143,19 @@ export default function LitigesPage() {
 
   function declencherResolution(course: Course, resolution: ResolutionLitige) {
     if (RESOLUTIONS_SIMPLES.has(resolution)) {
-      const confirmations: Record<"maintenue" | "retour", string> = {
-        maintenue: `Maintenir la course ${course.numeroCommande} (la livraison reprend son cours) ?`,
-        retour: `Marquer le colis de ${course.numeroCommande} comme retourné ? Le client sera facturé ${formatFCFA(
-          calculerFraisRetour(course.prix)
-        )} (50% du prix), conformément à la politique de retour.`,
-      };
-      if (!window.confirm(confirmations[resolution as "maintenue" | "retour"])) return;
-      appliquerResolution(course, resolution);
+      setResolutionAConfirmer({ course, resolution: resolution as "maintenue" | "retour" });
       return;
     }
     setPanneau({ courseId: course.id, resolution });
   }
+
+  const MESSAGES_CONFIRMATION_SIMPLE: Record<"maintenue" | "retour", (course: Course) => string> = {
+    maintenue: (course) => `Maintenir la course ${course.numeroCommande} (la livraison reprend son cours) ?`,
+    retour: (course) =>
+      `Marquer le colis de ${course.numeroCommande} comme retourné ? Le client sera facturé ${formatFCFA(
+        calculerFraisRetour(course.prix)
+      )} (50% du prix), conformément à la politique de retour.`,
+  };
 
   function confirmerPanneau(course: Course) {
     if (!panneau) return;
@@ -282,18 +298,18 @@ export default function LitigesPage() {
                 </p>
 
                 {panneauCourse.resolution === "annulee" && (
-                  <select
-                    value={motifPanneau}
-                    onChange={(e) => setMotifPanneau(e.target.value as MotifAnnulationAdmin)}
-                    className="mb-3 w-full rounded-md border border-colimo-neutre-clair px-2 py-1.5 text-xs"
-                  >
-                    <option value="">Motif de l'annulation…</option>
-                    {MOTIFS_ADMIN.map((m) => (
-                      <option key={m.valeur} value={m.valeur}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={motifPanneau || undefined} onValueChange={(v) => setMotifPanneau(v as MotifAnnulationAdmin)}>
+                    <SelectTrigger className="mb-3 h-auto w-full px-2 py-1.5 text-xs">
+                      <SelectValue placeholder="Motif de l'annulation…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOTIFS_ADMIN.map((m) => (
+                        <SelectItem key={m.valeur} value={m.valeur}>
+                          {m.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
 
                 {panneauCourse.resolution === "remboursement_partiel" && (
@@ -350,6 +366,31 @@ export default function LitigesPage() {
           </p>
         )}
       </div>
+
+      <AlertDialog open={resolutionAConfirmer !== null} onOpenChange={(open) => !open && setResolutionAConfirmer(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {resolutionAConfirmer?.resolution === "maintenue" ? "Maintenir la course ?" : "Marquer le colis comme retourné ?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {resolutionAConfirmer &&
+                MESSAGES_CONFIRMATION_SIMPLE[resolutionAConfirmer.resolution](resolutionAConfirmer.course)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (resolutionAConfirmer) appliquerResolution(resolutionAConfirmer.course, resolutionAConfirmer.resolution);
+                setResolutionAConfirmer(null);
+              }}
+            >
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

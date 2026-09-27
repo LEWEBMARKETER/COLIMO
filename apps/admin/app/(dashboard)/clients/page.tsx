@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import StatutBadge from "@/components/StatutBadge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getUtilisateurs, getCourses, updateUtilisateur, supprimerCompteUtilisateur } from "@/lib/api";
 import { ZONE_LABELS, estCompteSupprime, type Course, type Utilisateur, type Zone } from "@colimo/shared";
 
@@ -27,6 +31,8 @@ export default function ClientsPage() {
     telephone: "",
     zone: "",
   });
+  const [clientASupprimer, setClientASupprimer] = useState<Utilisateur | null>(null);
+  const [motifSuppression, setMotifSuppression] = useState("");
 
   useEffect(() => {
     Promise.all([getUtilisateurs(), getCourses()])
@@ -80,28 +86,24 @@ export default function ClientsPage() {
     setUtilisateurs((prev) => prev.map((u) => (u.id === client.id ? misAJour : u)));
   }
 
-  async function supprimerCompte(client: Utilisateur) {
-    if (
-      !window.confirm(
-        `Supprimer le compte de ${client.nom} ?\n\nSi ce compte n'a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y compris de Supabase Auth. S'il a de l'historique, ses données personnelles seront anonymisées et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé.\n\nCette action est irréversible.`
-      )
-    ) {
-      return;
-    }
-    const motif = window.prompt("Motif de la suppression (optionnel) :") ?? undefined;
+  async function confirmerSuppression() {
+    if (!clientASupprimer) return;
     try {
-      const resultat = await supprimerCompteUtilisateur(client.id, motif || undefined);
+      const resultat = await supprimerCompteUtilisateur(clientASupprimer.id, motifSuppression.trim() || undefined);
       if (resultat.mode === "suppression_definitive") {
-        setUtilisateurs((prev) => prev.filter((u) => u.id !== client.id));
-        window.alert(`Compte de ${client.nom} supprimé définitivement.`);
+        setUtilisateurs((prev) => prev.filter((u) => u.id !== clientASupprimer.id));
+        window.alert(`Compte de ${clientASupprimer.nom} supprimé définitivement.`);
       } else if (resultat.utilisateur) {
-        setUtilisateurs((prev) => prev.map((u) => (u.id === client.id ? resultat.utilisateur! : u)));
+        setUtilisateurs((prev) => prev.map((u) => (u.id === clientASupprimer.id ? resultat.utilisateur! : u)));
         window.alert(
           `Ce compte avait de l'historique : ses données personnelles ont été anonymisées et sa connexion bloquée définitivement (l'historique de courses/paiements est conservé).`
         );
       }
     } catch (erreur) {
       window.alert(erreur instanceof Error ? erreur.message : "Impossible de supprimer ce compte.");
+    } finally {
+      setClientASupprimer(null);
+      setMotifSuppression("");
     }
   }
 
@@ -143,75 +145,79 @@ export default function ClientsPage() {
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-colimo-neutre-clair text-colimo-neutre-fonce/60">
-            <tr>
-              <th className="px-4 py-3 font-medium">Nom</th>
-              <th className="px-4 py-3 font-medium">Type</th>
-              <th className="px-4 py-3 font-medium">Téléphone</th>
-              <th className="px-4 py-3 font-medium">Zone</th>
-              <th className="px-4 py-3 font-medium">Commandes</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+              <TableHead>Nom</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Téléphone</TableHead>
+              <TableHead>Zone</TableHead>
+              <TableHead>Commandes</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {clients.map((client) => {
               const enCours = enEdition === client.id;
               return (
-                <tr key={client.id} className="border-b border-colimo-neutre-clair last:border-0">
-                  <td className="px-4 py-3">
+                <TableRow key={client.id} className="border-colimo-neutre-clair">
+                  <TableCell>
                     {enCours ? (
-                      <input
+                      <Input
                         value={brouillon.nom}
                         onChange={(e) => setBrouillon((b) => ({ ...b, nom: e.target.value }))}
-                        className="w-40 rounded-md border border-colimo-neutre-clair px-2 py-1 text-sm"
+                        className="h-auto w-40 px-2 py-1 text-sm"
                       />
                     ) : (
                       client.nom
                     )}
-                  </td>
-                  <td className="px-4 py-3 capitalize">{client.typeClient ?? "particulier"}</td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="capitalize">{client.typeClient ?? "particulier"}</TableCell>
+                  <TableCell>
                     {enCours ? (
-                      <input
+                      <Input
                         value={brouillon.telephone}
                         onChange={(e) => setBrouillon((b) => ({ ...b, telephone: e.target.value }))}
-                        className="w-32 rounded-md border border-colimo-neutre-clair px-2 py-1 text-sm"
+                        className="h-auto w-32 px-2 py-1 text-sm"
                       />
                     ) : (
                       client.telephone
                     )}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     {enCours ? (
-                      <select
-                        value={brouillon.zone}
-                        onChange={(e) => setBrouillon((b) => ({ ...b, zone: e.target.value as Zone }))}
-                        className="rounded-md border border-colimo-neutre-clair px-2 py-1 text-sm"
+                      <Select
+                        value={brouillon.zone || "aucune"}
+                        onValueChange={(v) => setBrouillon((b) => ({ ...b, zone: v === "aucune" ? "" : (v as Zone) }))}
                       >
-                        <option value="">—</option>
-                        {(Object.keys(ZONE_LABELS) as Zone[]).map((zone) => (
-                          <option key={zone} value={zone}>
-                            {ZONE_LABELS[zone]}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="h-auto px-2 py-1 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aucune">—</SelectItem>
+                          {(Object.keys(ZONE_LABELS) as Zone[]).map((zone) => (
+                            <SelectItem key={zone} value={zone}>
+                              {ZONE_LABELS[zone]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : client.zone ? (
                       ZONE_LABELS[client.zone]
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <Link href={`/courses?clientId=${client.id}`} className="text-colimo-rouge hover:underline">
                       {nombreCommandes(client.id)}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <StatutBadge statut={client.statut} label={STATUT_CLIENT_LABELS[client.statut] ?? "Actif"} />
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     {estCompteSupprime(client.telephone) ? (
                       <span className="text-xs text-colimo-neutre-fonce/40">Compte supprimé — aucune action possible</span>
                     ) : enCours ? (
@@ -244,27 +250,68 @@ export default function ClientsPage() {
                           {client.statut === "suspendu" ? "Réactiver" : "Suspendre"}
                         </button>
                         <button
-                          onClick={() => supprimerCompte(client)}
+                          onClick={() => setClientASupprimer(client)}
                           className="rounded-md border border-colimo-rouge/30 px-2.5 py-1 text-xs font-medium text-colimo-rouge hover:bg-colimo-rouge-clair"
                         >
                           Supprimer
                         </button>
                       </div>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
             {!chargement && clients.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-colimo-neutre-fonce/50">
+              <TableRow>
+                <TableCell colSpan={7} className="py-6 text-center text-colimo-neutre-fonce/50">
                   Aucun client trouvé
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
+
+      <Dialog
+        open={clientASupprimer !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setClientASupprimer(null);
+            setMotifSuppression("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le compte de {clientASupprimer?.nom} ?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-colimo-neutre-fonce/70">
+            Si ce compte n&apos;a aucun historique (aucune course, aucun avis...), il sera supprimé définitivement, y
+            compris de Supabase Auth. S&apos;il a de l&apos;historique, ses données personnelles seront anonymisées
+            et sa connexion bloquée définitivement — mais son historique de courses/paiements sera conservé. Cette
+            action est irréversible.
+          </p>
+          <Input
+            value={motifSuppression}
+            onChange={(e) => setMotifSuppression(e.target.value)}
+            placeholder="Motif de la suppression (optionnel)"
+          />
+          <DialogFooter>
+            <button
+              onClick={() => setClientASupprimer(null)}
+              className="rounded-md border border-colimo-neutre-clair px-3 py-1.5 text-sm font-medium text-colimo-neutre-fonce hover:bg-colimo-neutre-clair"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={confirmerSuppression}
+              className="rounded-md bg-colimo-rouge px-3 py-1.5 text-sm font-medium text-white hover:bg-colimo-rouge-fonce"
+            >
+              Supprimer
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
