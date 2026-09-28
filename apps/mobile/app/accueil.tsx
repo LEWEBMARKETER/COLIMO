@@ -338,7 +338,7 @@ export default function AccueilScreen() {
 
           <View className="relative overflow-hidden">
             <FondDegrade />
-            <View className="mx-auto w-full max-w-6xl flex-row items-center gap-16 px-12 py-24">
+            <View className="mx-auto w-full max-w-7xl flex-row items-center gap-12 px-12 py-24">
               <View className="flex-1">
                 <Text className="font-texte-medium text-xs uppercase tracking-widest text-colimo-rouge">
                   Livraison à Libreville et environs · à partir de 2 000 FCFA
@@ -366,11 +366,11 @@ export default function AccueilScreen() {
                 <EtapesCompactes />
               </View>
 
-              <View className="flex-1 flex-row items-end justify-center gap-4">
+              <View className="flex-1 flex-row flex-wrap items-end justify-center gap-4">
                 <Image
                   source={require("../assets/hero-livreur.png")}
                   resizeMode="contain"
-                  style={{ width: 190, height: 230 }}
+                  style={{ width: 254, height: 308 }}
                 />
                 <TelephoneApercu profil={profil} />
               </View>
@@ -497,9 +497,9 @@ export default function AccueilScreen() {
             <Image
               source={require("../assets/hero-livreur.png")}
               resizeMode="contain"
-              style={{ width: 148, height: 179 }}
+              style={{ width: 210, height: 254 }}
             />
-            <View className="-mt-2">
+            <View className="-mt-3">
               <TelephoneApercu profil={profil} />
             </View>
           </View>
