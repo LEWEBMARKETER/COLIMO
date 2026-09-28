@@ -6,8 +6,10 @@ import StatutBadge from "@/components/StatutBadge";
 import CarteCourses from "@/components/CarteCourses";
 import DetailCourseModal from "@/components/DetailCourseModal";
 import ValidationLivraisonModal from "@/components/ValidationLivraisonModal";
+import GraphiqueBarres from "@/components/GraphiqueBarres";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { agregerParBucket, bornesPeriode, genererBuckets, PERIODE_LABELS, type Periode } from "@/lib/periodes";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,6 +74,7 @@ function CoursesContenu() {
   const [coursiers, setCoursiers] = useState<CoursierAvecUtilisateur[]>([]);
   const [confirmations, setConfirmations] = useState<ConfirmationLivraison[]>([]);
   const [filtreZone, setFiltreZone] = useState<string>("toutes");
+  const [periode, setPeriode] = useState<Periode>("tout");
   const [filtreAConfirmer, setFiltreAConfirmer] = useState(searchParams.get("filtre") === "a_confirmer");
   const [chargement, setChargement] = useState(true);
   const [panneauAnnulation, setPanneauAnnulation] = useState<string | null>(null);
@@ -113,11 +116,30 @@ function CoursesContenu() {
   // section 10), pas un nouveau statut.
   const coursesAConfirmer = useMemo(() => courses.filter((c) => c.statut === "livree"), [courses]);
 
+  // Recalculée une seule fois par rendu : "maintenant" ne doit pas dériver
+  // entre le filtrage des courses et le découpage du graphique, sinon les
+  // deux pourraient retomber sur des bornes de période légèrement différentes.
+  const maintenant = useMemo(() => new Date(), []);
+  const bornes = useMemo(() => bornesPeriode(periode, maintenant), [periode, maintenant]);
+
   const coursesAffichees = useMemo(() => {
     let liste = clientIdFiltre ? courses.filter((c) => c.clientId === clientIdFiltre) : courses;
     if (filtreAConfirmer) liste = liste.filter((c) => c.statut === "livree");
+    if (bornes) {
+      liste = liste.filter((c) => {
+        const d = new Date(c.createdAt);
+        return d >= bornes.debut && d < bornes.fin;
+      });
+    }
     return liste;
-  }, [courses, clientIdFiltre, filtreAConfirmer]);
+  }, [courses, clientIdFiltre, filtreAConfirmer, bornes]);
+
+  // Le graphique porte sur les courses déjà filtrées par zone/client/"à
+  // confirmer" (coursesAffichees), mais jamais par la période elle-même —
+  // les buckets définissent leurs propres bornes temporelles à l'intérieur
+  // de la période choisie.
+  const buckets = useMemo(() => genererBuckets(periode, maintenant, coursesAffichees), [periode, maintenant, coursesAffichees]);
+  const donneesGraphique = useMemo(() => agregerParBucket(coursesAffichees, buckets), [coursesAffichees, buckets]);
 
   const nomUtilisateur = useMemo(
     () => (id: string) => utilisateurs.find((u) => u.id === id)?.nom ?? "—",
@@ -219,6 +241,18 @@ function CoursesContenu() {
           >
             À confirmer ({coursesAConfirmer.length})
           </button>
+          <Select value={periode} onValueChange={(v) => setPeriode(v as Periode)}>
+            <SelectTrigger className="h-auto w-auto min-w-[8rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(PERIODE_LABELS) as Periode[]).map((p) => (
+                <SelectItem key={p} value={p}>
+                  {PERIODE_LABELS[p]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={filtreZone} onValueChange={setFiltreZone}>
             <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
               <SelectValue />
@@ -245,6 +279,20 @@ function CoursesContenu() {
           </button>
         </div>
       )}
+
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <GraphiqueBarres
+          titre={`Chiffre d'affaires — ${PERIODE_LABELS[periode].toLowerCase()}`}
+          donnees={donneesGraphique.map((p) => ({ label: p.label, valeur: p.chiffreAffaires }))}
+          formatValeur={formatFCFA}
+        />
+        <GraphiqueBarres
+          titre={`Courses — ${PERIODE_LABELS[periode].toLowerCase()}`}
+          donnees={donneesGraphique.map((p) => ({ label: p.label, valeur: p.nombreCourses }))}
+          formatValeur={(v) => String(v)}
+          couleur="#2B2622"
+        />
+      </div>
 
       <div className="mt-6">
         <div className="mb-2 flex items-center justify-between">
