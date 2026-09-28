@@ -366,7 +366,12 @@ export default function AccueilScreen() {
                 <EtapesCompactes />
               </View>
 
-              <View className="flex-1 items-center justify-center">
+              <View className="flex-1 flex-row items-end justify-center gap-4">
+                <Image
+                  source={require("../assets/hero-livreur.png")}
+                  resizeMode="contain"
+                  style={{ width: 190, height: 230 }}
+                />
                 <TelephoneApercu profil={profil} />
               </View>
             </View>
@@ -489,7 +494,14 @@ export default function AccueilScreen() {
           <EtapesCompactes />
 
           <View className="mt-6 items-center">
-            <TelephoneApercu profil={profil} />
+            <Image
+              source={require("../assets/hero-livreur.png")}
+              resizeMode="contain"
+              style={{ width: 148, height: 179 }}
+            />
+            <View className="-mt-2">
+              <TelephoneApercu profil={profil} />
+            </View>
           </View>
         </View>
 
