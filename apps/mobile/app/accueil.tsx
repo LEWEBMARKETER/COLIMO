@@ -1,22 +1,23 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  Image,
-  Pressable,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { useRef, useState } from "react";
+import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { ZONE_LABELS, zonesArriveeDesservies, zonesDepartDesservies, type Zone } from "@colimo/shared";
 import Bouton from "@/components/ui/Bouton";
+import Carte from "@/components/ui/Carte";
 import CarteInfoConfiance from "@/components/ui/CarteInfoConfiance";
+import ChiffreCle from "@/components/ui/ChiffreCle";
+import StatutChip from "@/components/ui/StatutChip";
+import TitreSection from "@/components/ui/TitreSection";
 import { useInstallationPwa } from "@/lib/pwa";
+
+// Dérivées de la grille tarifaire (packages/shared/pricing), jamais une
+// liste séparée à recopier à la main — sinon elle finit par mentionner une
+// zone non desservie (ex. PK12, cf. la correction de ZoneSelector).
+const ZONES_DESSERVIES: Zone[] = Array.from(new Set([...zonesDepartDesservies(), ...zonesArriveeDesservies()]));
+const ZONES_DESSERVIES_LABEL = ZONES_DESSERVIES.map((zone) => ZONE_LABELS[zone]).join(", ");
 
 const INFORMATIONS_CLES: { icone: keyof typeof Ionicons.glyphMap; titre: string; description: string }[] = [
   { icone: "location-outline", titre: "Grand Libreville", description: "Livraisons dans les zones couvertes par COLIMO" },
@@ -75,28 +76,6 @@ const PILLES_CONFIANCE: { icone: keyof typeof Ionicons.glyphMap; texte: string }
   { icone: "card-outline", texte: "Espèces & Mobile Money" },
 ];
 
-// Respecte la préférence système "réduire les animations" — désactive les
-// boucles Animated ci-dessous plutôt que de les imposer indéfiniment.
-function useReduireAnimations(): boolean {
-  const [reduit, setReduit] = useState(false);
-  useEffect(() => {
-    let actif = true;
-    AccessibilityInfo.isReduceMotionEnabled?.()
-      .then((valeur) => {
-        if (actif) setReduit(valeur);
-      })
-      .catch(() => {});
-    const abonnement = AccessibilityInfo.addEventListener?.("reduceMotionChanged", (valeur: boolean) => {
-      if (actif) setReduit(valeur);
-    });
-    return () => {
-      actif = false;
-      abonnement?.remove?.();
-    };
-  }, []);
-  return reduit;
-}
-
 // Remplace l'ancien fond plat "bg-colimo-noir" par un dégradé de profondeur
 // (mêmes tokens de marque, juste noir → noir clair en diagonale) + halos
 // rouges + un anneau fin à peine visible — pas de nouvel asset, pas de
@@ -129,68 +108,125 @@ function FondDegrade({ inverse = false }: { inverse?: boolean }) {
   );
 }
 
-const APERCU_PAR_PROFIL: Record<ProfilHero, { destination: string; delai: string; nom: string; note: string }> = {
-  particulier: { destination: "Colis vers Bikélé", delai: "Arrivée dans 22 min", nom: "Steevy N.", note: "★ 4,9 · Moto" },
-  commerce: { destination: "Commande vers Akanda", delai: "Arrivée dans 15 min", nom: "Grace O.", note: "★ 4,8 · Scooter" },
+const APERCU_PAR_PROFIL: Record<
+  ProfilHero,
+  { prenomOuNom: string; initiale: string; destination: string; prix: string }
+> = {
+  particulier: { prenomOuNom: "Steevy", initiale: "S", destination: "Libreville → Bikélé-Essassa", prix: "3 500 FCFA" },
+  commerce: { prenomOuNom: "Le Comptoir", initiale: "C", destination: "Libreville → Akanda", prix: "3 000 FCFA" },
 };
 
-// Pas d'accès à de vraies photos/vidéos ici (pas de récupération d'images
-// externes) : un mock d'écran de suivi, inspiré du Hero VitGo, plutôt qu'un
-// visuel statique — point de repère qui monte, ETA, coursier, "Suivre".
+// Aperçu construit avec les mêmes composants que l'accueil réel de l'app
+// (Carte, StatutChip, ChiffreCle, TitreSection) — une vraie capture
+// d'écran fidèle, pas un mock inventé pour la page vitrine. Deux contenus
+// (particulier/commerce) qui suivent le sélecteur de profil du hero, sinon
+// ce dernier ne changeait que le texte à côté sans rien montrer.
 function TelephoneApercu({ profil }: { profil: ProfilHero }) {
-  const reduireAnimations = useReduireAnimations();
-  const [hauteurTrajet, setHauteurTrajet] = useState(0);
-  const trajet = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (reduireAnimations) return;
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(trajet, { toValue: 1, duration: 2200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.delay(500),
-        Animated.timing(trajet, { toValue: 0, duration: 0, useNativeDriver: true }),
-        Animated.delay(300),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, [trajet, reduireAnimations]);
-  const translateY = trajet.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(hauteurTrajet - 16, 0)] });
   const infos = APERCU_PAR_PROFIL[profil];
 
   return (
-    <View className="w-full max-w-[280px] overflow-hidden rounded-[36px] border-[6px] border-colimo-noir-clair bg-white shadow-2xl">
-      <View className="bg-colimo-rouge px-5 pb-6 pt-5">
-        <Text className="font-texte text-xs text-white/75">{infos.destination}</Text>
-        <Text className="mt-1 font-titre text-lg text-white">{infos.delai}</Text>
-      </View>
-      <View className="relative h-36 bg-colimo-fond px-5 py-4">
-        <View
-          onLayout={(e) => setHauteurTrajet(e.nativeEvent.layout.height)}
-          className="absolute bottom-4 left-8 top-4 w-0.5 bg-colimo-neutre-clair"
-        />
-        <View className="absolute left-[27px] top-4 h-3 w-3 rounded-full bg-colimo-neutre-fonce/30" />
-        <View className="absolute bottom-4 left-[27px] h-3 w-3 rounded-full bg-colimo-rouge" />
-        {!reduireAnimations && (
-          <Animated.View
-            style={{ transform: [{ translateY }] }}
-            className="absolute left-6 top-4 h-4 w-4 rounded-full border-2 border-white bg-colimo-rouge"
-          />
-        )}
-      </View>
-      <View className="flex-row items-center justify-between border-t border-colimo-neutre-clair px-5 py-3">
+    <View className="w-full max-w-[280px] overflow-hidden rounded-[36px] border-[6px] border-colimo-noir-clair bg-colimo-fond shadow-2xl">
+      <View className="px-5 pb-4 pt-5">
         <View className="flex-row items-center gap-2">
-          <View className="h-8 w-8 items-center justify-center rounded-full bg-colimo-rouge-clair">
-            <Ionicons name="bicycle-outline" size={16} color="#C41E24" />
+          <View className="h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-colimo-rouge-clair">
+            {profil === "commerce" ? (
+              <Ionicons name="storefront-outline" size={16} color="#C41E24" />
+            ) : (
+              <Text className="font-titre text-sm text-colimo-rouge">{infos.initiale}</Text>
+            )}
           </View>
-          <View>
-            <Text className="font-texte-medium text-xs text-colimo-neutre-fonce">{infos.nom}</Text>
-            <Text className="font-texte text-[10px] text-colimo-neutre-fonce/50">{infos.note}</Text>
+          <Text className="flex-1 font-titre text-sm text-colimo-neutre-fonce" numberOfLines={1}>
+            Bonjour {infos.prenomOuNom} 👋
+          </Text>
+        </View>
+
+        <View className="mt-4">
+          <TitreSection>Que faire ?</TitreSection>
+          <View className="mt-2 flex-row gap-2">
+            <View className="flex-1 items-center gap-1 rounded-2xl border border-colimo-neutre-clair bg-white py-3">
+              <Ionicons name={profil === "commerce" ? "add-circle-outline" : "cube-outline"} size={18} color="#C41E24" />
+              <Text className="text-center font-texte-medium text-[10px] text-colimo-neutre-fonce">
+                {profil === "commerce" ? "Nouvelle\nlivraison" : "Envoyer\nun colis"}
+              </Text>
+            </View>
+            <View className="flex-1 items-center gap-1 rounded-2xl border border-colimo-neutre-clair bg-white py-3">
+              <Ionicons name={profil === "commerce" ? "stats-chart-outline" : "location-outline"} size={18} color="#C41E24" />
+              <Text className="text-center font-texte-medium text-[10px] text-colimo-neutre-fonce">
+                {profil === "commerce" ? "Statistiques" : "Suivre une\ncourse"}
+              </Text>
+            </View>
           </View>
         </View>
-        <Text className="font-texte-medium text-xs text-colimo-rouge">Suivre</Text>
+
+        <View className="mt-4">
+          {profil === "commerce" ? (
+            <Carte sombre>
+              <View className="flex-row items-end justify-between">
+                <ChiffreCle valeur="12" label="Livraisons ce mois" sombre taille="moyen" />
+                <ChiffreCle valeur="98%" label="À l'heure" sombre taille="moyen" />
+              </View>
+            </Carte>
+          ) : (
+            <Carte sombre degrade>
+              <Text className="font-texte-medium text-xs text-white/50">Course en cours</Text>
+              <Text className="mt-1 font-texte-medium text-white">{infos.destination}</Text>
+              <View className="mt-2 flex-row items-center justify-between">
+                <Text className="font-titre text-white">{infos.prix}</Text>
+                <StatutChip statut="en_cours" intensite="douce" />
+              </View>
+            </Carte>
+          )}
+        </View>
       </View>
-      <View className="bg-colimo-noir px-5 py-3">
-        <Text className="text-center font-texte-medium text-xs text-white">Partager le lien de suivi</Text>
+
+      <View className="border-t border-colimo-neutre-clair bg-white px-5 py-3">
+        <Text className="text-center font-texte-medium text-xs text-colimo-rouge">Dès 2 000 FCFA · Grand Libreville</Text>
+      </View>
+    </View>
+  );
+}
+
+// Rappel compact des étapes (même contenu que la section "Comment fonctionne
+// une course COLIMO" plus bas, jamais une liste séparée) — visible dès le
+// hero, sans dupliquer les descriptions détaillées.
+function EtapesCompactes({ sombreFond = true }: { sombreFond?: boolean }) {
+  return (
+    <View className="mt-5 flex-row flex-wrap items-center gap-x-2 gap-y-2">
+      {ETAPES.map((etape, index) => (
+        <View key={etape.titre} className="flex-row items-center gap-2">
+          <View className="h-6 w-6 items-center justify-center rounded-full bg-colimo-rouge">
+            <Text className="font-texte-medium text-[11px] text-white">{index + 1}</Text>
+          </View>
+          <Text className={`font-texte-medium text-xs ${sombreFond ? "text-white/75" : "text-colimo-neutre-fonce/70"}`}>
+            {etape.titre}
+          </Text>
+          {index < ETAPES.length - 1 && (
+            <Ionicons name="chevron-forward" size={12} color={sombreFond ? "#ffffff55" : "#2B262255"} />
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// Bande "zones desservies" — mêmes données que ZoneSelector (packages/shared
+// pricing), jamais une liste réécrite à la main dans le texte marketing.
+function BandeZonesDesservies({ desktop }: { desktop: boolean }) {
+  return (
+    <View className={desktop ? "mx-auto w-full max-w-6xl px-12 pt-14" : "mt-10 px-6"}>
+      <Text className="font-texte-medium text-xs uppercase tracking-widest text-colimo-neutre-fonce/40">
+        Zones desservies
+      </Text>
+      <View className="mt-3 flex-row flex-wrap gap-2">
+        {ZONES_DESSERVIES.map((zone) => (
+          <View
+            key={zone}
+            className="flex-row items-center gap-1.5 rounded-full border border-colimo-neutre-clair bg-white px-3 py-1.5"
+          >
+            <Ionicons name="location-outline" size={13} color="#C41E24" />
+            <Text className="font-texte-medium text-xs text-colimo-neutre-fonce">{ZONE_LABELS[zone]}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -326,6 +362,8 @@ export default function AccueilScreen() {
                   ))}
                   <PilleInstallationPwa />
                 </View>
+
+                <EtapesCompactes />
               </View>
 
               <View className="flex-1 items-center justify-center">
@@ -333,6 +371,8 @@ export default function AccueilScreen() {
               </View>
             </View>
           </View>
+
+          <BandeZonesDesservies desktop />
 
           <View className="mx-auto w-full max-w-6xl px-12 pt-20">
             <View className="flex-row gap-16">
@@ -393,7 +433,7 @@ export default function AccueilScreen() {
               </Text>
             </View>
             <Text className="mt-2 text-center font-texte text-xs text-colimo-neutre-fonce/50">
-              Zones desservies : Libreville, Akanda, Owendo, PK12, Bikélé, Ntoum
+              Zones desservies : {ZONES_DESSERVIES_LABEL}
             </Text>
             <Text className="mt-3 text-center font-texte text-xs text-colimo-neutre-fonce/40">
               © COLIMO {new Date().getFullYear()}. Tous droits réservés.
@@ -446,10 +486,14 @@ export default function AccueilScreen() {
             <PilleInstallationPwa />
           </View>
 
+          <EtapesCompactes />
+
           <View className="mt-6 items-center">
             <TelephoneApercu profil={profil} />
           </View>
         </View>
+
+        <BandeZonesDesservies desktop={false} />
 
         <View className="mt-10 px-6">
           <Text className="font-titre text-xl text-colimo-neutre-fonce">Ce qui est inclus</Text>
@@ -512,7 +556,7 @@ export default function AccueilScreen() {
             </Text>
           </View>
           <Text className="mt-2 text-center font-texte text-xs text-colimo-neutre-fonce/50">
-            Zones desservies : Libreville, Akanda, Owendo, PK12, Bikélé, Ntoum
+            Zones desservies : {ZONES_DESSERVIES_LABEL}
           </Text>
           <Text className="mt-3 text-center font-texte text-xs text-colimo-neutre-fonce/40">
             © COLIMO {new Date().getFullYear()}. Tous droits réservés.
