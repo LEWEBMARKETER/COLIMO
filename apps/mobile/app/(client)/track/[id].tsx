@@ -151,6 +151,21 @@ export default function TrackScreen() {
   const [echecEnAttente, setEchecEnAttente] = useState<EchecLivraison | null>(null);
   const [decisionEnCours, setDecisionEnCours] = useState<DecisionEchecLivraison | null>(null);
   const [erreurDecision, setErreurDecision] = useState<string | null>(null);
+  const [rechercheLongue, setRechercheLongue] = useState(false);
+
+  // Le bottom sheet "Recherche d'un coursier…" couvre l'écran entier
+  // (BottomSheet.tsx) pendant que statut = "en_attente" — il masquait la
+  // barre d'action du dessous, y compris le bouton "Annuler la course" déjà
+  // fonctionnel (peutAnnulerCourse l'autorise sur ce statut). Plutôt que de
+  // retirer l'overlay, une option d'annulation apparaît dans le sheet
+  // lui-même après un délai, pour ne pas inviter à annuler dans les toutes
+  // premières secondes d'une recherche qui aboutit généralement vite.
+  useEffect(() => {
+    setRechercheLongue(false);
+    if (course?.statut !== "en_attente") return;
+    const minuteur = setTimeout(() => setRechercheLongue(true), 20000);
+    return () => clearTimeout(minuteur);
+  }, [course?.id, course?.statut]);
 
   async function telechargerRecu() {
     if (!course) return;
@@ -664,6 +679,19 @@ export default function TrackScreen() {
             </Text>
           </View>
         </View>
+        {rechercheLongue && (
+          <Animated.View entering={FadeIn.duration(200)} className="mt-4">
+            <Text className="mb-2 text-center font-texte text-xs text-colimo-neutre-fonce/60">
+              La recherche prend plus de temps que d&apos;habitude.
+            </Text>
+            <Bouton
+              label="Annuler la course"
+              variante="contour"
+              onPress={() => router.push(`/(client)/annuler/${course.id}`)}
+              className="py-3.5"
+            />
+          </Animated.View>
+        )}
       </BottomSheet>
 
       {confirmationReussieVisible && (
