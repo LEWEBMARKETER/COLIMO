@@ -10,6 +10,10 @@ import {
   getBadgesCoursier as getBadgesCoursierQuery,
   getCatalogueBadges as getCatalogueBadgesQuery,
   getCatalogueNiveaux as getCatalogueNiveauxQuery,
+  getCataloguePaliersCommission as getCataloguePaliersCommissionQuery,
+  getGrillePaliersCommission as getGrillePaliersCommissionQuery,
+  enregistrerGrillePaliersCommission as enregistrerGrillePaliersCommissionQuery,
+  getPerformancesMensuelles as getPerformancesMensuellesQuery,
   getCodesPromo as getCodesPromoQuery,
   getCommercantsBruts as getCommercantsBrutsQuery,
   getCoursierAvecUtilisateur as getCoursierAvecUtilisateurQuery,
@@ -93,6 +97,9 @@ import {
   type Litige,
   type ModeleCommunication,
   type NiveauCoursier,
+  type PalierCommission,
+  type PerformanceMensuelleCoursier,
+  type EntreeGrillePalier,
   type PackPayant,
   type Program,
   type ProgramParticipant,
@@ -532,6 +539,26 @@ export async function retirerBadge(attributionId: string): Promise<BadgeCoursier
 
 export function getCatalogueNiveaux(): Promise<NiveauCoursier[]> {
   return getCatalogueNiveauxQuery(createClient());
+}
+
+export function getCataloguePaliersCommission(): Promise<PalierCommission[]> {
+  return getCataloguePaliersCommissionQuery(createClient());
+}
+
+export function getGrillePaliersCommission(dateEffet: string): Promise<PalierCommission[]> {
+  return getGrillePaliersCommissionQuery(createClient(), dateEffet);
+}
+
+export function enregistrerGrillePaliersCommission(dateEffet: string, paliers: EntreeGrillePalier[]): Promise<void> {
+  return enregistrerGrillePaliersCommissionQuery(createClient(), dateEffet, paliers);
+}
+
+export function getPerformancesMensuelles(filtres?: {
+  mois?: string;
+  coursierId?: string;
+  palierId?: string;
+}): Promise<PerformanceMensuelleCoursier[]> {
+  return getPerformancesMensuellesQuery(createClient(), filtres);
 }
 
 export function patchCatalogueNiveau(
