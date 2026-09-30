@@ -69,10 +69,14 @@ import {
   getCompteurProgramme as getCompteurProgrammeQuery,
   getMaCandidatureProgramme as getMaCandidatureProgrammeQuery,
   candidaterProgramme as candidaterProgrammeQuery,
+  getMaPerformanceMensuelle as getMaPerformanceMensuelleQuery,
+  getCataloguePaliersCommission as getCataloguePaliersCommissionQuery,
   type Program,
   type ProgramParticipant,
   type ConfirmationLivraison,
   type EtatConfirmationCoursier,
+  type PalierCommission,
+  type PerformanceMensuelleCoursier,
   type ResultatVerificationOtp,
   type ActiviteCommerce,
   type CategorieColis,
@@ -820,4 +824,14 @@ export async function envoyerDemandeSupport(input: {
   if (!reponse.ok) {
     throw new Error(corps?.erreur || "Impossible d'envoyer votre demande. Réessayez.");
   }
+}
+
+// --- Paliers et commissions coursiers ---
+
+export function getMaPerformanceMensuelle(): Promise<PerformanceMensuelleCoursier | null> {
+  return getMaPerformanceMensuelleQuery(supabase);
+}
+
+export function getCataloguePaliersCommission(): Promise<PalierCommission[]> {
+  return getCataloguePaliersCommissionQuery(supabase);
 }
