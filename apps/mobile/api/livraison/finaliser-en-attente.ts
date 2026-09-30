@@ -10,6 +10,16 @@
 // une exécution par jour) — l'horaire ci-dessous (toutes les heures) peut
 // nécessiter un plan payant. Voir docs/CONFIRMATION_LIVRAISON.md.
 import { createClient } from "@supabase/supabase-js";
+import { EVENEMENT_CANAL, EVENEMENT_MODELE_CODE, envoyerCommunication, type EvenementCommunication } from "@colimo/shared";
+
+// Palier -> événement de notification (besoin section 7) — mêmes
+// événements que track/[id].tsx et ValidationLivraisonModal (admin), pour
+// le 3e et dernier chemin qui peut amener une course à "confirmee".
+const EVENEMENT_PAR_PALIER: Record<string, EvenementCommunication> = {
+  actif: "coursier_palier_actif",
+  pro: "coursier_palier_pro",
+  elite: "coursier_palier_elite",
+};
 
 interface ApiRequest {
   method?: string;
@@ -47,6 +57,32 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
   if (error) {
     res.status(500).json({ erreur: error.message });
     return;
+  }
+
+  // Draine les franchissements de palier générés par les auto-finalisations
+  // ci-dessus (calculer_et_enregistrer_commission_course, appelée depuis
+  // finaliser_livraisons_en_attente, 0056) — best-effort, ne doit jamais
+  // faire échouer la réponse de ce endpoint déjà réussie.
+  try {
+    const { data: franchissements } = await serviceClient.rpc("recuperer_toutes_notifications_palier_en_attente");
+    for (const f of (franchissements ?? []) as {
+      coursier_utilisateur_id: string;
+      palier_code: string;
+      taux: number;
+    }[]) {
+      const evenement = EVENEMENT_PAR_PALIER[f.palier_code];
+      if (!evenement) continue;
+      await envoyerCommunication(serviceClient, {
+        declenchePar: f.coursier_utilisateur_id,
+        utilisateurId: f.coursier_utilisateur_id,
+        canal: EVENEMENT_CANAL[evenement],
+        destinataire: f.coursier_utilisateur_id,
+        modeleCode: EVENEMENT_MODELE_CODE[evenement],
+        variables: { taux: `${Math.round(f.taux * 100)}%` },
+      }).catch(() => {});
+    }
+  } catch {
+    // Silencieux — la finalisation des livraisons ci-dessus a déjà réussi.
   }
 
   res.status(200).json({ finalisees: data });

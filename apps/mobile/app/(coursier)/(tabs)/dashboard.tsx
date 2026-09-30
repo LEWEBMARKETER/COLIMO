@@ -3,11 +3,12 @@ import { ActivityIndicator, FlatList, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
 import { router, useFocusEffect } from "expo-router";
-import { formatFCFA, ZONE_LABELS, type Course, type Zone } from "@colimo/shared";
+import { formatFCFA, ZONE_LABELS, type Course, type PalierCommission, type PerformanceMensuelleCoursier, type Zone } from "@colimo/shared";
 import CourseDisponibleCard from "@/components/CourseDisponibleCard";
 import BandeauNotificationsPush from "@/components/BandeauNotificationsPush";
 import ClocheNotifications from "@/components/ClocheNotifications";
-import { getCourses, patchCoursier } from "@/lib/api";
+import CarteStatutCommission from "@/components/CarteStatutCommission";
+import { getCataloguePaliersCommission, getCourses, getMaPerformanceMensuelle, patchCoursier } from "@/lib/api";
 import { accepterCourse } from "@/lib/coursierActions";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -17,6 +18,8 @@ export default function CoursierDashboard() {
   const [gainsNets, setGainsNets] = useState(0);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [performance, setPerformance] = useState<PerformanceMensuelleCoursier | null>(null);
+  const [paliers, setPaliers] = useState<PalierCommission[]>([]);
 
   useEffect(() => {
     if (!session) return;
@@ -25,6 +28,19 @@ export default function CoursierDashboard() {
       setGainsNets(confirmees.reduce((s, c) => s + (c.prix - c.commission), 0));
     });
   }, [session]);
+
+  // Palier de commission du mois — peut changer pendant que l'onglet reste
+  // ouvert (une course confirmée ailleurs dans l'app fait progresser le
+  // compteur), donc useFocusEffect plutôt qu'un useEffect seul (cf.
+  // colimo-mobile-ux). Deux requêtes indépendantes, jamais groupées dans un
+  // seul Promise.all (même règle).
+  useFocusEffect(
+    useCallback(() => {
+      if (!session) return;
+      getMaPerformanceMensuelle().then(setPerformance).catch(() => {});
+      getCataloguePaliersCommission().then(setPaliers).catch(() => {});
+    }, [session])
+  );
 
   const zonesDisponibilite: Zone[] = coursier?.zonesCouvertes?.length
     ? coursier.zonesCouvertes
@@ -133,6 +149,10 @@ export default function CoursierDashboard() {
                 <BandeauNotificationsPush utilisateurId={session.user.id} />
               </View>
             )}
+
+            <View className="mt-3">
+              <CarteStatutCommission performance={performance} paliers={paliers} />
+            </View>
 
             {/* Chiffre-clé du jour, traitement éditorial : le nombre porte
                 l'information, la légende reste discrète. */}

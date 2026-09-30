@@ -24,11 +24,14 @@ import {
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   desactiverCoursier,
+  enregistrerGrillePaliersCommission,
   getBadgesCoursier,
   getCatalogueBadges,
   getCatalogueNiveaux,
+  getCataloguePaliersCommission,
   getCoursiersAvecStatutEffectif,
   getHistoriqueCoursiers,
+  getPerformancesMensuelles,
   patchCatalogueBadge,
   patchCatalogueNiveau,
   reactiverCoursier,
@@ -42,19 +45,25 @@ import {
   ACTION_HISTORIQUE_COURSIER_LABELS,
   STATUT_COURSIER_LABELS,
   ZONE_LABELS,
+  calculerProgressionPalier,
   calculerStatistiquesCoursier,
   calculerTableauDeBordCoursiers,
   estCompteSupprime,
+  formatFCFA,
   type ActionHistoriqueCoursier,
   type BadgeCoursier,
   type BadgeCoursierAttribue,
   type CoursierAvecStatutEffectif,
+  type EntreeGrillePalier,
   type HistoriqueCoursier,
   type NiveauCoursier,
+  type PalierCommission,
+  type PerformanceMensuelleCoursier,
   type StatutCoursierEffectif,
+  type Zone,
 } from "@colimo/shared";
 
-const SECTIONS = ["dashboard", "liste", "statuts", "badges", "performances", "historique", "parametres"] as const;
+const SECTIONS = ["dashboard", "liste", "statuts", "badges", "performances", "commissions", "historique", "parametres"] as const;
 type Section = (typeof SECTIONS)[number];
 
 const SECTION_LABELS: Record<Section, string> = {
@@ -63,6 +72,7 @@ const SECTION_LABELS: Record<Section, string> = {
   statuts: "Statuts",
   badges: "Badges",
   performances: "Performances",
+  commissions: "Commissions & Paliers",
   historique: "Historique",
   parametres: "Paramètres",
 };
@@ -110,6 +120,14 @@ export default function CoursiersPage() {
   const [coursierASupprimer, setCoursierASupprimer] = useState<CoursierAvecStatutEffectif | null>(null);
   const [motifSuppressionCoursier, setMotifSuppressionCoursier] = useState("");
 
+  const [performancesCommission, setPerformancesCommission] = useState<PerformanceMensuelleCoursier[]>([]);
+  const [paliersCommission, setPaliersCommission] = useState<PalierCommission[]>([]);
+  const [commissionChargee, setCommissionChargee] = useState(false);
+  const [filtreMoisCommission, setFiltreMoisCommission] = useState(() => new Date().toISOString().slice(0, 7) + "-01");
+  const [filtrePalierCommission, setFiltrePalierCommission] = useState<string>("tous");
+  const [filtreCoursierCommission, setFiltreCoursierCommission] = useState<string>("tous");
+  const [filtreZoneCommission, setFiltreZoneCommission] = useState<Zone | "toutes">("toutes");
+
   async function chargerTout() {
     const [c, b, n, ba, h] = await Promise.all([
       getCoursiersAvecStatutEffectif(),
@@ -128,6 +146,47 @@ export default function CoursiersPage() {
   useEffect(() => {
     chargerTout().finally(() => setChargement(false));
   }, []);
+
+  async function chargerCommissions() {
+    const [p, gr] = await Promise.all([
+      getPerformancesMensuelles({ mois: filtreMoisCommission }),
+      getCataloguePaliersCommission(),
+    ]);
+    setPerformancesCommission(p);
+    setPaliersCommission(gr);
+  }
+
+  // Chargée seulement à la première visite de l'onglet (page déjà lourde,
+  // cf. chargerTout ci-dessus) — rechargée explicitement au changement de
+  // mois via le filtre, pas par un effet couplé à chargerTout (requêtes
+  // indépendantes).
+  useEffect(() => {
+    if (section === "commissions" && !commissionChargee) {
+      chargerCommissions().then(() => setCommissionChargee(true));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section]);
+
+  useEffect(() => {
+    if (!commissionChargee) return;
+    getPerformancesMensuelles({ mois: filtreMoisCommission }).then(setPerformancesCommission);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtreMoisCommission]);
+
+  const coursierParId = useMemo(() => new Map(coursiers.map((c) => [c.id, c])), [coursiers]);
+  const palierParId = useMemo(() => new Map(paliersCommission.map((p) => [p.id, p])), [paliersCommission]);
+
+  const performancesCommissionFiltrees = useMemo(
+    () =>
+      performancesCommission.filter((perf) => {
+        const coursier = coursierParId.get(perf.coursierId);
+        if (filtrePalierCommission !== "tous" && perf.palierId !== filtrePalierCommission) return false;
+        if (filtreCoursierCommission !== "tous" && perf.coursierId !== filtreCoursierCommission) return false;
+        if (filtreZoneCommission !== "toutes" && !coursier?.zonesCouvertes.includes(filtreZoneCommission)) return false;
+        return true;
+      }),
+    [performancesCommission, coursierParId, filtrePalierCommission, filtreCoursierCommission, filtreZoneCommission]
+  );
 
   const niveauParId = useMemo(() => new Map(niveaux.map((n) => [n.id, n])), [niveaux]);
   const badgeParId = useMemo(() => new Map(badges.map((b) => [b.id, b])), [badges]);
@@ -639,6 +698,129 @@ export default function CoursiersPage() {
         </div>
       )}
 
+      {section === "commissions" && (
+        <div>
+          <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-colimo-neutre-clair bg-white p-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-colimo-neutre-fonce/60">Mois</label>
+              <input
+                type="month"
+                value={filtreMoisCommission.slice(0, 7)}
+                onChange={(e) => setFiltreMoisCommission(e.target.value + "-01")}
+                className="h-auto rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm text-colimo-neutre-fonce"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-colimo-neutre-fonce/60">Palier</label>
+              <Select value={filtrePalierCommission} onValueChange={setFiltrePalierCommission}>
+                <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tous">Tous les paliers</SelectItem>
+                  {paliersCommission.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-colimo-neutre-fonce/60">Coursier</label>
+              <Select value={filtreCoursierCommission} onValueChange={setFiltreCoursierCommission}>
+                <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tous">Tous les coursiers</SelectItem>
+                  {coursiersVisibles.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {nomCoursier(c)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-colimo-neutre-fonce/60">Zone</label>
+              <Select value={filtreZoneCommission} onValueChange={(v) => setFiltreZoneCommission(v as Zone | "toutes")}>
+                <SelectTrigger className="h-auto w-auto min-w-[10rem] rounded-lg border-colimo-neutre-clair py-2 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="toutes">Toutes les zones</SelectItem>
+                  {Object.entries(ZONE_LABELS).map(([zone, label]) => (
+                    <SelectItem key={zone} value={zone}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-colimo-neutre-clair bg-white">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-colimo-neutre-clair text-colimo-neutre-fonce/60">
+                  <TableHead>Coursier</TableHead>
+                  <TableHead>Courses du mois</TableHead>
+                  <TableHead>Palier</TableHead>
+                  <TableHead>Taux</TableHead>
+                  <TableHead>CA généré</TableHead>
+                  <TableHead>Commission COLIMO</TableHead>
+                  <TableHead>Revenus net coursier</TableHead>
+                  <TableHead>Progression</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {performancesCommissionFiltrees.map((perf) => {
+                  const coursier = coursierParId.get(perf.coursierId);
+                  const palier = perf.palierId ? palierParId.get(perf.palierId) : undefined;
+                  const { prochainPalier, coursesRestantes } = calculerProgressionPalier(perf.coursesEligibles, paliersCommission);
+                  return (
+                    <TableRow key={perf.id} className="border-colimo-neutre-clair">
+                      <TableCell>
+                        {coursier ? (
+                          <Link href={`/coursiers/${coursier.id}`} className="font-medium text-colimo-neutre-fonce hover:text-colimo-rouge">
+                            {nomCoursier(coursier)}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>{perf.coursesEligibles}</TableCell>
+                      <TableCell>{palier?.nom ?? "—"}</TableCell>
+                      <TableCell>{perf.tauxCommissionActuel !== null ? `${Math.round(perf.tauxCommissionActuel * 100)}%` : "—"}</TableCell>
+                      <TableCell>{formatFCFA(perf.chiffreAffairesBrut)}</TableCell>
+                      <TableCell>{formatFCFA(perf.commissionColimoTotal)}</TableCell>
+                      <TableCell>{formatFCFA(perf.revenusNetCoursier)}</TableCell>
+                      <TableCell className="text-colimo-neutre-fonce/70">
+                        {prochainPalier && coursesRestantes !== null
+                          ? `${coursesRestantes} avant ${prochainPalier.nom}`
+                          : "Meilleur taux atteint"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {performancesCommissionFiltrees.length === 0 && (
+                  <TableRow className="border-colimo-neutre-clair">
+                    <TableCell colSpan={8} className="py-8 text-center text-colimo-neutre-fonce/50">
+                      Aucune donnée pour ce mois et ces filtres.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="mt-6">
+            <GrillePaliersCommission paliers={paliersCommission} onEnregistre={chargerCommissions} />
+          </div>
+        </div>
+      )}
+
       {section === "historique" && (
         <div>
           <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-colimo-neutre-clair bg-white p-4">
@@ -1059,6 +1241,145 @@ function ParametresCoursiers({
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+interface BrouillonPalier {
+  code: string;
+  nom: string;
+  seuilMin: string;
+  seuilMax: string;
+  taux: string;
+  ordre: number;
+}
+
+function palierVersBrouillon(p: PalierCommission): BrouillonPalier {
+  return {
+    code: p.code,
+    nom: p.nom,
+    seuilMin: String(p.seuilMin),
+    seuilMax: p.seuilMax === null ? "" : String(p.seuilMax),
+    taux: String(Math.round(p.taux * 100)),
+    ordre: p.ordre,
+  };
+}
+
+// Grille des paliers de commission (besoin section 9) — même patron de
+// brouillon éditable que ParametresCoursiers ci-dessus, mais enregistrée en
+// un seul appel (enregistrer_grille_paliers_commission valide l'ensemble de
+// la grille, pas ligne par ligne : chevauchement/trous ne peuvent être
+// détectés qu'en comparant toutes les lignes entre elles). Une date d'effet
+// différente de celle déjà active crée une nouvelle version de la grille,
+// sans jamais modifier les commissions déjà calculées avec l'ancienne.
+function GrillePaliersCommission({ paliers, onEnregistre }: { paliers: PalierCommission[]; onEnregistre: () => Promise<void> }) {
+  const dateEffetActuelle = paliers[0]?.dateEffet ?? new Date().toISOString().slice(0, 10);
+  const [dateEffet, setDateEffet] = useState(dateEffetActuelle);
+  const [brouillons, setBrouillons] = useState<BrouillonPalier[]>(() => paliers.map(palierVersBrouillon));
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDateEffet(dateEffetActuelle);
+    setBrouillons(paliers.map(palierVersBrouillon));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paliers]);
+
+  function modifier(index: number, champ: "nom" | "seuilMin" | "seuilMax" | "taux", valeur: string) {
+    setBrouillons((prev) => prev.map((b, i) => (i === index ? { ...b, [champ]: valeur } : b)));
+  }
+
+  async function enregistrer() {
+    setEnCours(true);
+    setErreur(null);
+    try {
+      const entrees: EntreeGrillePalier[] = brouillons.map((b) => ({
+        code: b.code,
+        nom: b.nom,
+        seuilMin: Number(b.seuilMin) || 0,
+        seuilMax: b.seuilMax.trim() === "" ? null : Number(b.seuilMax),
+        taux: (Number(b.taux) || 0) / 100,
+        ordre: b.ordre,
+      }));
+      await enregistrerGrillePaliersCommission(dateEffet, entrees);
+      await onEnregistre();
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Impossible d'enregistrer cette grille.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-colimo-neutre-clair bg-white p-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="font-medium text-colimo-neutre-fonce">Grille des paliers</p>
+          <p className="mt-1 text-xs text-colimo-neutre-fonce/60">
+            Une modification ne s&apos;applique qu&apos;aux commissions calculées à partir de la date d&apos;effet —
+            jamais aux commissions déjà enregistrées.
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-colimo-neutre-fonce/60">Date d&apos;effet</label>
+          <input
+            type="date"
+            value={dateEffet}
+            onChange={(e) => setDateEffet(e.target.value)}
+            className="h-auto rounded-lg border border-colimo-neutre-clair px-3 py-2 text-sm text-colimo-neutre-fonce"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2">
+        {brouillons.map((b, index) => (
+          <div key={b.code} className="flex flex-wrap items-center gap-3 rounded-lg border border-colimo-neutre-clair p-3">
+            <input
+              value={b.nom}
+              onChange={(e) => modifier(index, "nom", e.target.value)}
+              className="w-28 rounded-lg border border-colimo-neutre-clair px-2 py-1.5 text-sm"
+            />
+            <label className="flex items-center gap-1.5 text-xs text-colimo-neutre-fonce/60">
+              Min
+              <input
+                type="number"
+                value={b.seuilMin}
+                onChange={(e) => modifier(index, "seuilMin", e.target.value)}
+                className="w-16 rounded-lg border border-colimo-neutre-clair px-2 py-1.5 text-sm"
+              />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-colimo-neutre-fonce/60">
+              Max
+              <input
+                type="number"
+                placeholder="∞"
+                value={b.seuilMax}
+                onChange={(e) => modifier(index, "seuilMax", e.target.value)}
+                className="w-16 rounded-lg border border-colimo-neutre-clair px-2 py-1.5 text-sm"
+              />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-colimo-neutre-fonce/60">
+              Taux %
+              <input
+                type="number"
+                value={b.taux}
+                onChange={(e) => modifier(index, "taux", e.target.value)}
+                className="w-16 rounded-lg border border-colimo-neutre-clair px-2 py-1.5 text-sm"
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+
+      {erreur && <p className="mt-3 text-sm text-colimo-rouge">{erreur}</p>}
+
+      <button
+        onClick={enregistrer}
+        disabled={enCours || brouillons.length === 0}
+        className="mt-4 rounded-md bg-colimo-rouge px-4 py-2 text-sm font-medium text-white hover:bg-colimo-rouge-fonce disabled:opacity-40"
+      >
+        {enCours ? "Enregistrement…" : "Enregistrer la grille"}
+      </button>
     </div>
   );
 }

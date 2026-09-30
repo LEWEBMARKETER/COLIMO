@@ -32,6 +32,12 @@ export type EvenementCommunication =
   // Coursier
   | "coursier_compte_valide"
   | "coursier_nouvelle_course_disponible"
+  // Paliers et commissions coursiers (franchissement de palier mensuel,
+  // cf. packages/shared/src/commissions) — jamais lié à une course en
+  // particulier, comme coursier_compte_valide/abonnement_active.
+  | "coursier_palier_actif"
+  | "coursier_palier_pro"
+  | "coursier_palier_elite"
   // Litiges
   | "litige_ouvert"
   | "litige_resolu"
@@ -86,6 +92,10 @@ export const EVENEMENT_MODELE_CODE: Record<EvenementCommunication, string> = {
   coursier_compte_valide: "whatsapp_coursier_compte_valide",
   coursier_nouvelle_course_disponible: "whatsapp_coursier_nouvelle_course_disponible",
 
+  coursier_palier_actif: "coursier_palier_actif",
+  coursier_palier_pro: "coursier_palier_pro",
+  coursier_palier_elite: "coursier_palier_elite",
+
   litige_ouvert: "whatsapp_litige_ouvert",
   litige_resolu: "whatsapp_litige_resolu",
 
@@ -139,6 +149,10 @@ export const EVENEMENT_CANAL: Record<EvenementCommunication, "email" | "sms" | "
 
   coursier_compte_valide: "whatsapp",
   coursier_nouvelle_course_disponible: "whatsapp",
+
+  coursier_palier_actif: "push",
+  coursier_palier_pro: "push",
+  coursier_palier_elite: "push",
 
   litige_ouvert: "whatsapp",
   litige_resolu: "whatsapp",
