@@ -25,11 +25,13 @@ import {
   formatDureeSecondes,
   formatFCFA,
   peutAnnulerCourse,
+  recupererEtMarquerNotificationPalier,
   type ConfirmationLivraison,
   type Coursier,
   type Course,
   type DecisionEchecLivraison,
   type EchecLivraison,
+  type EvenementCommunication,
   type PositionCoursier,
   type Utilisateur,
 } from "@colimo/shared";
@@ -66,6 +68,15 @@ const STATUTS_SIGNALABLES = new Set(["acceptee", "retrait", "en_cours", "livree"
 const STATUTS_AVEC_POSITION = new Set(["acceptee", "retrait", "en_cours"]);
 const STATUTS_TERMINAUX = new Set(["livree", "confirmee", "annulee", "retournee"]);
 const STATUTS_AVEC_OTP = new Set(["acceptee", "retrait", "en_cours"]);
+
+// Palier -> événement de notification (besoin section 7) — STANDARD n'a
+// pas d'entrée : un coursier ne peut jamais "franchir" ce palier de départ
+// (cf. ValidationLivraisonModal côté admin, même table).
+const EVENEMENT_PAR_PALIER: Record<string, EvenementCommunication> = {
+  actif: "coursier_palier_actif",
+  pro: "coursier_palier_pro",
+  elite: "coursier_palier_elite",
+};
 
 // Pastille qui pulse pendant la recherche — indique un processus actif en
 // arrière-plan, pas un écran figé (seule animation en boucle de cet écran,
@@ -202,6 +213,20 @@ export default function TrackScreen() {
           await recalculerBadgesEtNiveau(misAJour.coursierId);
         } catch {
           // Le recalcul des badges/niveau ne doit jamais bloquer la confirmation de livraison.
+        }
+        try {
+          const franchissement = await recupererEtMarquerNotificationPalier(supabase, misAJour.coursierId);
+          const evenement = franchissement ? EVENEMENT_PAR_PALIER[franchissement.palierCode] : undefined;
+          if (evenement) {
+            await notifierEvenement(evenement, {
+              declenchePar: session.user.id,
+              destinataire: misAJour.coursierId,
+              utilisateurId: misAJour.coursierId,
+              variables: { taux: `${Math.round(franchissement!.taux * 100)}%` },
+            });
+          }
+        } catch {
+          // Notification de franchissement de palier best-effort — ne doit jamais bloquer la confirmation.
         }
       }
     } catch {

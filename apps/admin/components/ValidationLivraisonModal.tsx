@@ -4,11 +4,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   METHODE_VERIFICATION_LIVRAISON_LABELS,
   RESULTAT_VERIFICATION_LIVRAISON_LABELS,
+  recupererEtMarquerNotificationPalier,
   type Course,
+  type EvenementCommunication,
   type MethodeVerificationLivraison,
   type ResultatVerificationLivraison,
 } from "@colimo/shared";
 import { validerLivraisonAdmin } from "@/lib/api";
+import { notifierEvenement } from "@/lib/communication";
+import { createClient } from "@/lib/supabaseClient";
+
+// Palier -> événement de notification (besoin section 7) — STANDARD n'a
+// pas d'entrée : un coursier ne peut jamais "franchir" ce palier de départ
+// (le compteur mensuel ne fait qu'augmenter, cf. calculer_et_enregistrer_commission_course, 0055).
+const EVENEMENT_PAR_PALIER: Record<string, EvenementCommunication> = {
+  actif: "coursier_palier_actif",
+  pro: "coursier_palier_pro",
+  elite: "coursier_palier_elite",
+};
 
 const METHODES: MethodeVerificationLivraison[] = [
   "client_contacte",
@@ -54,6 +67,27 @@ export default function ValidationLivraisonModal({ course, onClose, onValide }: 
         note: note.trim() || undefined,
       });
       onValide(misAJour);
+
+      // Validation admin = l'un des 3 chemins qui peut faire passer une
+      // course à "confirmee" (0042, 0051) et donc déclencher un
+      // franchissement de palier côté coursier (0055) — jamais lors d'une
+      // contestation ou d'un constat "impossible", qui ne changent rien au
+      // compteur mensuel.
+      if (resultat === "confirmee" && misAJour.coursierId) {
+        try {
+          const franchissement = await recupererEtMarquerNotificationPalier(createClient(), misAJour.coursierId);
+          const evenement = franchissement ? EVENEMENT_PAR_PALIER[franchissement.palierCode] : undefined;
+          if (evenement) {
+            await notifierEvenement(evenement, {
+              destinataire: misAJour.coursierId,
+              utilisateurId: misAJour.coursierId,
+              variables: { taux: `${Math.round(franchissement!.taux * 100)}%` },
+            });
+          }
+        } catch {
+          // Notification best-effort — ne doit jamais remettre en cause la validation déjà enregistrée.
+        }
+      }
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Impossible d'enregistrer cette validation.");
       setEtapeFinale(false);
