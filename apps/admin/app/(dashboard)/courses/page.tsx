@@ -343,7 +343,7 @@ function CoursesContenu() {
                 <TableCell>
                   {formatFCFA(course.prix)}
                   <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">
-                    Commission : {formatFCFA(course.commission)}
+                    Commission : {course.commission !== null ? formatFCFA(course.commission) : "— (à la confirmation)"}
                   </p>
                   {course.fraisRetour !== null && (
                     <p className="mt-0.5 text-xs text-colimo-neutre-fonce/50">

@@ -25,7 +25,7 @@ export default function CoursierDashboard() {
     if (!session) return;
     getCourses({ coursierId: session.user.id }).then((mesCourses) => {
       const confirmees = mesCourses.filter((c) => c.statut === "confirmee");
-      setGainsNets(confirmees.reduce((s, c) => s + (c.prix - c.commission), 0));
+      setGainsNets(confirmees.reduce((s, c) => s + (c.prix - (c.commission ?? 0)), 0));
     });
   }, [session]);
 

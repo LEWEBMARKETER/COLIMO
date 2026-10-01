@@ -12,8 +12,11 @@ function lignesExport(courses: Course[], utilisateurs: Utilisateur[]) {
     Départ: ZONE_LABELS[c.zoneDepart],
     Arrivée: ZONE_LABELS[c.zoneArrivee],
     Prix: c.prix,
+    // null tant que la course n'est pas confirmée (commission calculée une
+    // seule fois, à la confirmation — cf. migration 0055) : jamais une
+    // estimation inventée pour l'export.
     Commission: c.commission,
-    "Net coursier": c.prix - c.commission,
+    "Net coursier": c.commission !== null ? c.prix - c.commission : null,
     Paiement: MODE_PAIEMENT_LABELS[c.modePaiement],
     Statut: COURSE_STATUS_LABELS[c.statut],
     Date: new Date(c.createdAt).toLocaleDateString("fr-FR"),

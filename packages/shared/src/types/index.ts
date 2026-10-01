@@ -327,7 +327,11 @@ export interface Course {
   codePromoId?: string;
   reductionPromo: number;
   fraisRetour: number | null;
-  commission: number;
+  // null tant que la course n'est pas confirmée : calculée une seule fois,
+  // au moment où la course devient financièrement finale
+  // (calculer_et_enregistrer_commission_course, cf. migration 0055) —
+  // jamais une estimation affichée avant ce moment.
+  commission: number | null;
   telephoneDestinataire: string | null;
   nomDestinataire: string | null;
   nomExpediteur: string | null;
