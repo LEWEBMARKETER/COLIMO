@@ -8,6 +8,7 @@ import {
   QUI_PAIE_LABELS,
   RESULTAT_VERIFICATION_LIVRAISON_LABELS,
   ZONE_LABELS,
+  formatDureeSecondes,
   formatFCFA,
   type ConfirmationLivraison,
   type Course,
@@ -130,11 +131,38 @@ export default function DetailCourseModal({
           <Section titre="Historique">
             <Champ label="Créée le" valeur={formatDateHeure(course.createdAt)} />
             <Champ label="Acceptée le" valeur={formatDateHeure(course.accepteeAt)} />
+            {course.statut === "en_attente" && (
+              <Champ
+                label="Temps avant acceptation"
+                valeur={`${formatDureeSecondes((Date.now() - new Date(course.createdAt).getTime()) / 1000)} (en cours)`}
+              />
+            )}
+            {course.accepteeAt && (
+              <Champ
+                label="Temps avant acceptation"
+                valeur={formatDureeSecondes(
+                  (new Date(course.accepteeAt).getTime() - new Date(course.createdAt).getTime()) / 1000
+                )}
+              />
+            )}
+            {course.statut === "en_attente" && (
+              <Champ label="Recherche prolongée" valeur={course.rechercheProlongeeAt ? "Oui" : "Non"} />
+            )}
             <Champ label="Colis récupéré le" valeur={formatDateHeure(course.recupereeAt)} />
             <Champ label="Livrée le" valeur={formatDateHeure(course.livreeAt)} />
             <Champ label="Confirmée le" valeur={formatDateHeure(course.confirmeeAt)} />
             {course.annuleeAt && <Champ label="Annulée le" valeur={formatDateHeure(course.annuleeAt)} />}
-            {course.motifAnnulation && <Champ label="Motif d'annulation" valeur={course.motifAnnulation} />}
+            {course.annuleePar && (
+              <Champ label="Annulée par" valeur={nomUtilisateur ? nomUtilisateur(course.annuleePar) : course.annuleePar} />
+            )}
+            {course.motifAnnulation && (
+              <Champ
+                label="Motif d'annulation"
+                valeur={
+                  course.motifAnnulation === "no_courier_available" ? "Aucun coursier disponible" : course.motifAnnulation
+                }
+              />
+            )}
             {course.commentaireAnnulation && (
               <Champ label="Commentaire d'annulation" valeur={course.commentaireAnnulation} />
             )}

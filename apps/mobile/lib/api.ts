@@ -71,12 +71,16 @@ import {
   candidaterProgramme as candidaterProgrammeQuery,
   getMaPerformanceMensuelle as getMaPerformanceMensuelleQuery,
   getCataloguePaliersCommission as getCataloguePaliersCommissionQuery,
+  getConfigurationRechercheCoursier as getConfigurationRechercheCoursierQuery,
+  prolongerRechercheCoursier as prolongerRechercheCoursierQuery,
+  marquerRelancesRechercheDues as marquerRelancesRechercheDuesQuery,
   type Program,
   type ProgramParticipant,
   type ConfirmationLivraison,
   type EtatConfirmationCoursier,
   type PalierCommission,
   type PerformanceMensuelleCoursier,
+  type ConfigurationRechercheCoursier,
   type ResultatVerificationOtp,
   type ActiviteCommerce,
   type CategorieColis,
@@ -834,4 +838,18 @@ export function getMaPerformanceMensuelle(): Promise<PerformanceMensuelleCoursie
 
 export function getCataloguePaliersCommission(): Promise<PalierCommission[]> {
   return getCataloguePaliersCommissionQuery(supabase);
+}
+
+// --- Recherche d'un coursier (délai d'attente) ---
+
+export function getConfigurationRechercheCoursier(): Promise<ConfigurationRechercheCoursier> {
+  return getConfigurationRechercheCoursierQuery(supabase);
+}
+
+export function prolongerRechercheCoursier(courseId: string): Promise<void> {
+  return prolongerRechercheCoursierQuery(supabase, courseId);
+}
+
+export function marquerRelancesRechercheDues(courseId: string): Promise<number[]> {
+  return marquerRelancesRechercheDuesQuery(supabase, courseId);
 }

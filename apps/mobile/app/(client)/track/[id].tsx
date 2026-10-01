@@ -7,7 +7,6 @@ import Animated, {
   FadeOut,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
   withSequence,
   withSpring,
   withTiming,
@@ -38,6 +37,7 @@ import {
 import ContactCarte from "@/components/ContactCarte";
 import CarteItineraire from "@/components/CarteItineraire";
 import BandeauStatut from "@/components/BandeauStatut";
+import CarteRechercheCoursier from "@/components/CarteRechercheCoursier";
 import StatusTimeline from "@/components/StatusTimeline";
 import NotationForm from "@/components/NotationForm";
 import NoteEtoiles from "@/components/NoteEtoiles";
@@ -77,18 +77,6 @@ const EVENEMENT_PAR_PALIER: Record<string, EvenementCommunication> = {
   pro: "coursier_palier_pro",
   elite: "coursier_palier_elite",
 };
-
-// Pastille qui pulse pendant la recherche — indique un processus actif en
-// arrière-plan, pas un écran figé (seule animation en boucle de cet écran,
-// visible uniquement tant que le bottom sheet de recherche est affiché).
-function PointRecherche() {
-  const echelle = useSharedValue(1);
-  useEffect(() => {
-    echelle.value = withRepeat(withTiming(1.6, { duration: 700, easing: Easing.inOut(Easing.ease) }), -1, true);
-  }, [echelle]);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: echelle.value }] }));
-  return <Animated.View style={style} className="h-2.5 w-2.5 rounded-full bg-colimo-rouge" />;
-}
 
 // Retour transitoire sur "Confirmer la réception du colis" — la seule
 // action qui clôture le parcours client, jusqu'ici accompagnée d'un son
@@ -151,22 +139,6 @@ export default function TrackScreen() {
   const [echecEnAttente, setEchecEnAttente] = useState<EchecLivraison | null>(null);
   const [decisionEnCours, setDecisionEnCours] = useState<DecisionEchecLivraison | null>(null);
   const [erreurDecision, setErreurDecision] = useState<string | null>(null);
-  const [rechercheLongue, setRechercheLongue] = useState(false);
-
-  // Le bottom sheet "Recherche d'un coursier…" couvre l'écran entier
-  // (BottomSheet.tsx) pendant que statut = "en_attente" — il masquait la
-  // barre d'action du dessous, y compris le bouton "Annuler la course" déjà
-  // fonctionnel (peutAnnulerCourse l'autorise sur ce statut). Plutôt que de
-  // retirer l'overlay, une option d'annulation apparaît dans le sheet
-  // lui-même après un délai, pour ne pas inviter à annuler dans les toutes
-  // premières secondes d'une recherche qui aboutit généralement vite.
-  useEffect(() => {
-    setRechercheLongue(false);
-    if (course?.statut !== "en_attente") return;
-    const minuteur = setTimeout(() => setRechercheLongue(true), 20000);
-    return () => clearTimeout(minuteur);
-  }, [course?.id, course?.statut]);
-
   async function telechargerRecu() {
     if (!course) return;
     setRecuEnCours(true);
@@ -670,27 +642,13 @@ export default function TrackScreen() {
       )}
 
       <BottomSheet visible={course.statut === "en_attente"}>
-        <View className="flex-row items-center gap-3">
-          <PointRecherche />
-          <View className="flex-1">
-            <Text className="font-titre-bold text-base text-colimo-neutre-fonce">Recherche d&apos;un coursier…</Text>
-            <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/60">
-              Nous recherchons un coursier disponible à proximité.
-            </Text>
-          </View>
-        </View>
-        {rechercheLongue && (
-          <Animated.View entering={FadeIn.duration(200)} className="mt-4">
-            <Text className="mb-2 text-center font-texte text-xs text-colimo-neutre-fonce/60">
-              La recherche prend plus de temps que d&apos;habitude.
-            </Text>
-            <Bouton
-              label="Annuler la course"
-              variante="contour"
-              onPress={() => router.push(`/(client)/annuler/${course.id}`)}
-              className="py-3.5"
-            />
-          </Animated.View>
+        {session && (
+          <CarteRechercheCoursier
+            course={course}
+            clientId={session.user.id}
+            onRechercheProlongee={() => getCourse(course.id).then(setCourse)}
+            onCoursierTrouve={() => getCourse(course.id).then(setCourse)}
+          />
         )}
       </BottomSheet>
 
