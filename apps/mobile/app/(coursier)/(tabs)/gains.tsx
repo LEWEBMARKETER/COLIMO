@@ -32,7 +32,7 @@ export default function GainsCoursierScreen() {
 
   const coursesConfirmees = courses.filter((c) => c.statut === "confirmee");
   const gainsBruts = coursesConfirmees.reduce((total, c) => total + c.prix, 0);
-  const gainsNets = coursesConfirmees.reduce((total, c) => total + (c.prix - c.commission), 0);
+  const gainsNets = coursesConfirmees.reduce((total, c) => total + (c.prix - (c.commission ?? 0)), 0);
 
   return (
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
@@ -76,7 +76,8 @@ export default function GainsCoursierScreen() {
                 </View>
                 {item.statut === "confirmee" && (
                   <Text className="mt-1.5 font-texte text-[11px] text-colimo-neutre-fonce/50">
-                    Net perçu : {formatFCFA(item.prix - item.commission)} (commission {formatFCFA(item.commission)})
+                    Net perçu : {formatFCFA(item.prix - (item.commission ?? 0))} (commission{" "}
+                    {formatFCFA(item.commission ?? 0)})
                   </Text>
                 )}
               </View>

@@ -37,7 +37,10 @@ export default function StatistiquesPage() {
   // quel que soit le mode de paiement retenu (espèces ou mobile money).
   const coursesConfirmees = courses.filter((c) => c.statut === "confirmee");
   const chiffreAffairesTotal = coursesConfirmees.reduce((s, c) => s + c.prix, 0);
-  const commissionsGenerees = coursesConfirmees.reduce((s, c) => s + c.commission, 0);
+  // Toujours renseignée pour une course confirmée (calculée à la
+  // confirmation, cf. migration 0055) — ?? 0 lève seulement l'ambiguïté de
+  // type (commission est nullable avant confirmation).
+  const commissionsGenerees = coursesConfirmees.reduce((s, c) => s + (c.commission ?? 0), 0);
   const gainsCoursiersNets = chiffreAffairesTotal - commissionsGenerees;
 
   const parModePaiement = MODES_PAIEMENT.map((mode) => {
@@ -45,7 +48,7 @@ export default function StatistiquesPage() {
     return {
       mode,
       ca: sousEnsemble.reduce((s, c) => s + c.prix, 0),
-      commission: sousEnsemble.reduce((s, c) => s + c.commission, 0),
+      commission: sousEnsemble.reduce((s, c) => s + (c.commission ?? 0), 0),
     };
   });
 

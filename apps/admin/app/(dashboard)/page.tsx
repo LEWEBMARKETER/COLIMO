@@ -92,7 +92,10 @@ export default function DashboardPage() {
   // réalisée, quel que soit le mode de paiement (espèces ou mobile money).
   const commissionsPeriode = coursesPeriode
     .filter((c) => c.statut === "confirmee")
-    .reduce((total, c) => total + c.commission, 0);
+    // Toujours renseignée pour une course confirmée (calculée à la
+    // confirmation, cf. migration 0055) — ?? 0 lève seulement l'ambiguïté
+    // de type (commission est nullable avant confirmation).
+    .reduce((total, c) => total + (c.commission ?? 0), 0);
 
   const coursiersActifs = coursiers.filter((c) => c.disponibilite).length;
   const commercantsActifs = utilisateurs.filter(

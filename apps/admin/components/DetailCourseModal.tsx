@@ -119,7 +119,10 @@ export default function DetailCourseModal({
             <Champ label="Mode de paiement" valeur={MODE_PAIEMENT_LABELS[course.modePaiement]} />
             <Champ label="Qui paie" valeur={QUI_PAIE_LABELS[course.quiPaie]} />
             <Champ label="Prix" valeur={formatFCFA(course.prix)} />
-            <Champ label="Commission" valeur={formatFCFA(course.commission)} />
+            <Champ
+              label="Commission"
+              valeur={course.commission !== null ? formatFCFA(course.commission) : "Calculée à la confirmation"}
+            />
             <Champ label="Réduction promo" valeur={course.reductionPromo ? formatFCFA(course.reductionPromo) : null} />
             <Champ label="Frais de retour" valeur={course.fraisRetour ? formatFCFA(course.fraisRetour) : null} />
           </Section>
