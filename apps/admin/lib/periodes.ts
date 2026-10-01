@@ -77,8 +77,17 @@ export function genererBuckets(periode: Periode, maintenant: Date, courses: Cour
   }
 
   if (courses.length === 0) return [];
-  const dates = courses.map((c) => new Date(c.createdAt).getTime());
-  let curseur = debutMois(new Date(Math.min(...dates)));
+  // Jamais Math.min(...dates) : passé quelques dizaines de milliers de
+  // courses (toute la plateforme, période "Tout"), l'étalement du tableau
+  // en arguments individuels dépasse la pile d'appel du moteur JS
+  // ("Maximum call stack size exceeded") — exception côté client qui
+  // plantait silencieusement toute la page Courses dès son chargement
+  // (periode par défaut = "tout").
+  const dateMinMs = courses.reduce((min, c) => {
+    const t = new Date(c.createdAt).getTime();
+    return t < min ? t : min;
+  }, new Date(courses[0]!.createdAt).getTime());
+  let curseur = debutMois(new Date(dateMinMs));
   const max = debutMois(maintenant);
   const buckets: Bucket[] = [];
   while (curseur <= max) {
