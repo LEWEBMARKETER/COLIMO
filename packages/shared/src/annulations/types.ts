@@ -9,6 +9,7 @@ export type MotifAnnulationClient =
   | "destinataire_indisponible"
   | "colis_non_pret"
   | "erreur_creation"
+  | "no_courier_available"
   | "autre";
 
 export const MOTIF_ANNULATION_CLIENT_LABELS: Record<MotifAnnulationClient, string> = {
@@ -20,6 +21,9 @@ export const MOTIF_ANNULATION_CLIENT_LABELS: Record<MotifAnnulationClient, strin
   destinataire_indisponible: "Le destinataire n'est plus disponible",
   colis_non_pret: "Le colis n'est plus prêt",
   erreur_creation: "J'ai créé la course par erreur",
+  // Jamais proposé dans le sélecteur manuel (AnnulerCourseForm) — réservé à
+  // l'écran automatique "aucun coursier après 15 minutes" (track/[id].tsx).
+  no_courier_available: "Aucun coursier disponible",
   autre: "Autre",
 };
 

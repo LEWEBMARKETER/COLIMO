@@ -129,6 +129,7 @@ export interface CourseRow {
   annulee_par: string | null;
   motif_annulation: string | null;
   commentaire_annulation: string | null;
+  recherche_prolongee_at: string | null;
   statut_avant_litige: CourseStatus | null;
   token_suivi: string;
   code_suivi: string;
@@ -322,6 +323,7 @@ export function courseFromRow(row: CourseRow): Course {
     annuleePar: row.annulee_par,
     motifAnnulation: row.motif_annulation,
     commentaireAnnulation: row.commentaire_annulation,
+    rechercheProlongeeAt: row.recherche_prolongee_at,
     statutAvantLitige: row.statut_avant_litige,
     tokenSuivi: row.token_suivi,
     codeSuivi: row.code_suivi,

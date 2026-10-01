@@ -8,6 +8,7 @@ export * from "./maps";
 export * from "./communication";
 export * from "./coursiers";
 export * from "./commissions";
+export * from "./rechercheCoursier";
 export * from "./annulations";
 export * from "./echecsLivraison";
 export * from "./abonnements";

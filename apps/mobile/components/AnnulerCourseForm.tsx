@@ -8,9 +8,13 @@ import GroupePastilles from "@/components/ui/GroupePastilles";
 import { annulerCourseClient } from "@/lib/api";
 import { notifierEvenement } from "@/lib/communication";
 
+// no_courier_available est réservé à l'écran automatique "aucun coursier
+// après 15 minutes" (track/[id].tsx) — jamais un choix manuel ici.
 const MOTIFS: { valeur: MotifAnnulationClient; label: string }[] = (
   Object.keys(MOTIF_ANNULATION_CLIENT_LABELS) as MotifAnnulationClient[]
-).map((valeur) => ({ valeur, label: MOTIF_ANNULATION_CLIENT_LABELS[valeur] }));
+)
+  .filter((valeur) => valeur !== "no_courier_available")
+  .map((valeur) => ({ valeur, label: MOTIF_ANNULATION_CLIENT_LABELS[valeur] }));
 
 interface AnnulerCourseFormProps {
   courseId: string;

@@ -353,6 +353,10 @@ export interface Course {
   annuleePar: string | null;
   motifAnnulation: string | null;
   commentaireAnnulation: string | null;
+  // Posé une fois par prolonger_recherche_coursier (0058) quand le client
+  // choisit de continuer la recherche après le délai indicatif — jamais
+  // réinitialisé, jamais un état React éphémère (visible par l'admin).
+  rechercheProlongeeAt: string | null;
   statutAvantLitige: CourseStatus | null;
   tokenSuivi: string;
   // Code court lisible (ex. CLM-X7P4-K92M) utilisé pour le lien de suivi
