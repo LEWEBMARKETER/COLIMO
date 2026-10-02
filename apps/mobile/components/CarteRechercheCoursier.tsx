@@ -228,19 +228,33 @@ export default function CarteRechercheCoursier({
   }
 
   return (
-    <View className="flex-row items-center gap-3">
-      <PointRecherche />
-      <View className="flex-1">
-        <View className="flex-row items-baseline justify-between">
-          <Text className="font-titre-bold text-base text-colimo-neutre-fonce">🔎 Recherche d&apos;un coursier</Text>
-          <Text className="font-titre-bold text-base text-colimo-neutre-fonce" style={{ fontVariant: ["tabular-nums"] }}>
-            {formatMmSs(restantMs)}
+    <View>
+      <View className="flex-row items-center gap-3">
+        <PointRecherche />
+        <View className="flex-1">
+          <View className="flex-row items-baseline justify-between">
+            <Text className="font-titre-bold text-base text-colimo-neutre-fonce">🔎 Recherche d&apos;un coursier</Text>
+            <Text className="font-titre-bold text-base text-colimo-neutre-fonce" style={{ fontVariant: ["tabular-nums"] }}>
+              {formatMmSs(restantMs)}
+            </Text>
+          </View>
+          <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/60">
+            Votre demande est proposée aux coursiers disponibles dans votre zone.
           </Text>
         </View>
-        <Text className="mt-0.5 font-texte text-sm text-colimo-neutre-fonce/60">
-          Votre demande est proposée aux coursiers disponibles dans votre zone.
-        </Text>
       </View>
+      {/* CAS A de la mission : pendant les 15 premières minutes, la
+          possibilité d'annuler déjà offerte par l'app doit rester
+          disponible — pas le choix canné "aucun coursier disponible"
+          (réservé à l'expiration, ci-dessus), mais le même écran de
+          motifs que l'action "Annuler la course" historique, sinon
+          inatteignable tant que ce bottom sheet plein écran est affiché. */}
+      <Text
+        onPress={() => router.push(`/(client)/annuler/${course.id}`)}
+        className="mt-3 py-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50"
+      >
+        Annuler la course
+      </Text>
     </View>
   );
 }
