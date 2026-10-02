@@ -126,7 +126,7 @@ begin
   values (v_client_id, 'Test', 'Test', 'libreville', 'libreville', 'colis', 2500, 'en_attente', now() - interval '16 minutes')
   returning id into v_course_id;
 
-  select annuler_course_client(v_course_id, 'no_courier_available', null) into v_resultat;
+  v_resultat := annuler_course_client(v_course_id, 'no_courier_available', null);
   if v_resultat.statut != 'annulee' then
     raise exception 'Scénario B : la course aurait dû être annulée, statut obtenu %', v_resultat.statut;
   end if;
