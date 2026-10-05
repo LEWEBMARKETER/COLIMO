@@ -44,6 +44,20 @@ function dateISOJour(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+// Premier jour du mois UTC contenant `date`, sans passer par un Date
+// reconstruit à partir de getFullYear()/getMonth() (heure LOCALE) puis
+// réinterprété en UTC par dateISOJour — ce round-trip décale le résultat
+// d'un jour en arrière pour tout fuseau UTC+ (dont le Gabon, UTC+1) :
+// minuit local le 1er octobre vaut 23h UTC le 30 septembre. La colonne
+// `performance_mensuelle_coursier.mois` est elle posée côté serveur par
+// date_trunc('month', ...) dans la session Postgres (UTC) — ce calcul
+// doit donc rester en UTC du début à la fin pour correspondre.
+function debutMoisUTC(date: Date): string {
+  const annee = date.getUTCFullYear();
+  const moisIndex = date.getUTCMonth();
+  return `${annee}-${String(moisIndex + 1).padStart(2, "0")}-01`;
+}
+
 // Grille actuellement applicable (la plus récente dont la date d'effet est
 // déjà passée) — même règle que calculer_et_enregistrer_commission_course
 // (0055) côté base : jamais la grille la plus récente tout court (une
@@ -140,7 +154,7 @@ export async function getMaPerformanceMensuelle(
   client: SupabaseClient,
   mois: Date = new Date()
 ): Promise<PerformanceMensuelleCoursier | null> {
-  const debutMois = dateISOJour(new Date(mois.getFullYear(), mois.getMonth(), 1));
+  const debutMois = debutMoisUTC(mois);
   const { data, error } = await client
     .from("performance_mensuelle_coursier")
     .select("*")
