@@ -23,14 +23,18 @@ export default function ClientTabsLayout() {
         name="index"
         options={{
           title: "Accueil",
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="historique"
         options={{
           title: "Historique",
-          tabBarIcon: ({ color, size }) => <Ionicons name="time-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "time" : "time-outline"} size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -38,21 +42,27 @@ export default function ClientTabsLayout() {
         options={{
           title: "Statistiques",
           href: estCommerce ? "/(client)/statistiques" : null,
-          tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "bar-chart" : "bar-chart-outline"} size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="support"
         options={{
           title: "Support",
-          tabBarIcon: ({ color, size }) => <Ionicons name="help-buoy-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "help-buoy" : "help-buoy-outline"} size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profil"
         options={{
           title: "Profil",
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
