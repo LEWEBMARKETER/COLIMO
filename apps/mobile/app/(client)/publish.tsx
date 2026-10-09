@@ -15,6 +15,7 @@ import {
   distanceKm,
   formatFCFA,
   isRouteDesservie,
+  SUPPLEMENT_PRIORITAIRE,
   tempsEstimeMinutes,
   type CategorieColis,
   type CodePromo,
@@ -244,6 +245,19 @@ export default function PublishScreen() {
     <SafeAreaView className="flex-1 bg-colimo-fond" edges={["bottom"]}>
       <View className="px-6 pt-4">
         <Stepper etapes={ETAPES} etapeActuelle={etape} />
+        {/* Prix visible dès qu'il est calculable (étape 1+), pas seulement à
+            la confirmation — pricing est déjà disponible depuis l'étape 1
+            (useMemo plus haut), il manquait juste un affichage avant
+            l'étape 5. La ventilation complète reste réservée à l'étape 5
+            (Carte PriceSummary) pour ne pas la dupliquer plus tôt. */}
+        {pricing && etape < ETAPES.length - 1 && (
+          <View className="mt-3 flex-row items-center justify-between rounded-2xl bg-colimo-rouge-clair px-4 py-2.5">
+            <Text className="font-texte-medium text-xs text-colimo-neutre-fonce/70">Prix estimé</Text>
+            <Text className="font-titre-bold text-sm text-colimo-rouge">
+              {formatFCFA(Math.max(pricing.total - reduction, 0))}
+            </Text>
+          </View>
+        )}
       </View>
 
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}>
@@ -357,6 +371,16 @@ export default function PublishScreen() {
               value={typeLivraison}
               onChange={setTypeLivraison}
             />
+            {/* Positionnement du prix de l'option choisie, même sans afficher
+                un montant exact pour "standard"/"programmée" (identiques) —
+                aide à comparer sans obliger à faire le calcul mentalement. */}
+            <Text className="-mt-2 mb-4 font-texte text-xs text-colimo-neutre-fonce/50">
+              {typeLivraison === "express"
+                ? `+${formatFCFA(SUPPLEMENT_PRIORITAIRE)} pour une prise en charge prioritaire.`
+                : typeLivraison === "programmee"
+                  ? "Même tarif que la livraison standard, à l'heure de votre choix."
+                  : "Tarif standard, sans supplément."}
+            </Text>
             {typeLivraison === "programmee" && (
               <SelecteurCreneauProgramme
                 jour={jourProgramme}
@@ -364,11 +388,6 @@ export default function PublishScreen() {
                 onChangeJour={setJourProgramme}
                 onChangeHeure={setHeureProgrammee}
               />
-            )}
-            {typeLivraison === "express" && (
-              <Text className="-mt-2 mb-4 font-texte text-xs text-colimo-neutre-fonce/50">
-                +{formatFCFA(1000)} pour une prise en charge prioritaire.
-              </Text>
             )}
           </>
         )}
@@ -468,6 +487,16 @@ export default function PublishScreen() {
             />
           )}
         </View>
+
+        {/* Échappatoire pour les utilisateurs peu à l'aise avec un parcours
+            100% digital — router.push garde cet écran dans la pile, le
+            retour restaure le formulaire déjà rempli. */}
+        <Text
+          onPress={() => router.push("/(client)/(tabs)/support")}
+          className="mt-3 py-2 text-center font-texte-medium text-xs text-colimo-neutre-fonce/50"
+        >
+          Besoin d&apos;aide ? Contactez le support
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

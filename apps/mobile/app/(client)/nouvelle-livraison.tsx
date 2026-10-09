@@ -12,6 +12,7 @@ import {
   construireDateProgrammee,
   formatFCFA,
   isRouteDesservie,
+  SUPPLEMENT_PRIORITAIRE,
   type CategorieColis,
   type Commercant,
   type CommerceDestinataire,
@@ -459,6 +460,13 @@ export default function NouvelleLivraisonScreen() {
           value={typeLivraison}
           onChange={setTypeLivraison}
         />
+        <Text className="-mt-2 mb-4 font-texte text-xs text-colimo-neutre-fonce/50">
+          {typeLivraison === "express"
+            ? `+${formatFCFA(SUPPLEMENT_PRIORITAIRE)} pour une prise en charge prioritaire.`
+            : typeLivraison === "programmee"
+              ? "Même tarif que la livraison standard, à l'heure de votre choix."
+              : "Tarif standard, sans supplément."}
+        </Text>
         {typeLivraison === "programmee" && (
           <SelecteurCreneauProgramme
             jour={jourProgramme}
