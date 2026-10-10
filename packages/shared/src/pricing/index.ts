@@ -7,6 +7,7 @@ const GRILLE_TARIFAIRE: Record<string, number> = {
   "libreville|libreville": 2000,
   "libreville|akanda": 3000,
   "libreville|owendo": 3000,
+  "libreville|pk12": 3000,
   "libreville|bikele_essassa": 4000,
   "libreville|ntoum": 5000,
 
@@ -38,7 +39,7 @@ export function isRouteDesservie(depart: Zone, arrivee: Zone): boolean {
 // main) — sert à ne proposer, dans les sélecteurs de zone, que des zones
 // vers/depuis lesquelles une course peut réellement être créée. Ex :
 // Bikélé-Essassa n'est desservie qu'en arrivée (jamais en départ), PK12
-// n'est desservie dans aucun sens pour l'instant.
+// n'est desservie qu'en arrivée depuis Libreville pour l'instant.
 export function zonesDepartDesservies(): Zone[] {
   const departs = new Set(Object.keys(GRILLE_TARIFAIRE).map((cle) => cle.split("|")[0] as Zone));
   return (Object.keys(ZONE_LABELS) as Zone[]).filter((zone) => departs.has(zone));
