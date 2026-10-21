@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Image, Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { Image, type ImageSourcePropType, Linking, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -442,18 +442,24 @@ function SectionHero({ desktop, session, type }: { desktop: boolean; session: un
         titre="Livraison"
         texte="Envoyez vos colis partout dans le Grand Libreville."
         action={{ type: "lien", label: "Envoyer un colis", onPress: allerLivraison }}
+        image={require("../assets/photos/colimo-livraison.webp")}
+        imageDescription="Coursier COLIMO à moto dans les rues de Libreville"
       />
       <CarteServiceHero
         icone="car-outline"
         titre="Transport"
         texte="Déménagements, marchandises et courses volumineuses."
         action={{ type: "bientot" }}
+        image={require("../assets/photos/colimo-transport.webp")}
+        imageDescription="Transporteur COLIMO chargeant des colis près de son camion"
       />
       <CarteServiceHero
         icone="storefront-outline"
         titre="COLIMO Market"
         texte="Vos produits préférés, directement chez vous."
         action={{ type: "bientot" }}
+        image={require("../assets/photos/colimo-market.webp")}
+        imageDescription="Panier de produits du quotidien COLIMO Market"
       />
     </View>
   );
@@ -681,35 +687,52 @@ function SectionMarket({ desktop, onLayout }: { desktop: boolean; onLayout: (y: 
 function SectionPro({ desktop, onLayout }: { desktop: boolean; onLayout: (y: number) => void }) {
   const fonctionnalites = CATALOGUE_FONCTIONNALITES_PREMIUM.slice(0, 4);
 
+  const texte = (
+    <>
+      <TitreSection sombre>COLIMO Pro</TitreSection>
+      <Text className={`mt-2 font-titre-bold text-white ${desktop ? "text-3xl" : "text-2xl"}`}>
+        La solution COLIMO pour les entreprises et commerces
+      </Text>
+      <Text className="mt-3 max-w-xl font-texte text-white/60">
+        Équipe multi-comptes, points de départ multiples, export des commandes, coursiers favoris et support
+        prioritaire — à partir de {formatFCFA(PRIX_PACK_STARTER)}/mois.
+      </Text>
+
+      <View className={desktop ? "mt-6 flex-row flex-wrap gap-4" : "mt-6 gap-3"}>
+        {fonctionnalites.map((f) => (
+          <View key={f.cle} className={`rounded-2xl bg-white/5 p-4 ${desktop ? "w-64" : ""}`}>
+            <Text className="font-texte-medium text-sm text-white">{f.nom}</Text>
+            <Text className="mt-1 font-texte text-xs text-white/50">{f.description}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Text className="mt-4 font-texte text-xs text-white/40">
+        Pack Business à {formatFCFA(PRIX_PACK_BUSINESS)}/mois pour les fonctionnalités avancées.
+      </Text>
+
+      <View className="mt-6">
+        <Bouton label="Découvrir COLIMO Pro" onPress={allerDevenirCommerce} className={desktop ? "self-start px-6 py-4" : "py-3.5"} />
+      </View>
+    </>
+  );
+
+  const photo = (
+    <Image
+      source={require("../assets/photos/colimo-pro.webp")}
+      resizeMode="cover"
+      accessibilityLabel="Professionnel utilisant COLIMO Pro sur tablette"
+      style={desktop ? { width: 260, height: 340, borderRadius: 24 } : { width: "100%", height: 200, borderRadius: 24 }}
+    />
+  );
+
   return (
     <View onLayout={(e) => onLayout(e.nativeEvent.layout.y)} className="relative mt-20 overflow-hidden px-6 py-16">
       <FondDegrade inverse />
-      <View className={desktop ? "mx-auto w-full max-w-6xl px-6" : ""}>
-        <TitreSection sombre>COLIMO Pro</TitreSection>
-        <Text className={`mt-2 font-titre-bold text-white ${desktop ? "text-3xl" : "text-2xl"}`}>
-          La solution COLIMO pour les entreprises et commerces
-        </Text>
-        <Text className="mt-3 max-w-xl font-texte text-white/60">
-          Équipe multi-comptes, points de départ multiples, export des commandes, coursiers favoris et support
-          prioritaire — à partir de {formatFCFA(PRIX_PACK_STARTER)}/mois.
-        </Text>
-
-        <View className={desktop ? "mt-6 flex-row flex-wrap gap-4" : "mt-6 gap-3"}>
-          {fonctionnalites.map((f) => (
-            <View key={f.cle} className={`rounded-2xl bg-white/5 p-4 ${desktop ? "w-64" : ""}`}>
-              <Text className="font-texte-medium text-sm text-white">{f.nom}</Text>
-              <Text className="mt-1 font-texte text-xs text-white/50">{f.description}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Text className="mt-4 font-texte text-xs text-white/40">
-          Pack Business à {formatFCFA(PRIX_PACK_BUSINESS)}/mois pour les fonctionnalités avancées.
-        </Text>
-
-        <View className="mt-6">
-          <Bouton label="Créer mon compte commerce" onPress={allerDevenirCommerce} className={desktop ? "self-start px-6 py-4" : "py-3.5"} />
-        </View>
+      <View className={desktop ? "mx-auto w-full max-w-6xl flex-row items-center gap-12 px-6" : "gap-6"}>
+        {!desktop && photo}
+        <View className={desktop ? "flex-1" : ""}>{texte}</View>
+        {desktop && photo}
       </View>
     </View>
   );
@@ -721,44 +744,51 @@ function SectionPartenaires({ desktop, onLayout }: { desktop: boolean; onLayout:
   const cartes = [
     {
       icone: "bicycle-outline" as const,
-      titre: "Coursiers",
-      texte: "Effectuez des livraisons et développez votre activité.",
+      titre: "Devenir coursier",
+      texte: "Effectuez des livraisons et gagnez des revenus.",
       cta: "Devenir coursier",
       onPress: () => router.push("/(auth)/register-coursier"),
+      image: require("../assets/photos/colimo-coursier.webp") as ImageSourcePropType,
+      imageDescription: "Portrait d'un coursier partenaire COLIMO",
     },
     {
       icone: "car-outline" as const,
-      titre: "Transporteurs",
+      titre: "Devenir transporteur",
       texte: "Recevez des demandes de transport via COLIMO.",
       cta: "Devenir transporteur",
       onPress: () => router.push("/(auth)/register-transporteur"),
+      image: require("../assets/photos/colimo-transporteur.webp") as ImageSourcePropType,
+      imageDescription: "Portrait d'un transporteur partenaire COLIMO",
     },
     {
       icone: "storefront-outline" as const,
-      titre: "Commerces",
+      titre: "Devenir commerce partenaire",
       texte: "Proposez vos produits et développez vos ventes avec COLIMO Market.",
       cta: "Devenir partenaire",
       onPress: allerDevenirCommerce,
+      image: require("../assets/photos/colimo-commerce.webp") as ImageSourcePropType,
+      imageDescription: "Portrait d'une commerçante partenaire COLIMO",
     },
   ];
 
   return (
     <View onLayout={(e) => onLayout(e.nativeEvent.layout.y)} className={desktop ? "mx-auto mt-20 w-full max-w-6xl px-12" : "mt-14 px-6"}>
-      <TitreSection>Espace partenaires</TitreSection>
+      <TitreSection>Devenez partenaire COLIMO</TitreSection>
       <Text className={`mt-2 font-titre-bold text-colimo-neutre-fonce ${desktop ? "text-3xl" : "text-2xl"}`}>
-        Rejoignez le réseau COLIMO
+        Rejoignez notre réseau et développez votre activité
       </Text>
 
       <View className={desktop ? "mt-8 flex-row gap-5" : "mt-6 gap-3"}>
         {cartes.map((c) => (
-          <View key={c.titre} className="flex-1 min-w-[220px] rounded-2xl border border-colimo-neutre-clair bg-white p-5">
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-colimo-rouge-clair">
-              <Ionicons name={c.icone} size={20} color="#C41E24" />
-            </View>
-            <Text className="mt-4 font-titre-bold text-base text-colimo-neutre-fonce">{c.titre}</Text>
-            <Text className="mt-1.5 font-texte text-sm text-colimo-neutre-fonce/70">{c.texte}</Text>
-            <Bouton label={c.cta} variante="contour" onPress={c.onPress} className="mt-4 py-3" />
-          </View>
+          <CarteServiceHero
+            key={c.titre}
+            icone={c.icone}
+            titre={c.titre}
+            texte={c.texte}
+            action={{ type: "lien", label: c.cta, onPress: c.onPress }}
+            image={c.image}
+            imageDescription={c.imageDescription}
+          />
         ))}
       </View>
     </View>
