@@ -254,11 +254,33 @@ function PilleInstallationPwa() {
 // --- Header -----------------------------------------------------------
 
 const ITEMS_SERVICES = [
-  { icone: "cube-outline" as const, label: "Livraison", cible: "livraison" as const },
-  { icone: "car-outline" as const, label: "Transport", cible: "transport" as const },
-  { icone: "storefront-outline" as const, label: "Boutique COLIMO", cible: "boutique" as const },
-  { icone: "briefcase-outline" as const, label: "COLIMO Pro", cible: "pro" as const },
+  { icone: "cube-outline" as const, label: "Livraison", cible: "livraison" as const, bientot: false },
+  { icone: "car-outline" as const, label: "Transport", cible: "transport" as const, bientot: false },
+  // COLIMO Market n'est pas développé (aucun catalogue, aucune commande) —
+  // indication explicite dans le menu lui-même, pas seulement dans la
+  // section (besoin métier). "bientot" ne change que l'affichage, jamais
+  // le comportement du clic : il scrolle toujours vers la vitrine, jamais
+  // vers une commande.
+  { icone: "storefront-outline" as const, label: "COLIMO Market", cible: "market" as const, bientot: true },
+  { icone: "briefcase-outline" as const, label: "COLIMO Pro", cible: "pro" as const, bientot: false },
 ];
+
+// Ligne de menu réutilisée par le dropdown desktop ET le panneau mobile
+// (même contenu, même comportement) — un seul endroit pour l'indication
+// "Bientôt disponible" plutôt que la dupliquer à chaque appelant.
+function LigneMenuService({ item, onPress }: { item: (typeof ITEMS_SERVICES)[number]; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} className="flex-row items-center justify-between rounded-xl px-3 py-2.5 hover:bg-colimo-neutre-clair">
+      <View className="flex-row items-center gap-3">
+        <Ionicons name={item.icone} size={16} color="#C41E24" />
+        <Text className="font-texte-medium text-sm text-colimo-neutre-fonce">{item.label}</Text>
+      </View>
+      {item.bientot && (
+        <Text className="font-texte-medium text-[10px] text-colimo-neutre-fonce/40">Bientôt disponible</Text>
+      )}
+    </Pressable>
+  );
+}
 
 const ITEMS_PARTENAIRES = [
   { icone: "bicycle-outline" as const, label: "Devenir coursier", route: "/(auth)/register-coursier" as const },
@@ -266,7 +288,7 @@ const ITEMS_PARTENAIRES = [
   { icone: "storefront-outline" as const, label: "Devenir commerce partenaire", route: "commerce" as const },
 ];
 
-type CibleSection = "livraison" | "transport" | "boutique" | "pro" | "partenaires" | "commentCaMarche";
+type CibleSection = "livraison" | "transport" | "market" | "pro" | "partenaires" | "commentCaMarche";
 
 function allerDevenirCommerce() {
   router.push({ pathname: "/(auth)/register-client", params: { type: "commerce" } });
@@ -299,16 +321,9 @@ function EnteteDesktop({ onNaviguer }: { onNaviguer: (cible: CibleSection) => vo
             <Ionicons name={menuOuvert === "services" ? "chevron-up" : "chevron-down"} size={14} color="#2B2622B3" />
           </Pressable>
           {menuOuvert === "services" && (
-            <View className="absolute left-0 top-9 w-64 rounded-2xl border border-colimo-neutre-clair bg-white p-2 shadow-lg">
+            <View className="absolute left-0 top-9 w-72 rounded-2xl border border-colimo-neutre-clair bg-white p-2 shadow-lg">
               {ITEMS_SERVICES.map((item) => (
-                <Pressable
-                  key={item.cible}
-                  onPress={() => choisirService(item.cible)}
-                  className="flex-row items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-colimo-neutre-clair"
-                >
-                  <Ionicons name={item.icone} size={16} color="#C41E24" />
-                  <Text className="font-texte-medium text-sm text-colimo-neutre-fonce">{item.label}</Text>
-                </Pressable>
+                <LigneMenuService key={item.cible} item={item} onPress={() => choisirService(item.cible)} />
               ))}
             </View>
           )}
@@ -379,14 +394,7 @@ function EnteteMobile({ onNaviguer }: { onNaviguer: (cible: CibleSection) => voi
             Nos services
           </Text>
           {ITEMS_SERVICES.map((item) => (
-            <Pressable
-              key={item.cible}
-              onPress={() => choisir(() => onNaviguer(item.cible))}
-              className="flex-row items-center gap-3 rounded-xl px-3 py-2.5"
-            >
-              <Ionicons name={item.icone} size={16} color="#C41E24" />
-              <Text className="font-texte-medium text-sm text-colimo-neutre-fonce">{item.label}</Text>
-            </Pressable>
+            <LigneMenuService key={item.cible} item={item} onPress={() => choisir(() => onNaviguer(item.cible))} />
           ))}
 
           <Text
@@ -443,8 +451,8 @@ function SectionHero({ desktop, session, type }: { desktop: boolean; session: un
       />
       <CarteServiceHero
         icone="storefront-outline"
-        titre="Boutique COLIMO"
-        texte="Découvrez les produits sélectionnés de nos commerces partenaires."
+        titre="COLIMO Market"
+        texte="Vos produits préférés, directement chez vous."
         action={{ type: "bientot" }}
       />
     </View>
@@ -620,28 +628,37 @@ function SectionTransport({ desktop, onLayout }: { desktop: boolean; onLayout: (
   );
 }
 
-// --- Section Boutique -------------------------------------------------
+// --- Section COLIMO Market -------------------------------------------------
+// Vitrine pure — aucun catalogue, panier, commande, stock, paiement,
+// commission ni interface vendeur Market (besoin métier explicite :
+// Market n'est pas développé). Aucune table Supabase, aucune route, aucune
+// API spécifique à Market n'existe ni n'est anticipée ici.
+//
+// Activation future : le jour où Market sera développé, seul le `action`
+// de la carte Hero (SectionHero, action={{ type: "bientot" }}) et le badge
+// ci-dessous changent — cette section garde la même structure (TitreSection
+// + accroche + catégories + CTA), pas de refonte nécessaire.
 
-const CATEGORIES_BOUTIQUE = [
+const CATEGORIES_MARKET = [
   { icone: "sparkles-outline" as const, texte: "Produits d'entretien" },
   { icone: "basket-outline" as const, texte: "Épicerie sèche" },
   { icone: "briefcase-outline" as const, texte: "Fournitures professionnelles" },
 ];
 
-function SectionBoutique({ desktop, onLayout }: { desktop: boolean; onLayout: (y: number) => void }) {
+function SectionMarket({ desktop, onLayout }: { desktop: boolean; onLayout: (y: number) => void }) {
   return (
     <View onLayout={(e) => onLayout(e.nativeEvent.layout.y)} className={desktop ? "mx-auto mt-20 w-full max-w-6xl px-12" : "mt-14 px-6"}>
-      <TitreSection>Boutique COLIMO</TitreSection>
+      <TitreSection>COLIMO Market</TitreSection>
       <Text className={`mt-2 font-titre-bold text-colimo-neutre-fonce ${desktop ? "text-3xl" : "text-2xl"}`}>
-        Les produits de nos commerces partenaires, bientôt ici
+        Vos produits préférés, directement chez vous.
       </Text>
       <Text className="mt-3 max-w-xl font-texte text-colimo-neutre-fonce/70">
-        Une vitrine des commerces déjà partenaires COLIMO — produits d&apos;entretien, épicerie sèche, fournitures
-        professionnelles — livrables directement par notre réseau de coursiers.
+        Une future vitrine des produits de nos commerces partenaires — sélectionnés, livrables directement par notre
+        réseau de coursiers. Quelques catégories envisagées :
       </Text>
 
       <View className="mt-6 flex-row flex-wrap gap-3">
-        {CATEGORIES_BOUTIQUE.map((c) => (
+        {CATEGORIES_MARKET.map((c) => (
           <View key={c.texte} className="flex-row items-center gap-2 rounded-full border border-colimo-neutre-clair bg-white px-3.5 py-2">
             <Ionicons name={c.icone} size={15} color="#C41E24" />
             <Text className="font-texte-medium text-xs text-colimo-neutre-fonce">{c.texte}</Text>
@@ -650,7 +667,7 @@ function SectionBoutique({ desktop, onLayout }: { desktop: boolean; onLayout: (y
       </View>
 
       <View className="mt-6">
-        <BadgeBientotDisponible label="Catalogue — bientôt disponible" />
+        <BadgeBientotDisponible label="COLIMO Market — bientôt disponible" />
       </View>
       <Text onPress={allerDevenirCommerce} className="mt-4 font-texte-medium text-sm text-colimo-rouge">
         Devenir commerce partenaire →
@@ -798,7 +815,8 @@ function PiedDePage({ desktop, onNaviguer }: { desktop: boolean; onNaviguer: (ci
         <View className={desktop ? "max-w-xs" : ""}>
           <Image source={require("../assets/logo-colimo.png")} style={{ width: 130, height: 37 }} resizeMode="contain" />
           <Text className="mt-3 font-texte text-xs text-colimo-neutre-fonce/50">
-            Livraison, transport et boutique de commerces partenaires dans le Grand Libreville.
+            Livraison et transport dans le Grand Libreville — COLIMO Market, notre future vitrine de commerces
+            partenaires, arrive bientôt.
           </Text>
         </View>
 
@@ -812,6 +830,7 @@ function PiedDePage({ desktop, onNaviguer }: { desktop: boolean; onNaviguer: (ci
                 className="mt-2.5 font-texte text-sm text-colimo-neutre-fonce/70"
               >
                 {item.label}
+                {item.bientot && <Text className="font-texte text-xs text-colimo-neutre-fonce/40"> · Bientôt disponible</Text>}
               </Text>
             ))}
           </View>
@@ -905,7 +924,7 @@ export default function AccueilScreen() {
         />
 
         <SectionTransport desktop={desktop} onLayout={enregistrerOffset("transport")} />
-        <SectionBoutique desktop={desktop} onLayout={enregistrerOffset("boutique")} />
+        <SectionMarket desktop={desktop} onLayout={enregistrerOffset("market")} />
         <SectionPro desktop={desktop} onLayout={enregistrerOffset("pro")} />
         <SectionPartenaires desktop={desktop} onLayout={enregistrerOffset("partenaires")} />
         <SectionCommentCaMarche desktop={desktop} onLayout={enregistrerOffset("commentCaMarche")} />
