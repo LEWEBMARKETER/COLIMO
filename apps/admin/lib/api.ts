@@ -32,10 +32,13 @@ import {
   getCoursiers as getCoursiersQuery,
   getTransporteurs as getTransporteursQuery,
   getVehiculesTransporteur as getVehiculesTransporteurQuery,
+  getHistoriqueTransporteur as getHistoriqueTransporteurQuery,
   validerDossierTransporteur as validerDossierTransporteurQuery,
   rejeterDossierTransporteur as rejeterDossierTransporteurQuery,
+  demanderCorrectionDossierTransporteur as demanderCorrectionDossierTransporteurQuery,
   validerVehiculeTransporteur as validerVehiculeTransporteurQuery,
   rejeterVehiculeTransporteur as rejeterVehiculeTransporteurQuery,
+  demanderCorrectionVehiculeTransporteur as demanderCorrectionVehiculeTransporteurQuery,
   getConfigurationModuleTransport as getConfigurationModuleTransportQuery,
   definirModuleTransportActif as definirModuleTransportActifQuery,
   patchCatalogueBadge as patchCatalogueBadgeQuery,
@@ -98,6 +101,7 @@ import {
   type CoursierAvecStatutEffectif,
   type Transporteur,
   type VehiculeTransporteur,
+  type HistoriqueTransporteur,
   type ConfigurationModuleTransport,
   type Course,
   type CourseStatus,
@@ -512,22 +516,45 @@ export function getVehiculesTransporteur(transporteurId: string): Promise<Vehicu
   return getVehiculesTransporteurQuery(createClient(), transporteurId);
 }
 
+export function getHistoriqueTransporteur(transporteurId: string): Promise<HistoriqueTransporteur[]> {
+  return getHistoriqueTransporteurQuery(createClient(), transporteurId);
+}
+
 export async function validerDossierTransporteur(transporteurId: string): Promise<Transporteur> {
   const { client, adminId } = await idAdminCourant();
   return validerDossierTransporteurQuery(client, transporteurId, adminId);
 }
 
-export async function rejeterDossierTransporteur(transporteurId: string, motif?: string): Promise<Transporteur> {
+export async function rejeterDossierTransporteur(transporteurId: string, motif: string): Promise<Transporteur> {
   const { client, adminId } = await idAdminCourant();
   return rejeterDossierTransporteurQuery(client, transporteurId, adminId, motif);
+}
+
+export async function demanderCorrectionDossierTransporteur(transporteurId: string, motif: string): Promise<Transporteur> {
+  const { client, adminId } = await idAdminCourant();
+  return demanderCorrectionDossierTransporteurQuery(client, transporteurId, adminId, motif);
 }
 
 export function validerVehiculeTransporteur(vehiculeId: string): Promise<VehiculeTransporteur> {
   return validerVehiculeTransporteurQuery(createClient(), vehiculeId);
 }
 
-export function rejeterVehiculeTransporteur(vehiculeId: string): Promise<VehiculeTransporteur> {
-  return rejeterVehiculeTransporteurQuery(createClient(), vehiculeId);
+export async function rejeterVehiculeTransporteur(
+  vehiculeId: string,
+  transporteurId: string,
+  motif: string
+): Promise<VehiculeTransporteur> {
+  const { client, adminId } = await idAdminCourant();
+  return rejeterVehiculeTransporteurQuery(client, vehiculeId, transporteurId, adminId, motif);
+}
+
+export async function demanderCorrectionVehiculeTransporteur(
+  vehiculeId: string,
+  transporteurId: string,
+  motif: string
+): Promise<VehiculeTransporteur> {
+  const { client, adminId } = await idAdminCourant();
+  return demanderCorrectionVehiculeTransporteurQuery(client, vehiculeId, transporteurId, adminId, motif);
 }
 
 export function getConfigurationModuleTransport(): Promise<ConfigurationModuleTransport> {

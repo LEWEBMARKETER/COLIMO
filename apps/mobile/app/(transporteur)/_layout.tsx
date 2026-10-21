@@ -12,6 +12,7 @@ export default function TransporteurLayout() {
     >
       <Stack.Screen name="dashboard" options={{ headerShown: false }} />
       <Stack.Screen name="vehicules" options={{ title: "Mes véhicules" }} />
+      <Stack.Screen name="corriger-dossier" options={{ title: "Corriger mon dossier" }} />
     </Stack>
   );
 }

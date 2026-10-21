@@ -250,11 +250,29 @@ export interface Transporteur {
   id: string;
   utilisateurId: string;
   nomEntreprise: string | null;
+  quartier: string | null;
   documents: string[];
   typePieceIdentite: PieceIdentiteType | null;
   pieceIdentiteUrl: string | null;
+  // Permis de conduire adapté à la catégorie de véhicule — document propre
+  // au transporteur (une personne, un permis), distinct de la pièce
+  // d'identité ci-dessus même si "permis_conduire" existe aussi comme
+  // valeur possible de PieceIdentiteType (un permis peut servir de pièce
+  // d'identité ET être exigé séparément ici comme preuve d'aptitude à
+  // conduire le véhicule déclaré).
+  permisConduireUrl: string | null;
   zonesCouvertes: Zone[];
   statutVerification: VerificationStatus;
+  // Acceptation des conditions de partenariat COLIMO TRANSPORT (étape 3
+  // de l'inscription) — distincte des CGU générales. Les missions ne
+  // s'activeront (phase ultérieure) qu'avec statutVerification = "valide"
+  // ET ce champ renseigné.
+  conditionsPartenariatAccepteesAt: string | null;
+  // Motif du dernier rejet/demande de correction — lisible par le
+  // transporteur lui-même (sa propre ligne), contrairement au journal
+  // complet HistoriqueTransporteur réservé à l'admin. Effacé (-> null)
+  // uniquement par une resoumission légitime.
+  dernierMotifRejet: string | null;
   noteMoyenne: number;
   createdAt: string;
   updatedAt: string;
@@ -267,19 +285,63 @@ export interface VehiculeTransporteur {
   plaqueImmatriculation: string;
   capacitePoidsKg: number | null;
   capaciteVolumeM3: number | null;
+  photoUrl: string | null;
+  carteGriseUrl: string | null;
+  assuranceUrl: string | null;
+  // Justificatifs complémentaires variables selon la catégorie de véhicule
+  // (ex. autorisation de transport de marchandises pour un camion) — cf.
+  // JUSTIFICATIFS_COMPLEMENTAIRES_PAR_CATEGORIE ci-dessous pour la liste
+  // indicative affichée à l'inscription.
   documents: string[];
   statutVerification: VerificationStatus;
+  dernierMotifRejet: string | null;
   actif: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
+// Statuts visibles côté admin/transporteur — exactement 3, demande
+// explicite du besoin métier. Mappés en AFFICHAGE SEULEMENT sur l'enum
+// verification_status existant (en_attente/valide/rejete), jamais
+// renommé en base : cet enum est partagé avec coursiers (coursiers.statut_verification),
+// le renommer casserait tout le code coursier qui compare ces chaînes
+// littérales. "Ne pas confirmer" et "Demander une correction" (actions
+// admin) aboutissent toutes deux à NON_CONFIRME (rejete) — seule l'action
+// journalisée diffère (voir ActionHistoriqueTransporteur).
+export const STATUT_VERIFICATION_TRANSPORT_LABELS: Record<VerificationStatus, string> = {
+  en_attente: "EN_ATTENTE",
+  valide: "CONFIRME",
+  rejete: "NON_CONFIRME",
+};
+
+// Liste indicative (pas des champs d'upload séparés, pour rester simple)
+// affichée à l'étape 3 de l'inscription selon le véhicule choisi à
+// l'étape 2 — les documents eux-mêmes vont dans VehiculeTransporteur.documents.
+export const JUSTIFICATIFS_COMPLEMENTAIRES_PAR_CATEGORIE: Record<TypeVehiculeTransport, string[]> = {
+  camionnette: ["Permis adapté à la catégorie du véhicule"],
+  camion: ["Permis poids lourd", "Autorisation de transport de marchandises"],
+  fourgon: ["Permis adapté à la catégorie du véhicule"],
+  pickup: ["Permis adapté à la catégorie du véhicule"],
+  remorque: ["Permis poids lourd", "Autorisation de transport de marchandises"],
+  autre: [],
+};
+
 export type ActionHistoriqueTransporteur =
   | "validation_dossier"
   | "rejet_dossier"
+  | "demande_correction"
   | "suspension"
   | "reactivation"
   | "commentaire_interne";
+
+export const ACTION_HISTORIQUE_TRANSPORTEUR_LABELS: Record<ActionHistoriqueTransporteur, string> = {
+  validation_dossier: "Dossier confirmé",
+  rejet_dossier: "Dossier non confirmé",
+  demande_correction: "Correction demandée",
+  suspension: "Suspension",
+  reactivation: "Réactivation",
+  commentaire_interne: "Commentaire interne",
+};
 
 export interface HistoriqueTransporteur {
   id: string;
