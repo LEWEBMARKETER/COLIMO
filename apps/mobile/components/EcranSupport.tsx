@@ -7,9 +7,12 @@ import ChampTexte from "@/components/ui/ChampTexte";
 import { envoyerDemandeSupport } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
-const NUMERO_WHATSAPP = "+241 66 49 90 28";
-const NUMERO_WHATSAPP_WA_ME = "24166499028";
-const EMAIL_SUPPORT = "contact@colimo.online";
+// Exportées pour réutilisation hors de cet écran (ex. footer de la landing
+// page publique, apps/mobile/app/accueil.tsx) — une seule source pour ces
+// coordonnées, jamais recopiées en dur ailleurs.
+export const NUMERO_WHATSAPP = "+241 66 49 90 28";
+export const NUMERO_WHATSAPP_WA_ME = "24166499028";
+export const EMAIL_SUPPORT = "contact@colimo.online";
 const MESSAGE_WHATSAPP_PREREMPLI = "Bonjour, j'ai besoin d'aide concernant mon compte COLIMO.";
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
