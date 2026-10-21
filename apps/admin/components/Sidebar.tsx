@@ -28,6 +28,7 @@ const GROUPES = [
       { href: "/clients", label: "Clients" },
       { href: "/commercants", label: "Commerçants" },
       { href: "/coursiers", label: "Coursiers" },
+      { href: "/transporteurs", label: "Transporteurs" },
       { href: "/administrateurs", label: "Administrateurs" },
     ],
   },

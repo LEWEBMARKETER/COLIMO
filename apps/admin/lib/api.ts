@@ -30,6 +30,14 @@ import {
   getUtilisateurs as getUtilisateursQuery,
   getUtilisateur as getUtilisateurQuery,
   getCoursiers as getCoursiersQuery,
+  getTransporteurs as getTransporteursQuery,
+  getVehiculesTransporteur as getVehiculesTransporteurQuery,
+  validerDossierTransporteur as validerDossierTransporteurQuery,
+  rejeterDossierTransporteur as rejeterDossierTransporteurQuery,
+  validerVehiculeTransporteur as validerVehiculeTransporteurQuery,
+  rejeterVehiculeTransporteur as rejeterVehiculeTransporteurQuery,
+  getConfigurationModuleTransport as getConfigurationModuleTransportQuery,
+  definirModuleTransportActif as definirModuleTransportActifQuery,
   patchCatalogueBadge as patchCatalogueBadgeQuery,
   patchCatalogueNiveau as patchCatalogueNiveauQuery,
   patchCodePromo as patchCodePromoQuery,
@@ -88,6 +96,9 @@ import {
   type ConfigurationPaiementAbonnement,
   type Coursier,
   type CoursierAvecStatutEffectif,
+  type Transporteur,
+  type VehiculeTransporteur,
+  type ConfigurationModuleTransport,
   type Course,
   type CourseStatus,
   type DemandeAbonnement,
@@ -489,6 +500,43 @@ export async function rejeterDossierCoursier(coursierId: string, motif?: string)
 export async function demanderDocumentsComplementaires(coursierId: string, commentaire?: string): Promise<void> {
   const { client, adminId } = await idAdminCourant();
   return demanderDocumentsComplementairesQuery(client, coursierId, adminId, commentaire);
+}
+
+// --- COLIMO TRANSPORT (Phase 1 — fondations) -----------------------------
+
+export function getTransporteurs(filtres?: { statutVerification?: VerificationStatus }): Promise<Transporteur[]> {
+  return getTransporteursQuery(createClient(), filtres);
+}
+
+export function getVehiculesTransporteur(transporteurId: string): Promise<VehiculeTransporteur[]> {
+  return getVehiculesTransporteurQuery(createClient(), transporteurId);
+}
+
+export async function validerDossierTransporteur(transporteurId: string): Promise<Transporteur> {
+  const { client, adminId } = await idAdminCourant();
+  return validerDossierTransporteurQuery(client, transporteurId, adminId);
+}
+
+export async function rejeterDossierTransporteur(transporteurId: string, motif?: string): Promise<Transporteur> {
+  const { client, adminId } = await idAdminCourant();
+  return rejeterDossierTransporteurQuery(client, transporteurId, adminId, motif);
+}
+
+export function validerVehiculeTransporteur(vehiculeId: string): Promise<VehiculeTransporteur> {
+  return validerVehiculeTransporteurQuery(createClient(), vehiculeId);
+}
+
+export function rejeterVehiculeTransporteur(vehiculeId: string): Promise<VehiculeTransporteur> {
+  return rejeterVehiculeTransporteurQuery(createClient(), vehiculeId);
+}
+
+export function getConfigurationModuleTransport(): Promise<ConfigurationModuleTransport> {
+  return getConfigurationModuleTransportQuery(createClient());
+}
+
+export async function definirModuleTransportActif(actif: boolean): Promise<void> {
+  const { client, adminId } = await idAdminCourant();
+  return definirModuleTransportActifQuery(client, actif, adminId);
 }
 
 export function getCatalogueBadges(): Promise<BadgeCoursier[]> {
