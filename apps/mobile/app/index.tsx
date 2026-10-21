@@ -15,5 +15,6 @@ export default function Index() {
 
   if (!session) return <Redirect href="/accueil" />;
   if (utilisateur?.type === "coursier") return <Redirect href="/(coursier)/dashboard" />;
+  if (utilisateur?.type === "transporteur") return <Redirect href="/(transporteur)/dashboard" />;
   return <Redirect href="/(client)" />;
 }

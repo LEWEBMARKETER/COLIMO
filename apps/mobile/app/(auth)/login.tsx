@@ -72,6 +72,12 @@ export default function LoginScreen() {
               <Text className="font-texte-medium text-colimo-rouge">Créer un compte coursier</Text>
             </Text>
           </Pressable>
+          <Pressable onPress={() => router.push("/(auth)/register-transporteur")}>
+            <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/70">
+              Vous êtes transporteur partenaire ?{" "}
+              <Text className="font-texte-medium text-colimo-rouge">Créer un compte transporteur</Text>
+            </Text>
+          </Pressable>
           <Pressable onPress={() => router.push("/(auth)/rejoindre-commerce")}>
             <Text className="text-center font-texte text-sm text-colimo-neutre-fonce/70">
               Vous avez été invité par un commerce ?{" "}

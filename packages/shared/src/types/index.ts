@@ -1,4 +1,4 @@
-export type UserType = "client" | "coursier" | "admin";
+export type UserType = "client" | "coursier" | "admin" | "transporteur";
 
 export type Zone = "libreville" | "akanda" | "owendo" | "bikele_essassa" | "ntoum" | "pk12";
 
@@ -192,7 +192,7 @@ export const STATUT_INVITATION_ADMIN_LABELS: Record<StatutInvitationAdmin, strin
 // (affichage) — source unique pour éviter toute divergence UI / serveur.
 export const PAGES_PAR_POLE: Record<PoleAdmin, string[] | "*"> = {
   super_admin: "*",
-  operations: ["/carte", "/courses", "/coursiers", "/annulations"],
+  operations: ["/carte", "/courses", "/coursiers", "/annulations", "/transporteurs"],
   support_commerces: ["/clients", "/commercants", "/communication", "/litiges", "/programmes"],
   finance_analytics: ["/paiements", "/promotions", "/statistiques"],
 };
@@ -226,6 +226,77 @@ export interface Coursier {
   nombreCoursesAssignees: number;
   nombreCoursesAnnulees: number;
   dureeLivraisonTotaleSecondes: number;
+}
+
+// --- COLIMO TRANSPORT (Phase 1 — fondations) ------------------------------
+// Module distinct des coursiers moto : un transporteur peut couvrir une
+// flotte de véhicules (VehiculeTransporteur, table 1-N), contrairement au
+// coursier qui n'a qu'un seul type_vehicule sur sa propre ligne. Réutilise
+// volontairement Zone/VerificationStatus/PieceIdentiteType tels quels
+// (même géographie — 6 zones —, même patron de vérification KYC).
+
+export type TypeVehiculeTransport = "camionnette" | "camion" | "fourgon" | "pickup" | "remorque" | "autre";
+
+export const TYPE_VEHICULE_TRANSPORT_LABELS: Record<TypeVehiculeTransport, string> = {
+  camionnette: "Camionnette",
+  camion: "Camion",
+  fourgon: "Fourgon",
+  pickup: "Pickup",
+  remorque: "Remorque",
+  autre: "Autre",
+};
+
+export interface Transporteur {
+  id: string;
+  utilisateurId: string;
+  nomEntreprise: string | null;
+  documents: string[];
+  typePieceIdentite: PieceIdentiteType | null;
+  pieceIdentiteUrl: string | null;
+  zonesCouvertes: Zone[];
+  statutVerification: VerificationStatus;
+  noteMoyenne: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VehiculeTransporteur {
+  id: string;
+  transporteurId: string;
+  typeVehicule: TypeVehiculeTransport;
+  plaqueImmatriculation: string;
+  capacitePoidsKg: number | null;
+  capaciteVolumeM3: number | null;
+  documents: string[];
+  statutVerification: VerificationStatus;
+  actif: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ActionHistoriqueTransporteur =
+  | "validation_dossier"
+  | "rejet_dossier"
+  | "suspension"
+  | "reactivation"
+  | "commentaire_interne";
+
+export interface HistoriqueTransporteur {
+  id: string;
+  transporteurId: string;
+  action: ActionHistoriqueTransporteur;
+  ancienneValeur: string | null;
+  nouvelleValeur: string | null;
+  motif: string | null;
+  commentaire: string | null;
+  administrateurId: string | null;
+  createdAt: string;
+}
+
+export interface ConfigurationModuleTransport {
+  actif: boolean;
+  misAJourPar: string | null;
+  misAJourAt: string;
 }
 
 export type ActiviteCommerce =

@@ -132,7 +132,7 @@ export async function insertUtilisateur(
     nom: string;
     prenom?: string;
     telephone: string;
-    type: "client" | "coursier";
+    type: "client" | "coursier" | "transporteur";
     typeClient?: TypeClient;
     zone?: Zone | null;
     photoUrl?: string;

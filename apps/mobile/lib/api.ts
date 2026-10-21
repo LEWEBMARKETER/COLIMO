@@ -18,6 +18,11 @@ import {
   getCoursierByUtilisateurId as getCoursierByUtilisateurIdQuery,
   getCoursiers as getCoursiersQuery,
   getCourses as getCoursesQuery,
+  getTransporteurByUtilisateurId as getTransporteurByUtilisateurIdQuery,
+  getVehiculesTransporteur as getVehiculesTransporteurQuery,
+  insertTransporteur,
+  insertVehiculeTransporteur,
+  getConfigurationModuleTransport as getConfigurationModuleTransportQuery,
   getLitiges as getLitigesQuery,
   getMessages as getMessagesQuery,
   getNotations as getNotationsQuery,
@@ -112,12 +117,16 @@ import {
   type QuiPaie,
   type RoleCommerceMembre,
   type TailleColis,
+  type Transporteur,
   type TypeClient,
+  type TypeVehiculeTransport,
   type Utilisateur,
+  type VehiculeTransporteur,
   type VehiculeType,
   type VerificationStatus,
   type VolumeLivraisons,
   type Zone,
+  type ConfigurationModuleTransport,
 } from "@colimo/shared";
 import { supabase } from "./supabaseClient";
 
@@ -553,6 +562,16 @@ export async function uploaderPieceIdentite(utilisateurId: string, uri: string, 
   return uploadFichier(supabase, "documents", `${utilisateurId}/piece_identite.${extension}`, donnees, mimeType);
 }
 
+// Chemin keyé sur l'utilisateur (auth.uid()), pas sur transporteurId/vehiculeId
+// — la policy storage "documents_own_write" (0007) exige que le premier
+// segment du chemin soit auth.uid(), même convention que uploaderPieceIdentite.
+export async function uploaderDocumentVehicule(utilisateurId: string, uri: string, mimeType: string): Promise<string> {
+  const donnees = await uriVersArrayBuffer(uri);
+  const extension = mimeType.split("/")[1] ?? "jpg";
+  const nomFichier = `${Date.now()}-${Math.round(Math.random() * 1e6)}.${extension}`;
+  return uploadFichier(supabase, "documents", `${utilisateurId}/vehicules/${nomFichier}`, donnees, mimeType);
+}
+
 export async function uploaderPreuveLitige(
   utilisateurId: string,
   courseId: string,
@@ -808,6 +827,90 @@ export async function inscrireCoursier(input: {
   });
 
   return { utilisateur, coursier };
+}
+
+// COLIMO TRANSPORT (Phase 1) — même schéma que inscrireCoursier (signUp
+// puis insertUtilisateur puis table annexe), sans véhicule à ce stade :
+// un transporteur peut couvrir une flotte, ajoutée séparément après
+// inscription (cf. ajouterVehiculeTransporteur / écran "Mes véhicules").
+export async function inscrireTransporteur(input: {
+  email: string;
+  password: string;
+  nom: string;
+  prenom: string;
+  telephone: string;
+  zone: Zone;
+  nomEntreprise?: string;
+  typePieceIdentite: PieceIdentiteType;
+  pieceIdentite: { uri: string; mimeType: string };
+  photo?: { uri: string; mimeType: string };
+}): Promise<{ utilisateur: Utilisateur; transporteur: Transporteur }> {
+  const { data, error } = await supabase.auth.signUp({ email: input.email, password: input.password });
+  if (error) throw error;
+  if (!data.user) throw new Error("Inscription incomplète : aucun utilisateur créé.");
+
+  const photoUrl = input.photo ? await uploaderAvatar(data.user.id, input.photo.uri, input.photo.mimeType) : undefined;
+  const pieceIdentiteUrl = await uploaderPieceIdentite(
+    data.user.id,
+    input.pieceIdentite.uri,
+    input.pieceIdentite.mimeType
+  );
+
+  const utilisateur = await insertUtilisateur(supabase, {
+    id: data.user.id,
+    nom: input.nom,
+    prenom: input.prenom,
+    telephone: input.telephone,
+    type: "transporteur",
+    zone: input.zone,
+    photoUrl,
+  });
+  const transporteur = await insertTransporteur(supabase, {
+    utilisateurId: data.user.id,
+    nomEntreprise: input.nomEntreprise,
+    typePieceIdentite: input.typePieceIdentite,
+    pieceIdentiteUrl,
+    zonesCouvertes: [input.zone],
+  });
+
+  return { utilisateur, transporteur };
+}
+
+export function getTransporteurByUtilisateurId(utilisateurId: string): Promise<Transporteur | null> {
+  return getTransporteurByUtilisateurIdQuery(supabase, utilisateurId);
+}
+
+export function getMesVehicules(transporteurId: string): Promise<VehiculeTransporteur[]> {
+  return getVehiculesTransporteurQuery(supabase, transporteurId);
+}
+
+export async function ajouterVehiculeTransporteur(input: {
+  utilisateurId: string;
+  transporteurId: string;
+  typeVehicule: TypeVehiculeTransport;
+  plaqueImmatriculation: string;
+  capacitePoidsKg?: number;
+  capaciteVolumeM3?: number;
+  document?: { uri: string; mimeType: string };
+}): Promise<VehiculeTransporteur> {
+  const documents: string[] = [];
+  if (input.document) {
+    documents.push(
+      await uploaderDocumentVehicule(input.utilisateurId, input.document.uri, input.document.mimeType)
+    );
+  }
+  return insertVehiculeTransporteur(supabase, {
+    transporteurId: input.transporteurId,
+    typeVehicule: input.typeVehicule,
+    plaqueImmatriculation: input.plaqueImmatriculation,
+    capacitePoidsKg: input.capacitePoidsKg,
+    capaciteVolumeM3: input.capaciteVolumeM3,
+    documents,
+  });
+}
+
+export function getConfigurationModuleTransport(): Promise<ConfigurationModuleTransport> {
+  return getConfigurationModuleTransportQuery(supabase);
 }
 
 // Formulaire de contact de l'onglet Support — passe par une route serveur

@@ -2,8 +2,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session } from "@supabase/supabase-js";
 import {
   getCoursierByUtilisateurId,
+  getTransporteurByUtilisateurId,
   getUtilisateur,
   type Coursier,
+  type Transporteur,
   type Utilisateur,
 } from "@colimo/shared";
 import { supabase } from "./supabaseClient";
@@ -12,6 +14,7 @@ interface AuthContextValue {
   session: Session | null;
   utilisateur: Utilisateur | null;
   coursier: Coursier | null;
+  transporteur: Transporteur | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -23,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [utilisateur, setUtilisateur] = useState<Utilisateur | null>(null);
   const [coursier, setCoursier] = useState<Coursier | null>(null);
+  const [transporteur, setTransporteur] = useState<Transporteur | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function chargerProfil(userId: string) {
@@ -40,8 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       setCoursier(profilCoursier);
+      setTransporteur(null);
+    } else if (profil?.type === "transporteur") {
+      setTransporteur(await getTransporteurByUtilisateurId(supabase, userId));
+      setCoursier(null);
     } else {
       setCoursier(null);
+      setTransporteur(null);
     }
   }
 
@@ -63,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUtilisateur(null);
         setCoursier(null);
+        setTransporteur(null);
       }
     });
 
@@ -74,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, utilisateur, coursier, loading, refreshProfile, signOut }}>
+    <AuthContext.Provider value={{ session, utilisateur, coursier, transporteur, loading, refreshProfile, signOut }}>
       {children}
     </AuthContext.Provider>
   );
