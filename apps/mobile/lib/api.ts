@@ -22,6 +22,8 @@ import {
   getVehiculesTransporteur as getVehiculesTransporteurQuery,
   insertTransporteur,
   insertVehiculeTransporteur,
+  resoumettreDossierTransporteur as resoumettreDossierTransporteurQuery,
+  resoumettreVehiculeTransporteur as resoumettreVehiculeTransporteurQuery,
   getConfigurationModuleTransport as getConfigurationModuleTransportQuery,
   getLitiges as getLitigesQuery,
   getMessages as getMessagesQuery,
@@ -562,6 +564,15 @@ export async function uploaderPieceIdentite(utilisateurId: string, uri: string, 
   return uploadFichier(supabase, "documents", `${utilisateurId}/piece_identite.${extension}`, donnees, mimeType);
 }
 
+// Permis de conduire adapté (COLIMO TRANSPORT) — document propre au
+// transporteur, distinct de la pièce d'identité même si "permis_conduire"
+// existe aussi comme valeur possible de PieceIdentiteType.
+export async function uploaderPermisConduire(utilisateurId: string, uri: string, mimeType: string): Promise<string> {
+  const donnees = await uriVersArrayBuffer(uri);
+  const extension = mimeType.includes("png") ? "png" : "jpg";
+  return uploadFichier(supabase, "documents", `${utilisateurId}/permis_conduire.${extension}`, donnees, mimeType);
+}
+
 // Chemin keyé sur l'utilisateur (auth.uid()), pas sur transporteurId/vehiculeId
 // — la policy storage "documents_own_write" (0007) exige que le premier
 // segment du chemin soit auth.uid(), même convention que uploaderPieceIdentite.
@@ -829,10 +840,13 @@ export async function inscrireCoursier(input: {
   return { utilisateur, coursier };
 }
 
-// COLIMO TRANSPORT (Phase 1) — même schéma que inscrireCoursier (signUp
-// puis insertUtilisateur puis table annexe), sans véhicule à ce stade :
-// un transporteur peut couvrir une flotte, ajoutée séparément après
-// inscription (cf. ajouterVehiculeTransporteur / écran "Mes véhicules").
+// COLIMO TRANSPORT — inscription en 3 étapes (simplification) :
+// 1. infos personnelles, 2. véhicule (premier véhicule de la flotte,
+// d'autres peuvent être ajoutés ensuite via ajouterVehiculeTransporteur/
+// "Mes véhicules"), 3. documents + acceptation des conditions de
+// partenariat. Un seul appel orchestré côté client (signUp puis
+// insertUtilisateur puis les deux tables annexes), même schéma que
+// inscrireCoursier.
 export async function inscrireTransporteur(input: {
   email: string;
   password: string;
@@ -840,24 +854,40 @@ export async function inscrireTransporteur(input: {
   prenom: string;
   telephone: string;
   zone: Zone;
+  quartier?: string;
   nomEntreprise?: string;
+  typeVehicule: TypeVehiculeTransport;
+  plaqueImmatriculation: string;
+  capacitePoidsKg?: number;
+  capaciteVolumeM3?: number;
+  photoVehicule?: { uri: string; mimeType: string };
   typePieceIdentite: PieceIdentiteType;
   pieceIdentite: { uri: string; mimeType: string };
+  permisConduire: { uri: string; mimeType: string };
+  carteGrise: { uri: string; mimeType: string };
+  assurance: { uri: string; mimeType: string };
+  accepteConditionsPartenariat: boolean;
   photo?: { uri: string; mimeType: string };
-}): Promise<{ utilisateur: Utilisateur; transporteur: Transporteur }> {
+}): Promise<{ utilisateur: Utilisateur; transporteur: Transporteur; vehicule: VehiculeTransporteur }> {
+  if (!input.accepteConditionsPartenariat) {
+    throw new Error("L'acceptation des conditions de partenariat est obligatoire.");
+  }
   const { data, error } = await supabase.auth.signUp({ email: input.email, password: input.password });
   if (error) throw error;
   if (!data.user) throw new Error("Inscription incomplète : aucun utilisateur créé.");
+  const utilisateurId = data.user.id;
 
-  const photoUrl = input.photo ? await uploaderAvatar(data.user.id, input.photo.uri, input.photo.mimeType) : undefined;
-  const pieceIdentiteUrl = await uploaderPieceIdentite(
-    data.user.id,
-    input.pieceIdentite.uri,
-    input.pieceIdentite.mimeType
-  );
+  const photoUrl = input.photo ? await uploaderAvatar(utilisateurId, input.photo.uri, input.photo.mimeType) : undefined;
+  const pieceIdentiteUrl = await uploaderPieceIdentite(utilisateurId, input.pieceIdentite.uri, input.pieceIdentite.mimeType);
+  const permisConduireUrl = await uploaderPermisConduire(utilisateurId, input.permisConduire.uri, input.permisConduire.mimeType);
+  const carteGriseUrl = await uploaderDocumentVehicule(utilisateurId, input.carteGrise.uri, input.carteGrise.mimeType);
+  const assuranceUrl = await uploaderDocumentVehicule(utilisateurId, input.assurance.uri, input.assurance.mimeType);
+  const photoVehiculeUrl = input.photoVehicule
+    ? await uploaderDocumentVehicule(utilisateurId, input.photoVehicule.uri, input.photoVehicule.mimeType)
+    : undefined;
 
   const utilisateur = await insertUtilisateur(supabase, {
-    id: data.user.id,
+    id: utilisateurId,
     nom: input.nom,
     prenom: input.prenom,
     telephone: input.telephone,
@@ -866,14 +896,27 @@ export async function inscrireTransporteur(input: {
     photoUrl,
   });
   const transporteur = await insertTransporteur(supabase, {
-    utilisateurId: data.user.id,
+    utilisateurId,
     nomEntreprise: input.nomEntreprise,
+    quartier: input.quartier,
     typePieceIdentite: input.typePieceIdentite,
     pieceIdentiteUrl,
+    permisConduireUrl,
     zonesCouvertes: [input.zone],
+    conditionsPartenariatAccepteesAt: new Date().toISOString(),
+  });
+  const vehicule = await insertVehiculeTransporteur(supabase, {
+    transporteurId: transporteur.id,
+    typeVehicule: input.typeVehicule,
+    plaqueImmatriculation: input.plaqueImmatriculation,
+    capacitePoidsKg: input.capacitePoidsKg,
+    capaciteVolumeM3: input.capaciteVolumeM3,
+    photoUrl: photoVehiculeUrl,
+    carteGriseUrl,
+    assuranceUrl,
   });
 
-  return { utilisateur, transporteur };
+  return { utilisateur, transporteur, vehicule };
 }
 
 export function getTransporteurByUtilisateurId(utilisateurId: string): Promise<Transporteur | null> {
@@ -891,22 +934,49 @@ export async function ajouterVehiculeTransporteur(input: {
   plaqueImmatriculation: string;
   capacitePoidsKg?: number;
   capaciteVolumeM3?: number;
-  document?: { uri: string; mimeType: string };
+  photo?: { uri: string; mimeType: string };
+  carteGrise?: { uri: string; mimeType: string };
+  assurance?: { uri: string; mimeType: string };
 }): Promise<VehiculeTransporteur> {
-  const documents: string[] = [];
-  if (input.document) {
-    documents.push(
-      await uploaderDocumentVehicule(input.utilisateurId, input.document.uri, input.document.mimeType)
-    );
-  }
+  const photoUrl = input.photo ? await uploaderDocumentVehicule(input.utilisateurId, input.photo.uri, input.photo.mimeType) : undefined;
+  const carteGriseUrl = input.carteGrise
+    ? await uploaderDocumentVehicule(input.utilisateurId, input.carteGrise.uri, input.carteGrise.mimeType)
+    : undefined;
+  const assuranceUrl = input.assurance
+    ? await uploaderDocumentVehicule(input.utilisateurId, input.assurance.uri, input.assurance.mimeType)
+    : undefined;
   return insertVehiculeTransporteur(supabase, {
     transporteurId: input.transporteurId,
     typeVehicule: input.typeVehicule,
     plaqueImmatriculation: input.plaqueImmatriculation,
     capacitePoidsKg: input.capacitePoidsKg,
     capaciteVolumeM3: input.capaciteVolumeM3,
-    documents,
+    photoUrl,
+    carteGriseUrl,
+    assuranceUrl,
   });
+}
+
+// Resoumission après NON_CONFIRME — cf. colimo-mobile-ux / besoin métier :
+// "permettre au partenaire de corriger puis de soumettre à nouveau".
+export function resoumettreDossierTransporteur(
+  transporteurId: string,
+  body: {
+    nomEntreprise?: string;
+    quartier?: string;
+    typePieceIdentite?: PieceIdentiteType;
+    pieceIdentiteUrl?: string;
+    permisConduireUrl?: string;
+  }
+): Promise<Transporteur> {
+  return resoumettreDossierTransporteurQuery(supabase, transporteurId, body);
+}
+
+export function resoumettreVehiculeTransporteur(
+  vehiculeId: string,
+  body: { plaqueImmatriculation?: string; photoUrl?: string; carteGriseUrl?: string; assuranceUrl?: string }
+): Promise<VehiculeTransporteur> {
+  return resoumettreVehiculeTransporteurQuery(supabase, vehiculeId, body);
 }
 
 export function getConfigurationModuleTransport(): Promise<ConfigurationModuleTransport> {

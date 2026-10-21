@@ -8,7 +8,7 @@ import Bouton from "@/components/ui/Bouton";
 import Carte from "@/components/ui/Carte";
 import ChampTexte from "@/components/ui/ChampTexte";
 import GroupePastilles from "@/components/ui/GroupePastilles";
-import { ajouterVehiculeTransporteur, getMesVehicules } from "@/lib/api";
+import { ajouterVehiculeTransporteur, getMesVehicules, resoumettreVehiculeTransporteur, uploaderDocumentVehicule } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 
 const TYPES_VEHICULE = (Object.keys(TYPE_VEHICULE_TRANSPORT_LABELS) as TypeVehiculeTransport[]).map((valeur) => ({
@@ -17,9 +17,9 @@ const TYPES_VEHICULE = (Object.keys(TYPE_VEHICULE_TRANSPORT_LABELS) as TypeVehic
 }));
 
 const TEINTES_VERIFICATION: Record<string, { fond: string; texte: string; label: string }> = {
-  en_attente: { fond: "#FEF3C7", texte: "#92400E", label: "En attente" },
-  valide: { fond: "#D1FAE5", texte: "#065F46", label: "Validé" },
-  rejete: { fond: "#FBE7E7", texte: "#9E1419", label: "Rejeté" },
+  en_attente: { fond: "#FEF3C7", texte: "#92400E", label: "EN_ATTENTE" },
+  valide: { fond: "#D1FAE5", texte: "#065F46", label: "CONFIRME" },
+  rejete: { fond: "#FBE7E7", texte: "#9E1419", label: "NON_CONFIRME" },
 };
 
 function PastilleVerification({ statut }: { statut: string }) {
@@ -33,21 +33,25 @@ function PastilleVerification({ statut }: { statut: string }) {
   );
 }
 
-// Flotte d'un transporteur (COLIMO TRANSPORT, Phase 1) — table 1-N
-// vehicules_transporteur, contrairement au coursier moto qui n'a qu'un
-// seul type_vehicule sur sa propre ligne (décision produit : "plusieurs
-// véhicules" dès le MVP).
+type Photo = { uri: string; mimeType: string };
+
+// Flotte d'un transporteur (COLIMO TRANSPORT) — table 1-N
+// vehicules_transporteur. Un véhicule NON_CONFIRME peut être corrigé puis
+// resoumis (statut repasse à EN_ATTENTE), même principe que le dossier.
 export default function MesVehiculesScreen() {
   const { utilisateur, transporteur } = useAuth();
   const [vehicules, setVehicules] = useState<VehiculeTransporteur[]>([]);
   const [chargement, setChargement] = useState(true);
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
+  const [vehiculeACorriger, setVehiculeACorriger] = useState<VehiculeTransporteur | null>(null);
 
   const [typeVehicule, setTypeVehicule] = useState<TypeVehiculeTransport | null>(null);
   const [plaque, setPlaque] = useState("");
   const [capacitePoids, setCapacitePoids] = useState("");
   const [capaciteVolume, setCapaciteVolume] = useState("");
-  const [document, setDocument] = useState<{ uri: string; mimeType: string } | null>(null);
+  const [photo, setPhoto] = useState<Photo | null>(null);
+  const [carteGrise, setCarteGrise] = useState<Photo | null>(null);
+  const [assurance, setAssurance] = useState<Photo | null>(null);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -66,7 +70,29 @@ export default function MesVehiculesScreen() {
     }, [transporteur?.id])
   );
 
+  function reinitialiserFormulaire() {
+    setTypeVehicule(null);
+    setPlaque("");
+    setCapacitePoids("");
+    setCapaciteVolume("");
+    setPhoto(null);
+    setCarteGrise(null);
+    setAssurance(null);
+    setErreur(null);
+  }
+
   const peutEnvoyer = Boolean(typeVehicule && plaque.trim() && !envoiEnCours);
+  const peutResoumetre = Boolean(plaque.trim() && !envoiEnCours);
+
+  function ouvrirCorrection(v: VehiculeTransporteur) {
+    setVehiculeACorriger(v);
+    setFormulaireOuvert(false);
+    setPlaque(v.plaqueImmatriculation);
+    setPhoto(null);
+    setCarteGrise(null);
+    setAssurance(null);
+    setErreur(null);
+  }
 
   async function ajouter() {
     if (!transporteur || !utilisateur || !typeVehicule || !plaque.trim()) return;
@@ -80,17 +106,43 @@ export default function MesVehiculesScreen() {
         plaqueImmatriculation: plaque.trim(),
         capacitePoidsKg: capacitePoids.trim() ? Number(capacitePoids) : undefined,
         capaciteVolumeM3: capaciteVolume.trim() ? Number(capaciteVolume) : undefined,
-        document: document ?? undefined,
+        photo: photo ?? undefined,
+        carteGrise: carteGrise ?? undefined,
+        assurance: assurance ?? undefined,
       });
-      setTypeVehicule(null);
-      setPlaque("");
-      setCapacitePoids("");
-      setCapaciteVolume("");
-      setDocument(null);
+      reinitialiserFormulaire();
       setFormulaireOuvert(false);
       charger();
     } catch {
       setErreur("Impossible d'ajouter ce véhicule. Réessayez.");
+    } finally {
+      setEnvoiEnCours(false);
+    }
+  }
+
+  async function resoumettre() {
+    if (!vehiculeACorriger || !utilisateur || !plaque.trim()) return;
+    setEnvoiEnCours(true);
+    setErreur(null);
+    try {
+      const photoUrl = photo ? await uploaderDocumentVehicule(utilisateur.id, photo.uri, photo.mimeType) : undefined;
+      const carteGriseUrl = carteGrise
+        ? await uploaderDocumentVehicule(utilisateur.id, carteGrise.uri, carteGrise.mimeType)
+        : undefined;
+      const assuranceUrl = assurance
+        ? await uploaderDocumentVehicule(utilisateur.id, assurance.uri, assurance.mimeType)
+        : undefined;
+      await resoumettreVehiculeTransporteur(vehiculeACorriger.id, {
+        plaqueImmatriculation: plaque.trim(),
+        photoUrl,
+        carteGriseUrl,
+        assuranceUrl,
+      });
+      setVehiculeACorriger(null);
+      reinitialiserFormulaire();
+      charger();
+    } catch {
+      setErreur("Impossible de resoumettre ce véhicule. Réessayez.");
     } finally {
       setEnvoiEnCours(false);
     }
@@ -120,11 +172,41 @@ export default function MesVehiculesScreen() {
                   {v.capaciteVolumeM3 ? `${v.capaciteVolumeM3} m³` : null}
                 </Text>
               )}
+              {v.statutVerification === "rejete" && (
+                <Text
+                  onPress={() => ouvrirCorrection(v)}
+                  className="mt-3 py-1 font-texte-medium text-xs text-colimo-rouge"
+                >
+                  Corriger et soumettre à nouveau
+                </Text>
+              )}
             </Carte>
           ))
         )}
 
-        {formulaireOuvert ? (
+        {vehiculeACorriger ? (
+          <Carte className="mt-4">
+            <Text className="font-titre-bold text-base text-colimo-neutre-fonce">
+              Corriger — {TYPE_VEHICULE_TRANSPORT_LABELS[vehiculeACorriger.typeVehicule]}
+            </Text>
+            <ChampTexte label="Plaque d'immatriculation" value={plaque} onChangeText={setPlaque} placeholder="Ex : GA-1234-AB" />
+            <PhotoPicker label="Nouvelle photo (optionnel)" uri={photo?.uri ?? null} onChange={(uri, mimeType) => setPhoto({ uri, mimeType })} rond={false} />
+            <PhotoPicker label="Nouvelle carte grise (optionnel)" uri={carteGrise?.uri ?? null} onChange={(uri, mimeType) => setCarteGrise({ uri, mimeType })} rond={false} />
+            <PhotoPicker label="Nouvelle assurance (optionnel)" uri={assurance?.uri ?? null} onChange={(uri, mimeType) => setAssurance({ uri, mimeType })} rond={false} />
+            {erreur && <Text className="mb-2 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
+            <Bouton label="Soumettre à nouveau" onPress={resoumettre} disabled={!peutResoumetre} chargement={envoiEnCours} className="mt-2" />
+            <Bouton
+              label="Annuler"
+              variante="contour"
+              onPress={() => {
+                setVehiculeACorriger(null);
+                reinitialiserFormulaire();
+              }}
+              disabled={envoiEnCours}
+              className="mt-2"
+            />
+          </Carte>
+        ) : formulaireOuvert ? (
           <Carte className="mt-4">
             <Text className="font-titre-bold text-base text-colimo-neutre-fonce">Ajouter un véhicule</Text>
 
@@ -154,12 +236,9 @@ export default function MesVehiculesScreen() {
               placeholder="0"
             />
 
-            <PhotoPicker
-              label="Document du véhicule (optionnel — carte grise, assurance...)"
-              uri={document?.uri ?? null}
-              onChange={(uri, mimeType) => setDocument({ uri, mimeType })}
-              rond={false}
-            />
+            <PhotoPicker label="Photo du véhicule (optionnel)" uri={photo?.uri ?? null} onChange={(uri, mimeType) => setPhoto({ uri, mimeType })} rond={false} />
+            <PhotoPicker label="Carte grise" uri={carteGrise?.uri ?? null} onChange={(uri, mimeType) => setCarteGrise({ uri, mimeType })} rond={false} />
+            <PhotoPicker label="Assurance" uri={assurance?.uri ?? null} onChange={(uri, mimeType) => setAssurance({ uri, mimeType })} rond={false} />
 
             {erreur && <Text className="mb-2 font-texte text-sm text-colimo-rouge">{erreur}</Text>}
 
@@ -167,7 +246,10 @@ export default function MesVehiculesScreen() {
             <Bouton
               label="Annuler"
               variante="contour"
-              onPress={() => setFormulaireOuvert(false)}
+              onPress={() => {
+                setFormulaireOuvert(false);
+                reinitialiserFormulaire();
+              }}
               disabled={envoiEnCours}
               className="mt-2"
             />
