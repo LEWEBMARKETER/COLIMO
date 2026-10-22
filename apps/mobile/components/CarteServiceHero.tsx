@@ -50,7 +50,7 @@ export default function CarteServiceHero({ icone, titre, texte, action, image, i
         source={image}
         resizeMode="cover"
         accessibilityLabel={imageDescription ?? titre}
-        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
       />
       <LinearGradient
         colors={["rgba(24,20,15,0.05)", "rgba(24,20,15,0.92)"]}
